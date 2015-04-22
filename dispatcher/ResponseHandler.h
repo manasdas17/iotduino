@@ -39,22 +39,22 @@ class ResponseHandler {
 		/**
 		 * handles a numbered response packet
 		 * @param sequence
-		 * @param application type (redundant)
+		 * @param application type (redundant for now - maybe I will move this field into actual numberead packet.)
 		 * @param l3 remote address
 		 * @param applayer packet
 		 * @return success if listener is found.
 		 */
 		boolean handleReponseNumbered(seq_t seq, packet_type_application type, l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
 			responseListener_t* listener = getListener(seq, remote);
-			
+
 			if(listener == NULL)
 				return false;
-				
+
 			listener->callbackObj->doCallback(appPacket, remote, seq);
-			
+
 			return true;
 		}
-		
+
 		/**
 		 * register a new listener for a specific remote address and sequence number with callback
 		 * @param sequence
