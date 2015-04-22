@@ -1,0 +1,489 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectVersion>6.2</ProjectVersion>
+    <ToolchainName>com.Atmel.AVRGCC8.CPP</ToolchainName>
+    <ProjectGuid>{bbfe9936-160c-41cc-9efc-4f8360a2509d}</ProjectGuid>
+    <avrdevice>ATmega2560</avrdevice>
+    <avrdeviceseries>none</avrdeviceseries>
+    <OutputType>Executable</OutputType>
+    <Language>CPP</Language>
+    <OutputFileName>$(MSBuildProjectName)</OutputFileName>
+    <OutputFileExtension>.elf</OutputFileExtension>
+    <OutputDirectory>$(MSBuildProjectDirectory)\$(Configuration)</OutputDirectory>
+    <AssemblyName>MirfLib</AssemblyName>
+    <Name>MirfLib</Name>
+    <RootNamespace>MirfLib</RootNamespace>
+    <ToolchainFlavour>Native</ToolchainFlavour>
+    <KeepTimersRunning>true</KeepTimersRunning>
+    <OverrideVtor>false</OverrideVtor>
+    <CacheFlash>true</CacheFlash>
+    <ProgFlashFromRam>true</ProgFlashFromRam>
+    <RamSnippetAddress>0x20000000</RamSnippetAddress>
+    <UncachedRange />
+    <OverrideVtorValue>exception_table</OverrideVtorValue>
+    <BootSegment>2</BootSegment>
+    <eraseonlaunchrule>0</eraseonlaunchrule>
+    <AsfFrameworkConfig>
+      <framework-data xmlns="">
+        <options />
+        <configurations />
+        <files />
+        <documentation help="" />
+        <offline-documentation help="" />
+        <dependencies>
+          <content-extension eid="atmel.asf" uuidref="Atmel.ASF" version="3.17.0" />
+        </dependencies>
+      </framework-data>
+    </AsfFrameworkConfig>
+    <avrtool>com.atmel.avrdbg.tool.jtagicemkii</avrtool>
+    <com_atmel_avrdbg_tool_jtagicemkii>
+      <ToolOptions>
+        <InterfaceProperties>
+          <JtagDbgClock>2000000</JtagDbgClock>
+        </InterfaceProperties>
+        <InterfaceName>JTAG</InterfaceName>
+      </ToolOptions>
+      <ToolType>com.atmel.avrdbg.tool.jtagicemkii</ToolType>
+      <ToolNumber>070000004698</ToolNumber>
+      <ToolName>JTAGICE mkII</ToolName>
+    </com_atmel_avrdbg_tool_jtagicemkii>
+    <avrtoolinterface>JTAG</avrtoolinterface>
+    <com_atmel_avrdbg_tool_avrdragon>
+      <ToolOptions>
+        <InterfaceProperties>
+          <JtagDbgClock>2000000</JtagDbgClock>
+        </InterfaceProperties>
+        <InterfaceName>JTAG</InterfaceName>
+      </ToolOptions>
+      <ToolType>com.atmel.avrdbg.tool.avrdragon</ToolType>
+      <ToolNumber>00A200053505</ToolNumber>
+      <ToolName>AVR Dragon</ToolName>
+    </com_atmel_avrdbg_tool_avrdragon>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <ToolchainSettings>
+      <AvrGccCpp>
+        <avrgcc.common.optimization.RelaxBranches>True</avrgcc.common.optimization.RelaxBranches>
+        <avrgcc.common.outputfiles.hex>True</avrgcc.common.outputfiles.hex>
+        <avrgcc.common.outputfiles.lss>True</avrgcc.common.outputfiles.lss>
+        <avrgcc.common.outputfiles.eep>True</avrgcc.common.outputfiles.eep>
+        <avrgcc.common.outputfiles.srec>True</avrgcc.common.outputfiles.srec>
+        <avrgcc.common.outputfiles.usersignatures>False</avrgcc.common.outputfiles.usersignatures>
+        <avrgcc.compiler.general.ChangeDefaultCharTypeUnsigned>True</avrgcc.compiler.general.ChangeDefaultCharTypeUnsigned>
+        <avrgcc.compiler.general.ChangeDefaultBitFieldUnsigned>True</avrgcc.compiler.general.ChangeDefaultBitFieldUnsigned>
+        <avrgcc.compiler.symbols.DefSymbols>
+          <ListValues>
+            <Value>NDEBUG</Value>
+          </ListValues>
+        </avrgcc.compiler.symbols.DefSymbols>
+        <avrgcc.compiler.optimization.level>Optimize for size (-Os)</avrgcc.compiler.optimization.level>
+        <avrgcc.compiler.optimization.PackStructureMembers>True</avrgcc.compiler.optimization.PackStructureMembers>
+        <avrgcc.compiler.optimization.AllocateBytesNeededForEnum>True</avrgcc.compiler.optimization.AllocateBytesNeededForEnum>
+        <avrgcc.compiler.warnings.AllWarnings>True</avrgcc.compiler.warnings.AllWarnings>
+        <avrgcccpp.compiler.general.ChangeDefaultCharTypeUnsigned>True</avrgcccpp.compiler.general.ChangeDefaultCharTypeUnsigned>
+        <avrgcccpp.compiler.general.ChangeDefaultBitFieldUnsigned>True</avrgcccpp.compiler.general.ChangeDefaultBitFieldUnsigned>
+        <avrgcccpp.compiler.symbols.DefSymbols>
+          <ListValues>
+            <Value>NDEBUG</Value>
+          </ListValues>
+        </avrgcccpp.compiler.symbols.DefSymbols>
+        <avrgcccpp.compiler.optimization.level>Optimize for size (-Os)</avrgcccpp.compiler.optimization.level>
+        <avrgcccpp.compiler.optimization.PackStructureMembers>True</avrgcccpp.compiler.optimization.PackStructureMembers>
+        <avrgcccpp.compiler.optimization.AllocateBytesNeededForEnum>True</avrgcccpp.compiler.optimization.AllocateBytesNeededForEnum>
+        <avrgcccpp.compiler.warnings.AllWarnings>True</avrgcccpp.compiler.warnings.AllWarnings>
+      </AvrGccCpp>
+    </ToolchainSettings>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <ToolchainSettings>
+      <AvrGccCpp>
+  <avrgcc.common.optimization.RelaxBranches>True</avrgcc.common.optimization.RelaxBranches>
+  <avrgcc.common.outputfiles.hex>True</avrgcc.common.outputfiles.hex>
+  <avrgcc.common.outputfiles.lss>True</avrgcc.common.outputfiles.lss>
+  <avrgcc.common.outputfiles.eep>True</avrgcc.common.outputfiles.eep>
+  <avrgcc.common.outputfiles.srec>True</avrgcc.common.outputfiles.srec>
+  <avrgcc.common.outputfiles.usersignatures>False</avrgcc.common.outputfiles.usersignatures>
+  <avrgcc.compiler.general.ChangeDefaultCharTypeUnsigned>True</avrgcc.compiler.general.ChangeDefaultCharTypeUnsigned>
+  <avrgcc.compiler.general.ChangeDefaultBitFieldUnsigned>True</avrgcc.compiler.general.ChangeDefaultBitFieldUnsigned>
+  <avrgcc.compiler.symbols.DefSymbols>
+    <ListValues>
+      <Value>DEBUG</Value>
+      <Value>F_CPU=16000000UL</Value>
+      <Value>__ATmega2560__</Value>
+    </ListValues>
+  </avrgcc.compiler.symbols.DefSymbols>
+  <avrgcc.compiler.directories.IncludePaths>
+    <ListValues>
+      <Value>..</Value>
+      <Value>../../ArduinoCore</Value>
+      <Value>../../../../arduino-1.5.6-r2/hardware/tools/avr/avr/include</Value>
+    </ListValues>
+  </avrgcc.compiler.directories.IncludePaths>
+  <avrgcc.compiler.optimization.DebugLevel>Default (-g2)</avrgcc.compiler.optimization.DebugLevel>
+  <avrgcc.compiler.warnings.AllWarnings>True</avrgcc.compiler.warnings.AllWarnings>
+  <avrgcccpp.compiler.general.ChangeDefaultCharTypeUnsigned>True</avrgcccpp.compiler.general.ChangeDefaultCharTypeUnsigned>
+  <avrgcccpp.compiler.general.ChangeDefaultBitFieldUnsigned>True</avrgcccpp.compiler.general.ChangeDefaultBitFieldUnsigned>
+  <avrgcccpp.compiler.symbols.DefSymbols>
+    <ListValues>
+      <Value>DEBUG</Value>
+      <Value>F_CPU=16000000UL</Value>
+      <Value>__AVR_ATmega2560__</Value>
+      <Value>ARDUINO=100</Value>
+    </ListValues>
+  </avrgcccpp.compiler.symbols.DefSymbols>
+  <avrgcccpp.compiler.directories.IncludePaths>
+    <ListValues>
+      <Value>..</Value>
+      <Value>../../ArduinoCore</Value>
+      <Value>../../../../arduino-1.5.6-r2/hardware/tools/avr/avr/include</Value>
+    </ListValues>
+  </avrgcccpp.compiler.directories.IncludePaths>
+  <avrgcccpp.compiler.optimization.PrepareDataForGarbageCollection>False</avrgcccpp.compiler.optimization.PrepareDataForGarbageCollection>
+  <avrgcccpp.compiler.optimization.DebugLevel>Default (-g2)</avrgcccpp.compiler.optimization.DebugLevel>
+  <avrgcccpp.compiler.warnings.AllWarnings>True</avrgcccpp.compiler.warnings.AllWarnings>
+  <avrgcccpp.linker.libraries.Libraries>
+    <ListValues>
+      <Value>ArduinoCore</Value>
+    </ListValues>
+  </avrgcccpp.linker.libraries.Libraries>
+  <avrgcccpp.linker.libraries.LibrarySearchPaths>
+    <ListValues>
+      <Value>../../ArduinoCore/Debug</Value>
+    </ListValues>
+  </avrgcccpp.linker.libraries.LibrarySearchPaths>
+  <avrgcccpp.assembler.debugging.DebugLevel>Default (-Wa,-g)</avrgcccpp.assembler.debugging.DebugLevel>
+</AvrGccCpp>
+    </ToolchainSettings>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="DebugConfig.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="dispatcher\CommandHandler.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="dispatcher\Commands.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="dispatcher\EventCallbackInterface.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="dispatcher\HardwareInterface.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="dispatcher\HardwareInterface.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="dispatcher\PacketDispatcher.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="dispatcher\PacketFactory.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="dispatcher\Polling.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="dispatcher\Polling.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="dispatcher\ResponseHandler.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\analogio\AnalogIO.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\analogio\AnalogIO.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\analogio\AnalogIOGeneric.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\analogio\Methane.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\digitalio\DHT11.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\digitalio\DHT11.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\digitalio\DigitalIO.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\digitalio\DigitalIO.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\digitalio\DigitalIOGeneric.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\digitalio\LED.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\digitalio\MotionDetector.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\digitalio\RCSwitchTevionFSI07.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\digitalio\Relay.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\digitalio\SonarATtiny85.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\ethernet\Ethernet.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\ethernet\Ethernet.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\i2c\BMP085.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\i2c\BMP085.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\i2c\HMC5883.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\i2c\I2C.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\i2c\InvenSenseMPU6050.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\i2c\InvenSenseMPU6050.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\i2c\IRreceiveATtiny85.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\inoutput\7segment.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\inoutput\InputDevice.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\inoutput\KeyPad4x4.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\inoutput\LCD.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\inoutput\OutputDevice.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\inoutput\OutputDevice.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\inoutput\Serial.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\inoutput\Switch.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\inoutput\TFT.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\inoutput\Tochpad.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\interrupt\Interrupt.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\interrupt\Interrupt.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\multiplex\Multiplexed.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\multiplex\Multiplexed.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\multiplex\Multiplexible.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\multiplex\NoMultiplex.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\spi\MFRC522.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\spi\MFRC522.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\spi\SDCard.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\spi\SPI.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="HardwareDriver.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="HardwareID.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="interfaces\AnalogIOGeneric.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="interfaces\DigitalIOGeneric.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="interfaces\input\Accelerometer.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="interfaces\input\Button.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="interfaces\input\Gyroscope.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="interfaces\input\Humidity.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="interfaces\input\IRreceive.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="interfaces\input\KeyPad.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="interfaces\input\MagneticField.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="interfaces\input\Methane.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="interfaces\input\MotionDetector.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="interfaces\input\Pressure.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="interfaces\input\RFID.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="interfaces\input\RTC.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="interfaces\input\SDCard.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="interfaces\input\Sonar.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="interfaces\input\Switch.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="interfaces\input\Temperature.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="interfaces\input\Tochpad.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="interfaces\output\LED.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="interfaces\output\RCSwitchTevionFSI07.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="interfaces\output\Relay.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="interfaces\ToBePolled.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="main.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="main.cpp_TEST">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="main2.cpp_LAEUFT!">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="networking\Layer2rf24.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="networking\Layer2rf24.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="networking\Layer3.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="networking\Layer3.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="networking\LayerConfig.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="networking\neighbourData.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="networking\nRF24L01.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="networking\Packets.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="networking\RF24.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="networking\RF24.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="networking\RF24_config.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="printf.h__">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="utils\Stack.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="utils\Triple.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="utils\Tuple.h">
+      <SubType>compile</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="drivers\" />
+    <Folder Include="drivers\analogio\" />
+    <Folder Include="drivers\digitalio\" />
+    <Folder Include="drivers\ethernet\" />
+    <Folder Include="drivers\i2c\" />
+    <Folder Include="drivers\inoutput\" />
+    <Folder Include="drivers\interrupt\" />
+    <Folder Include="drivers\multiplex\" />
+    <Folder Include="drivers\spi\" />
+    <Folder Include="interfaces\" />
+    <Folder Include="interfaces\input\" />
+    <Folder Include="interfaces\output\" />
+    <Folder Include="networking" />
+    <Folder Include="networking\rf24\" />
+    <Folder Include="dispatcher" />
+    <Folder Include="utils\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="networking\rf24\nRF24L01.h__">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="networking\rf24\printf.h__">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="networking\rf24\RF24.cpp__">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="networking\rf24\RF24.h__">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="networking\rf24\RF24_config.h__">
+      <SubType>compile</SubType>
+    </None>
+  </ItemGroup>
+  <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
+</Project>
