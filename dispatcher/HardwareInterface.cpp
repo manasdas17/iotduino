@@ -1,4 +1,4 @@
-/* 
+/*
 * HardwareInterface.cpp
 *
 * Created: 13.02.2015 09:01:57
@@ -8,25 +8,25 @@
 
 #include "HardwareInterface.h"
 
-#include "interfaces/input/Accelerometer.h"
-#include "interfaces/input/Button.h"
-#include "interfaces/input/Gyroscope.h"
-#include "interfaces/input/Humidity.h"
-#include "interfaces/input/IRreceive.h"
-#include "interfaces/input/KeyPad.h"
-#include "interfaces/input/MagneticField.h"
-#include "interfaces/input/Methane.h"
-#include "interfaces/input/MotionDetector.h"
-#include "interfaces/input/Pressure.h"
-//#include "interfaces/input/RTC.h"
-#include "interfaces/input/Sonar.h"
-#include "interfaces/input/Switch.h"
-#include "interfaces/input/Temperature.h"
-#include "interfaces/input/Tochpad.h"
-
-#include "interfaces/output/Relay.h"
-#include "interfaces/output/LED.h"
-#include "interfaces/output/RCSwitchTevionFSI07.h"
+//#include "interfaces/input/Accelerometer.h"
+//#include "interfaces/input/Button.h"
+//#include "interfaces/input/Gyroscope.h"
+//#include "interfaces/input/Humidity.h"
+//#include "interfaces/input/IRreceive.h"
+//#include "interfaces/input/KeyPad.h"
+//#include "interfaces/input/MagneticField.h"
+//#include "interfaces/input/Methane.h"
+//#include "interfaces/input/MotionDetector.h"
+//#include "interfaces/input/Pressure.h"
+////#include "interfaces/input/RTC.h"
+//#include "interfaces/input/Sonar.h"
+//#include "interfaces/input/Switch.h"
+//#include "interfaces/input/Temperature.h"
+//#include "interfaces/input/Tochpad.h"
+//
+//#include "interfaces/output/Relay.h"
+//#include "interfaces/output/LED.h"
+//#include "interfaces/output/RCSwitchTevionFSI07.h"
 
 #include "drivers/digitalio/DHT11.h"
 
@@ -43,7 +43,7 @@ boolean HardwareInterface::registerDriver( HardwareDriver* mydriver ) {
 			return true;
 		}
 	}
-			
+
 	return false;
 }
 
@@ -62,7 +62,7 @@ HardwareDriver* HardwareInterface::getHardwareDriver( HardwareTypeIdentifier typ
 		Serial.println(type);
 		Serial.flush();
 	#endif
-	
+
 	for(uint8_t i = 0; i < driverPointerListSize; i++) {
 		if(driver[i] != NULL && driver[i]->implementsInterface(type)) {
 			#ifdef DEBUG_HARDWARE_ENABLE
@@ -74,7 +74,7 @@ HardwareDriver* HardwareInterface::getHardwareDriver( HardwareTypeIdentifier typ
 			return driver[i];
 		}
 	}
-			
+
 	return NULL;
 }
 
@@ -95,7 +95,7 @@ HardwareDriver* HardwareInterface::getHardwareDriver( HardwareTypeIdentifier typ
 				Serial.print(F(": found! &drv="));
 				Serial.println((uint16_t) &driver[i], HEX);
 			#endif
-			
+
 			return driver[i];
 		}
 	}
@@ -120,10 +120,10 @@ HardwareCommandResult* HardwareInterface::executeCommand(HardwareCommandResult* 
 	HardwareDriver* driver = getHardwareDriver(cmd->getHardwareType(), cmd->getAddress());
 	if(driver == NULL)
 		driver = getHardwareDriver(cmd->getHardwareType());
-	
+
 	if(driver == NULL)
 		return NULL;
-	
+
 	if(cmd->isReadRequest()) {
 		#ifdef DEBUG_HARDWARE_ENABLE
 			Serial.print(millis());
@@ -144,7 +144,7 @@ uint8_t HardwareInterface::getFreeResultIndex() {
 		if(!resultSetInUse[i])
 			return i;
 	}
-	
+
 	return 255;
 }
 
@@ -155,44 +155,44 @@ HardwareCommandResult* HardwareInterface::readHardware(HardwareDriver* driver, H
 	#endif
 
 	uint8_t freeResultIndex = getFreeResultIndex();
-	
+
 	#ifdef DEBUG_HARDWARE_ENABLE
 		Serial.print(millis());
 		Serial.print(F(": hwresultIndex="));
 		Serial.println(freeResultIndex);
 		Serial.flush();
 	#endif
-	
+
 	if(freeResultIndex == 255)
 		return NULL;
-	
+
 	resultSetInUse[freeResultIndex] = true;
 	resultset[freeResultIndex].reset();
-	
+
 	driver->readVal(cmd->getHardwareType(), &resultset[freeResultIndex]);
-	
+
 	resultset[freeResultIndex].setAddress(cmd->getAddress());
 	resultset[freeResultIndex].setHardwareType(cmd->getHardwareType());
-	
+
 	return &resultset[freeResultIndex];
 }
 
 HardwareCommandResult* HardwareInterface::writeHardware(HardwareDriver* driver, HardwareCommandResult* cmd) {
 	uint8_t freeResultIndex = getFreeResultIndex();
-	
+
 	if(freeResultIndex == 255)
 		return NULL;
-		
+
 	driver->writeVal(cmd->getHardwareType(), &resultset[freeResultIndex]);
-	
+
 	resultset[freeResultIndex].setAddress(cmd->getAddress());
 	resultset[freeResultIndex].setHardwareType(cmd->getHardwareType());
-	
+
 	return &resultset[freeResultIndex];
 }
 
 HardwareInterface::~HardwareInterface() {
-	
+
 }
 
 boolean HardwareInterface::releaseHardwareCommandResultEntry(HardwareCommandResult* ptr) {
@@ -206,13 +206,13 @@ boolean HardwareInterface::releaseHardwareCommandResultEntry(HardwareCommandResu
 				Serial.println(i);
 				Serial.flush();
 			#endif
-			
+
 			resultset[i].reset();
 			resultSetInUse[i] = false;
-			
+
 			return true;
 		}
 	}
-	
+
 	return false;
 }
