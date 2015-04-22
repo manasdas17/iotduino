@@ -7,3 +7,4 @@ networking/rf24/RF24_config.h__
 networking/rf24/nRF24L01.h__
 networking/rf24/printf.h__
 printf.h__
+MirfLib.cppproj
