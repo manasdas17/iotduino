@@ -1,9 +1,9 @@
-/* 
+/*
 * Packets.h
 *
 * Created: 07.01.2015 22:36:02
 * Author: helge
-* 
+*
 * Hardware Command:
 *       +-------------------------------------------------------------------------------+
 *       | packet_numbered_t                                                             |
@@ -76,12 +76,20 @@ typedef struct packet_beacon_t_struct{
 
 /**
  * Application packet
- * 
+ *
  */
 enum packet_type_application { HARDWARE_COMMAND_WRITE, HARDWARE_COMMAND_READ, HARDWARE_DISCOVERY_REQ, HARDWARE_DISCOVERY_RES, ACK };
+
 #define CONFIG_APP_LAYER_PAYLOAD_SIZE (CONFIG_L3_PACKET_NUMBERED_MAX_LEN - 1)
+
 typedef struct packet_application_numbered_cmd_struct {
 	uint8_t packetType; //1b
 	uint8_t payload[CONFIG_L3_PACKET_NUMBERED_MAX_LEN - 1];
 } packet_application_numbered_cmd_t;
+
+typedef struct packet_application_unnumbered_cmd_struct {
+	uint8_t packetType; //1b
+	uint8_t payload[CONFIG_L3_PACKET_UNNUMBERED_MAX_LEN - 1];
+} packet_application_unnumbered_cmd_t;
+
 #endif //__PACKETS_H__

@@ -1,4 +1,4 @@
-/* 
+/*
 * CommandHandler.h
 *
 * Created: 04.03.2015 22:32:52
@@ -18,23 +18,16 @@
 class CommandHandler {
 	private:
 		HardwareInterface* hardwareInterface;
-	
+
 	protected:
-		
+
 	public:
 		/**
 		 * handle numbered packet
+		 * by now only for hardware requests
 		 * @param packet
 		 */
 		boolean handleNumbered( EventCallbackInterface* callback, seq_t seq, packet_type_application type, l3_address_t remote, packet_application_numbered_cmd_t* appPacket ) {
-			
-			if(type != HARDWARE_COMMAND_READ && type != HARDWARE_COMMAND_WRITE)
-				return false;
-
-			//this must be a hwcommand			
-			HardwareCommandResult cmd = HardwareCommandResult();
-			cmd.deSerialize((command_t*) appPacket->payload);
-
 			#ifdef DEBUG_HANDLER_ENABLE
 				Serial.print(millis());
 				Serial.print(F(": CommandHandler::handleNumbered() from="));
@@ -43,6 +36,27 @@ class CommandHandler {
 				Serial.println(type);
 				Serial.print(F(" seq="));
 				Serial.println(seq);
+			#endif
+
+			switch(type) {
+				case HARDWARE_COMMAND_READ:
+				case HARDWARE_COMMAND_WRITE:
+					return handleHardwareCommand(appPacket, callback, remote, seq);
+					break;
+
+				default:
+					return false;
+			}
+		}
+
+		/**
+		 * handle hardware command payload.
+		 */
+		boolean handleHardwareCommand(packet_application_numbered_cmd_t* appPacket, EventCallbackInterface* callback, l3_address_t remote, seq_t seq) {
+			HardwareCommandResult cmd = HardwareCommandResult();
+			cmd.deSerialize((command_t*) appPacket->payload);
+
+			#ifdef DEBUG_HANDLER_ENABLE
 				Serial.print(F("\tcmd=["));
 				Serial.print(F("hwAdrress="));
 				Serial.print(cmd.getAddress());
@@ -71,16 +85,16 @@ class CommandHandler {
 
 			callback->doCallback(&appLayerPacket, remote, seq);
 			hardwareInterface->releaseHardwareCommandResultEntry(result);
-			
+
 			return true;
-		}
+}
 
 		/**
 		 * handle UNnumbered packet
 		 * @param packet
 		 */
 		void handleUnnumbered( EventCallbackInterface* callback, Layer3::packet_t packet ) {
-			
+
 		}
 
 		void setHardwareInterface(HardwareInterface* hwinterface) {
@@ -90,14 +104,14 @@ class CommandHandler {
 		 * constructor
 		 */
 		CommandHandler() {
-			
+
 		}
-		
+
 		/**
 		 * generic destructor
 		 */
 		~CommandHandler() {
-			
+
 		}
 
 }; //CommandHandler

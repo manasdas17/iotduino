@@ -31,7 +31,7 @@ class ResponseHandler {
 
 		/** listener storage */
 		responseListener_t listeners[LISTENER_NUM];
-		
+
 		/** timestamp for maintenance loop */
 		uint16_t lastCheckedTimestampMillis;
 	//functions
@@ -65,34 +65,34 @@ class ResponseHandler {
 		boolean registerListener(seq_t seqNumber, l3_address_t remoteAddress, EventCallbackInterface* callbackObject) {
 			if(callbackObject == NULL)
 				return false;
-				
+
 			uint8_t index = getListenerSlot();
-			
+
 			if(index == 0xff) {
 				return false;
 			}
-			
+
 			listeners[index].timestamp = millis();
 			listeners[index].callbackObj = callbackObject;
 			listeners[index].remote = remoteAddress;
 			listeners[index].seqNumber = seqNumber;
-			
+
 			return true;
 		}
-		
+
 		/**
 		 * maintenance.
 		 */
 		void loop() {
 			maintainListeners();
 		}
-		
+
 		ResponseHandler() {
-			
+
 		}
-		
+
 		~ResponseHandler() {
-			
+
 		}
 
 	protected:
@@ -106,17 +106,17 @@ class ResponseHandler {
 				if(listeners[i].timestamp > 0 && listeners[i].seqNumber == seq && listeners[i].remote == remote)
 					return &listeners[i];
 			}
-			
+
 			return NULL;
 		}
-	
+
 		/**
 		 * check callbacks for timeouts; in case of timeout, triggers FAIL() on callback
 		 */
 		void maintainListeners() {
 			if(millis() - lastCheckedTimestampMillis > MAINTENANCE_PERIOD_MILLIS) {
 				lastCheckedTimestampMillis = millis();
-			
+
 				for(uint8_t i = 0; i < LISTENER_NUM; i++) {
 					if(listeners[i].timestamp > 0 && listeners[i].timestamp < millis()) {
 						listeners[i].callbackObj->fail(listeners[i].seqNumber, listeners[i].remote);
@@ -125,7 +125,7 @@ class ResponseHandler {
 				}
 			}
 		}
-	
+
 		/**
 		 * @return free slot index, 255 otherwise
 		 */
@@ -137,10 +137,10 @@ class ResponseHandler {
 					break;
 				}
 			}
-		
+
 			return freeIndex;
 		}
-		
+
 	private:
 }; //ResponseHandler
 
