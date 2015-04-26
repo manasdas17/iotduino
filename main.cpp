@@ -3,7 +3,7 @@
  *
  * Created: 08.01.2015 21:20:37
  *  Author: helge
- */ 
+ */
 #include <Arduino.h>
 
 #include "networking/Layer3.h"
@@ -44,7 +44,7 @@ void getAddress() {
 	pinMode(7, INPUT_PULLUP);
 	pinMode(8, INPUT_PULLUP);
 	pinMode(9, INPUT_PULLUP);
-	
+
 	#define invert(x) ((x == 1) ? 0 : 1)
 	address_local = 0;
 	address_local |= invert(digitalRead(4)) << 5;
@@ -54,7 +54,7 @@ void getAddress() {
 	address_local |= invert(digitalRead(8)) << 1;
 	address_local |= invert(digitalRead(9)) << 0;
 	#undef invert
-	
+
 	#ifdef DEBUG
 		Serial.print(millis());
 		Serial.print(F(": address=0b"));
@@ -84,19 +84,19 @@ void setup() {
 	DHT11 dht11 = DHT11(17, 20);
 	RCSwitchTevionFSI07 rcsw = RCSwitchTevionFSI07(14, 21);
 	LED led = LED(30, 22);
-	
+
 	led.turnOn();
 	delay(500);
 	led.turnOff();
-	
+
 
 	HardwareInterface hwInterface = HardwareInterface();
 	hwInterface.registerDriver((HardwareDriver*) &dht11);
 	hwInterface.registerDriver((HardwareDriver*) &rcsw);
-	
-	
+
+
 	PacketDispatcher dispatcher = PacketDispatcher(l3, &hwInterface);
-	
+
 	command_t cmd_packet;
 	cmd_packet.address = 0;
 	cmd_packet.isRead = true;
@@ -104,26 +104,26 @@ void setup() {
 	HardwareCommandResult cmd = HardwareCommandResult();
 	cmd.deSerialize(&cmd_packet);
 	hwInterface.executeCommand(&cmd);
-	
-	
+
+
 	////create network packet
 	//cmd
 	command_t cmdX;
 	cmdX.address = dht11.getAddress();
 	cmdX.type = HWType_temprature;
 	cmdX.isRead = 1;
-	
+
 	//app layer
 	packet_application_numbered_cmd_t appCmd;
 	appCmd.packetType = HARDWARE_COMMAND_READ;
 	memcpy(appCmd.payload, (byte*) &cmdX, sizeof(cmdX));
-	
+
 	//networking numbered
 	packet_numbered_t numbered;
 	numbered.seqNumber = 37;
 	memcpy(numbered.payload, (byte*) &appCmd, sizeof(appCmd));
 	numbered.payloadLen = sizeof(appCmd);
-	
+
 	//network packet
 	Layer3::packet_t p;
 	p.data.destination = address_local;
@@ -132,10 +132,10 @@ void setup() {
 	p.data.type = PACKET_NUMBERED;
 	memcpy(p.data.payload, (byte*) &numbered, sizeof(numbered));
 	p.data.payloadLen = sizeof(numbered);
-	
+
 	//processing
 	dispatcher.handleNumberedFromNetwork(p);
-	
+
 	//turn off LED
 	pinMode(LED_BUILTIN, LOW);
 }
@@ -143,7 +143,7 @@ void setup() {
 void loop() {
 	//do networking.
 	l3->Loop();
-
+	//l2->radio->printDetails();
 
 /***
 	if(millis() - lastBeaconT > 60*1000UL) {
@@ -157,9 +157,9 @@ void loop() {
 		l3->receive((uint8_t*) &f.data.payload);
 	}
 	l3->updateSendingBuffer();
-	
+
 	delay(5000);
-	
+
 	//did we find more than one neighbour?
 	if(isServer && l3->neighboursSize() > 1) {
 		Layer3::packet_t p;
@@ -167,21 +167,21 @@ void loop() {
 		payload.payloadLen = 0;
 		payload.seqNumber = 1234L;
 		l3->createPacketGeneric(&p, address_remote, PACKET_NUMBERED, (uint8_t*) &payload, sizeof(payload));
-		
+
 		//manipulate neighbourtable for routing!
 		for(uint8_t i = 0; i < CONFIG_L3_NUM_NEIGHBOURS; i++) {
 			if(l3->neighbours[i].nodeId == address_remote) {
 				l3->neighbours[i].hopCount = 1;
 				l3->neighbours[i].hopNextNodeId = address_relay;
 				l3->neighbours[i].timestamp = millis();
-				
+
 				break;
 			}
 		}
-		
+
 		l3->sendPacket(p);
 ****/
-/***	
+/***
 	//create beacon
 	packet_beacon_t beacon;
 	memset(&beacon, 0, sizeof(packet_beacon_t));
@@ -192,11 +192,11 @@ void loop() {
 	routeInfo[1].hopcount = 4;
 	routeInfo[2].nodeId = 465; //not an actual real test example, but should do for testing.
 	routeInfo[2].hopcount = 2;
-	
+
 	beacon.nodeId = address_remote;
 	memcpy(beacon.neighbours, routeInfo, sizeof(routeInfo));
 	beacon.numNeighbourInfo = 3;
-	
+
 	Layer3::packet_t packet_beacon;
 	memset(&packet_beacon, 0, sizeof(Layer3::packet_t));
 	packet_beacon.data.destination = CONFIG_L3_ADDRESS_BROADCAST;
@@ -205,16 +205,16 @@ void loop() {
 	memcpy(packet_beacon.data.payload, &beacon, sizeof(beacon));
 	packet_beacon.data.source = address_local;
 	packet_beacon.data.type = PACKET_BEACON;
-	
+
 	//receive beacon frame
 	Layer2rf24::frame_t f1;
 	l2->createFrame(&f1, (Layer2rf24::address_t) CONFIG_L2_ADDR_BROADCAST, sizeof(packet_beacon), (uint8_t*) &packet_beacon );
 	l2->receiveQueuePush(&f1);
-	
+
 	Layer2rf24::frame_t f2;
 	l2->receiveQueuePop(&f2);
 	l3->receive(f2.data.payload);
-	
+
 	//create packet for forwarding
 	Layer3::packet_t packetForward;
 	packetForward.data.destination = 465;
@@ -223,7 +223,7 @@ void loop() {
 	packetForward.data.hopcount = 0;
 	packetForward.data.type = PACKET_UNNUMBERED;
 	l3->receive((uint8_t*) &packetForward);
-	
+
 	Layer3::packet_t packetForward2;
 	packetForward2.data.destination = 465;
 	packetForward2.data.source = address_local;
@@ -236,14 +236,14 @@ void loop() {
 	packet_numbered_t numbered;
 	numbered.payloadLen = 0;
 	numbered.seqNumber = 12346UL;
-	
+
 	Layer3::packet_t packetNumbered;
 	l3->createPacketGeneric(&packetNumbered, 465, PACKET_NUMBERED, (uint8_t*) &numbered, sizeof(packet_numbered_t));
-	
+
 	l3->sendPacket(packetNumbered);
 	l3->updateSendingBuffer();
-	
-	
+
+
 	//ack packet
 	packet_ack_t ack;
 	ack.ack = 12346UL;
@@ -252,7 +252,7 @@ void loop() {
 	l3->createPacketGeneric(&packetAck, address_local, PACKET_ACK, (uint8_t*) &ack, sizeof(packet_ack_t));
 	l3->receive((uint8_t*) &packetAck);
 
-	
+
 	delay(5000);
 ***/
 }

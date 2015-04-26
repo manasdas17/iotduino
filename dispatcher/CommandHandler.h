@@ -33,7 +33,7 @@ class CommandHandler {
 				Serial.print(F(": CommandHandler::handleNumbered() from="));
 				Serial.print(remote);
 				Serial.print(F(" type="));
-				Serial.println(type);
+				Serial.print(type);
 				Serial.print(F(" seq="));
 				Serial.println(seq);
 			#endif
@@ -62,9 +62,9 @@ class CommandHandler {
 				Serial.print(cmd.getAddress());
 				Serial.print(F(" hwType="));
 				Serial.print(cmd.getHardwareType());
-				Serial.print(F("isRead="));
+				Serial.print(F(" isRead="));
 				Serial.print(cmd.isReadRequest());
-				Serial.println(F("\t]"));
+				Serial.println(F("]"));
 				Serial.flush();
 			#endif
 
