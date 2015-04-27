@@ -81,29 +81,38 @@ class HardwareInterface {
 			memset(resultSetInUse, 0, sizeof(resultSetInUse));
 			memset(driver, 0, sizeof(driver));
 		}
-		
+
 		/**
 		 * destructor
 		 */
 		~HardwareInterface();
-		
+
 		/**
 		 * register a new driver
 		 * @param driver
 		 */
 		boolean registerDriver(HardwareDriver* driver);
-		
+
 		/**
 		 * execute a command according to internal information
 		 * @param command
 		 */
 		HardwareCommandResult* executeCommand(HardwareCommandResult* cmd);
-		
+
 		/**
 		 * free the hardware result set
 		 * @param set
 		 */
 		boolean releaseHardwareCommandResultEntry(HardwareCommandResult* ptr);
+
+		HardwareDriver** getHardwareDrivers() {
+			return driver;
+		}
+
+		inline uint8_t getHardwareDriversListSize() {
+			return driverPointerListSize;
+		}
+
 };
 
 #endif //__HARDWAREINTERFACE_H__

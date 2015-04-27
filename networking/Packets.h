@@ -92,4 +92,14 @@ typedef struct packet_application_unnumbered_cmd_struct {
 	uint8_t payload[CONFIG_L3_PACKET_UNNUMBERED_MAX_LEN - 1];
 } packet_application_unnumbered_cmd_t;
 
+
+typedef struct discoveryInfo_helper_struct {
+	uint8_t hardwareAddress;
+	uint8_t hardwareType;
+} packet_application_numbered_discovery_info_helper_t;
+
+typedef struct discoveryInfo_struct {
+	uint8_t numSensors;
+	packet_application_numbered_discovery_info_helper_t infos[(CONFIG_L3_PACKET_UNNUMBERED_MAX_LEN - 1) / sizeof(packet_application_numbered_discovery_info_helper_t)];
+} packet_application_numbered_discovery_info_t;
 #endif //__PACKETS_H__

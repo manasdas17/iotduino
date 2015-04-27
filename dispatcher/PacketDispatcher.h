@@ -32,6 +32,7 @@ class PacketDispatcher {
 		PacketDispatcher(Layer3* networking, HardwareInterface* hwinterface) {
 			this->networking = networking;
 			this->commandHandler.setHardwareInterface(hwinterface);
+			this->discoveryService.setHardwareInterface(hwinterface);
 		}
 
 		~PacketDispatcher() {
