@@ -1,4 +1,4 @@
-/* 
+/*
 * DHT11.h
 *
 * Created: 11.11.2014 20:17:06
@@ -38,7 +38,7 @@ class DHT11 : public DigitalIO, public Temperature, public Humidity {
 			hwresult->getUintList()[0] = readHumidity();
 		}
 
-		
+
 		int readTemperature() {
 			read();
 			return this->getTemperature();
@@ -60,7 +60,7 @@ class DHT11 : public DigitalIO, public Temperature, public Humidity {
 		DHT11(uint8_t newPin, uint8_t hwaddress) : DigitalIO(newPin, false, hwaddress) {
 			humidity = -127;
 			temperature = -127;
-			
+
 			lastRead = 0;
 			minDelayMs = 200;
 		}
@@ -89,7 +89,7 @@ class DHT11 : public DigitalIO, public Temperature, public Humidity {
 	protected:
 		uint16_t minDelayMs;
 		uint16_t lastRead;
-		
+
 		/*
 		 * getHumidity
 		 *
@@ -107,7 +107,7 @@ class DHT11 : public DigitalIO, public Temperature, public Humidity {
 		inline int getTemperature() const {
 			return this->temperature;
 		}
-	
+
 //	private:
 		enum {
 			/*
@@ -144,6 +144,7 @@ class DHT11 : public DigitalIO, public Temperature, public Humidity {
 		virtual boolean implementsInterface( HardwareTypeIdentifier type );
 
 		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
+			arr = DigitalIO::getImplementedInterfaces(arr, maxLen);
 			arr = this->addImplementedInterface(arr, maxLen, HWType_humidity);
 			return this->addImplementedInterface(arr, maxLen, HWType_temprature);
 		}

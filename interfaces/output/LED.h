@@ -5,7 +5,7 @@
 //  @ Project : Untitled
 //  @ File Name : LED.h
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
@@ -32,6 +32,7 @@ class LED : public DigitalIOGeneric {
 		virtual boolean implementsInterface( HardwareTypeIdentifier type );
 
 		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
+			arr = DigitalIOGeneric::getImplementedInterfaces(arr, maxLen);
 			return this->addImplementedInterface(arr, maxLen, HWTYPE_led);
 		}
 
