@@ -33,15 +33,30 @@ class HardwareDriver {
 		virtual uint8_t getAddress() {
 			return hardwareAddress;
 		}
-		
+
 		virtual ~HardwareDriver() {
-			
+
 		}
-		
+
 		virtual boolean readVal(HardwareTypeIdentifier type, HardwareCommandResult* result)=0;
 		virtual boolean writeVal(HardwareTypeIdentifier type, HardwareCommandResult* result)=0;
-		
+
 		virtual boolean implementsInterface(HardwareTypeIdentifier type) = 0;
+
+		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen)=0;
+
+		virtual HardwareTypeIdentifier* addImplementedInterface(HardwareTypeIdentifier* arr, uint8_t maxLen, HardwareTypeIdentifier type) {
+			if(arr == NULL) return NULL;
+
+			for(uint8_t i = 0; i < maxLen; i++) {
+				if(arr[i] != 0) {
+					arr[i] = type;
+					return arr;
+				}
+			}
+			return NULL;
+		}
+
 };
 
 #endif  //_HARDWAREDRIVER_H

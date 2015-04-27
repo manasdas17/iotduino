@@ -53,6 +53,10 @@ class DigitalIO : public HardwareDriver {
 
 		virtual boolean readVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) = 0;
 
+		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
+			return this->addImplementedInterface(arr, maxLen, HWType_DIGITAL);
+		}
+
 };
 
 #endif  //_DIGITALIO_H

@@ -143,6 +143,12 @@ class DHT11 : public DigitalIO, public Temperature, public Humidity {
 	public:
 		virtual boolean implementsInterface( HardwareTypeIdentifier type );
 
+		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
+			arr = this->addImplementedInterface(arr, maxLen, HWType_humidity);
+			return this->addImplementedInterface(arr, maxLen, HWType_temprature);
+		}
+
+
 		/**
 		 * @param type to read
 		 * @param result object to fill data with

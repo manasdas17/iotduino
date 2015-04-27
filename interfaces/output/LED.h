@@ -31,6 +31,10 @@ class LED : public DigitalIOGeneric {
 
 		virtual boolean implementsInterface( HardwareTypeIdentifier type );
 
+		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
+			return this->addImplementedInterface(arr, maxLen, HWTYPE_led);
+		}
+
 		/**
 		 * @param type
 		 * @param result:
