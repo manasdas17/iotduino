@@ -35,12 +35,12 @@ class DiscoveryService {
 				Serial.flush();
 			#endif
 
-			//create response
+			//create response - add info in place.
 			//info
-			packet_application_numbered_discovery_info_t info;
+			packet_application_numbered_discovery_info_t* info = (packet_application_numbered_discovery_info_t*) appPacket->payload;
 			memset(&info, 0, sizeof(info));
-			uint8_t num = getDriverInterfacesWithAddresses(&info);
-			info.numSensors = num;
+			uint8_t num = getDriverInterfacesWithAddresses(info);
+			info->numSensors = num;
 
 			//packet
 			packet_application_numbered_cmd_t appLayerPacket;
