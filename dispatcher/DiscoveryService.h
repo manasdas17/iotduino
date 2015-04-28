@@ -38,6 +38,7 @@ class DiscoveryService {
 			//create response
 			//info
 			packet_application_numbered_discovery_info_t info;
+			memset(&info, 0, sizeof(info));
 			uint8_t num = getDriverInterfacesWithAddresses(&info);
 			info.numSensors = num;
 
@@ -69,12 +70,14 @@ class DiscoveryService {
 					//did we get a valid result?
 					if(result != NULL) {
 						//iterate interfaces.
-						for(uint8_t i = 0; i < tempArraySize; i++) {
-							if(tempArray[i] != 0) {
+						for(uint8_t j = 0; j < tempArraySize; j++) {
+							if(tempArray[j] != 0) {
 								//this is an interface.
 								info->infos[numDrivers].hardwareAddress = drivers[i]->getAddress();
-								info->infos[numDrivers].hardwareType = tempArray[i];
+								info->infos[numDrivers].hardwareType = tempArray[j];
 								numDrivers++;
+							} else {
+								break;
 							}
 						}
 					}

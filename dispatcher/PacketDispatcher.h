@@ -129,6 +129,7 @@ class PacketDispatcher {
 					return responseHandler.handleReponseNumbered(seq, type, remote, appPacket);
 
 				case HARDWARE_DISCOVERY_REQ:
+					return discoveryService.handleInfoRequest(appPacket, l3->getCallbackInterface(), remote, seq);
 				case HARDWARE_DISCOVERY_RES:
 				default:
 					return false;
