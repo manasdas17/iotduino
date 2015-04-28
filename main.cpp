@@ -136,6 +136,30 @@ void setup() {
 	//processing
 	dispatcher.handleNumberedFromNetwork(p);
 
+	//numbered for discovery
+	//app layer
+	packet_application_numbered_cmd_t appCmd2;
+	appCmd2.packetType = HARDWARE_DISCOVERY_REQ;
+
+	//networking numbered
+	packet_numbered_t numbered2;
+	numbered2.seqNumber = 37;
+	memcpy(numbered2.payload, (byte*) &appCmd2, sizeof(appCmd2));
+	numbered2.payloadLen = sizeof(appCmd2);
+
+	//network packet
+	Layer3::packet_t p2;
+	p2.data.destination = address_local;
+	p2.data.hopcount = 5;
+	p2.data.source = 12;
+	p2.data.type = PACKET_NUMBERED;
+	memcpy(p2.data.payload, (byte*) &numbered2, sizeof(numbered2));
+	p2.data.payloadLen = sizeof(numbered2);
+
+	//processing
+	dispatcher.handleNumberedFromNetwork(p2);
+
+
 	//turn off LED
 	pinMode(LED_BUILTIN, LOW);
 }
