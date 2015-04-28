@@ -5,7 +5,7 @@
 //  @ Project : Untitled
 //  @ File Name : HardwareDriver.h
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
@@ -49,7 +49,7 @@ class HardwareDriver {
 			if(arr == NULL) return NULL;
 
 			for(uint8_t i = 0; i < maxLen; i++) {
-				if(arr[i] != 0) {
+				if(arr[i] == 0) {
 					arr[i] = type;
 					return arr;
 				}
