@@ -78,8 +78,15 @@ class CommandHandler {
 				Serial.flush();
 			#endif
 
-			//create response
 			packet_application_numbered_cmd_t appLayerPacket;
+
+			if(result == NULL) {
+				appLayerPacket.packetType = NACK;
+				callback->doCallback(&appLayerPacket, remote, seq);
+				return false;
+			}
+
+			//create response
 			appLayerPacket.packetType = ACK;
 			result->serialize((command_t*) appLayerPacket.payload);
 

@@ -1,4 +1,4 @@
-/* 
+/*
 * ResponseHandler.h
 *
 * Created: 14.04.2015 22:53:26
@@ -49,6 +49,11 @@ class ResponseHandler {
 
 			if(listener == NULL)
 				return false;
+
+			if(appPacket->packetType == NACK) {
+				listener->callbackObj->fail(seq, remote);
+				return true;
+			}
 
 			listener->callbackObj->doCallback(appPacket, remote, seq);
 
