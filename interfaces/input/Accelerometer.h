@@ -5,7 +5,7 @@
 //  @ Project : Untitled
 //  @ File Name : Accelerometer.h
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
@@ -13,7 +13,7 @@
 #if !defined(_ACCELEROMETER_H)
 #define _ACCELEROMETER_H
 
-#include "../../utils/Triple.h"
+#include <utils/Triple.h>
 #include "../../HardwareID.h"
 #include <dispatcher/Commands.h>
 

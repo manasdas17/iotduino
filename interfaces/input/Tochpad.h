@@ -5,7 +5,7 @@
 //  @ Project : Untitled
 //  @ File Name : Tochpad.h
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
@@ -15,7 +15,7 @@
 
 #include <Arduino.h>
 #include "../../drivers/inoutput/InputDevice.h"
-#include "../../utils/tuple.h"
+#include <utils/Tuple.h>
 
 class Tochpad : public InputDevice {
 	public:
