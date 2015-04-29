@@ -28,7 +28,7 @@ class DiscoveryService {
 		}
 
 
-		boolean handleInfoRequest(packet_application_numbered_cmd_t* appPacket, EventCallbackInterface* callback, l3_address_t remote, seq_t seq) {
+		boolean handleInfoRequest(EventCallbackInterface* callback, seq_t seq, packet_type_application type, l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
 			#ifdef DEBUG_HANDLER_ENABLE
 				Serial.print(millis());
 				Serial.println(F(": DiscoveryService::handleInfoRequest()"));
