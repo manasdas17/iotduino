@@ -172,7 +172,7 @@ class SubscriptionService {
 			memset(&newPkt, 0, sizeof(newPkt));
 			newPkt.packetType = HARDWARE_SUBSCRIPTION_INFO;
 			subscription_info_t* info = (subscription_info_t*) newPkt.payload;
-			info->forAddress = remote;
+			info->forAddress = subscriptionInfo->forAddress; //not yet changed, everything is fine.
 
 			for(; num > 0; num--) {
 				info->numInfosFollowing = num - 1;
