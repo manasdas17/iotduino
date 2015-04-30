@@ -78,7 +78,7 @@ typedef struct packet_beacon_t_struct{
  * Application packet
  *
  */
-enum packet_type_application { HARDWARE_COMMAND_WRITE, HARDWARE_COMMAND_READ, HARDWARE_DISCOVERY_REQ, HARDWARE_DISCOVERY_RES, ACK, NACK };
+enum packet_type_application { HARDWARE_COMMAND_WRITE, HARDWARE_COMMAND_READ, HARDWARE_DISCOVERY_REQ, HARDWARE_DISCOVERY_RES, ACK, NACK, HARDWARE_SUBSCRIPTION_SET, HARDWARE_SUBSCRIPTION_INFO };
 
 #define CONFIG_APP_LAYER_PAYLOAD_SIZE (CONFIG_L3_PACKET_NUMBERED_MAX_LEN - 1)
 
@@ -92,7 +92,7 @@ typedef struct packet_application_unnumbered_cmd_struct {
 	uint8_t payload[CONFIG_L3_PACKET_UNNUMBERED_MAX_LEN - 1];
 } packet_application_unnumbered_cmd_t;
 
-
+//discovery
 typedef struct discoveryInfo_helper_struct {
 	uint8_t hardwareAddress;
 	uint8_t hardwareType;
@@ -102,4 +102,24 @@ typedef struct discoveryInfo_struct {
 	uint8_t numSensors;
 	packet_application_numbered_discovery_info_helper_t infos[(CONFIG_L3_PACKET_UNNUMBERED_MAX_LEN - 1) / sizeof(packet_application_numbered_discovery_info_helper_t)];
 } packet_application_numbered_discovery_info_t;
+
+//subscriptions
+typedef struct subscription_helper_struct {
+	l3_address_t address;
+	uint8_t hardwareAddress;
+	uint8_t hardwareType;
+	uint16_t millisecondsDelay;
+	uint8_t onEvent;
+} subscriptopn_helper_t;
+
+typedef struct substcripton_info_struct {
+	l3_address_t forAddress;
+	uint8_t numInfosFollowing;
+	subscriptopn_helper_t info;
+} subscription_info_t;
+
+typedef struct subscription_set_struct {
+	subscriptopn_helper_t info;
+} subscription_stop_t;
+
 #endif //__PACKETS_H__

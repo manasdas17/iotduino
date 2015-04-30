@@ -13,6 +13,7 @@
 #include "ResponseHandler.h"
 #include "CommandHandler.h"
 #include "DiscoveryService.h"
+#include "SubscriptionService.h"
 
 class PacketDispatcher {
 	//variables
@@ -23,6 +24,7 @@ class PacketDispatcher {
 		CommandHandler commandHandler;
 		ResponseHandler responseHandler;
 		DiscoveryService discoveryService;
+		SubscriptionService subscriptionService;
 
 		//network
 		Layer3* networking;
@@ -128,6 +130,10 @@ class PacketDispatcher {
 				case ACK:
 				case NACK:
 					return responseHandler.handleReponseNumbered(seq, type, remote, appPacket);
+
+				case HARDWARE_SUBSCRIPTION_SET:
+				case HARDWARE_SUBSCRIPTION_INFO:
+					return subscriptionService.handleRequest(l3->getCallbackInterface(), seq, type, remote, appPacket);
 
 				case HARDWARE_DISCOVERY_REQ:
 					return discoveryService.handleInfoRequest(l3->getCallbackInterface(), seq, type, remote, appPacket);
