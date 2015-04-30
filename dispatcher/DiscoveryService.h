@@ -23,11 +23,22 @@ class DiscoveryService {
 		DiscoveryService() {};
 		~DiscoveryService() {};
 
+		/**
+		 * set hardware interface - needed for local device hardware lookup
+		 * @param interface
+		 */
 		void setHardwareInterface(HardwareInterface* hwinterface) {
 			this->hardwareInterface = hwinterface;
 		}
 
-
+		/**
+		 * handle a request - does hardware lookup and gives result to callback function
+		 * @param callback function
+		 * @param sequence
+		 * @param packet type (should be hardware discovery request)
+		 * @param l3 remote address
+		 * @param applayer packet (will be reused, i.e. modified)
+		 */
 		boolean handleInfoRequest(EventCallbackInterface* callback, seq_t seq, packet_type_application type, l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
 			#ifdef DEBUG_HANDLER_ENABLE
 				Serial.print(millis());
@@ -39,7 +50,7 @@ class DiscoveryService {
 			//info
 			packet_application_numbered_discovery_info_t* info = (packet_application_numbered_discovery_info_t*) appPacket->payload;
 			memset(&info, 0, sizeof(info));
-			uint8_t num = getDriverInterfacesWithAddresses(info);
+			uint8_t num = getDriverInterfacesAll(info);
 			info->numSensors = num;
 
 			//packet
@@ -53,9 +64,8 @@ class DiscoveryService {
 
 		/**
 		 * @param application packet
-		 *
 		 */
-		uint8_t getDriverInterfacesWithAddresses(packet_application_numbered_discovery_info_t* info) {
+		uint8_t getDriverInterfacesAll(packet_application_numbered_discovery_info_t* info) {
 			HardwareDriver** drivers = hardwareInterface->getHardwareDrivers();
 			uint8_t numDrivers = 0;
 
