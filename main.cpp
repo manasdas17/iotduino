@@ -65,6 +65,145 @@ void getAddress() {
 	#endif
 }
 
+void testHardwareCommandRead(DHT11* dht11, PacketDispatcher* dispatcher) {
+		////create network packet
+	//cmd
+	command_t cmdX;
+	memset(&cmdX, 0, sizeof(cmdX));
+	cmdX.address = dht11->getAddress();
+	cmdX.type = HWType_temprature;
+	cmdX.isRead = 1;
+
+	//app layer
+	packet_application_numbered_cmd_t appCmd;
+	memset(&appCmd, 0, sizeof(appCmd));
+	appCmd.packetType = HARDWARE_COMMAND_READ;
+	memcpy(appCmd.payload, (byte*) &cmdX, sizeof(cmdX));
+
+	//networking numbered
+	packet_numbered_t numbered;
+	memset(&numbered, 0, sizeof(numbered));
+	numbered.seqNumber = 37;
+	memcpy(numbered.payload, (byte*) &appCmd, sizeof(appCmd));
+	numbered.payloadLen = sizeof(appCmd);
+
+	//network packet
+	Layer3::packet_t p;
+	memset(&p, 0, sizeof(p));
+	p.data.destination = address_local;
+	p.data.hopcount = 5;
+	p.data.source = 12;
+	p.data.type = PACKET_NUMBERED;
+	memcpy(p.data.payload, (byte*) &numbered, sizeof(numbered));
+	p.data.payloadLen = sizeof(numbered);
+
+	//processing
+	dispatcher->handleNumberedFromNetwork(p);
+}
+
+void testHardwareCommand(HardwareInterface* hwInterface, DHT11* dht11, PacketDispatcher* dispatcher) {
+	command_t cmd_packet;
+	memset(&cmd_packet, 0, sizeof(cmd_packet));
+	cmd_packet.address = 0;
+	cmd_packet.isRead = true;
+	cmd_packet.type = HWType_temprature;
+	HardwareCommandResult cmd = HardwareCommandResult();
+	cmd.deSerialize(&cmd_packet);
+	hwInterface->executeCommand(&cmd);
+}
+
+void testDiscoverySet(DHT11* dht11, PacketDispatcher* dispatcher) {
+		//numbered for subscription
+	//app layer
+	subscription_set_t cmdSubscription;
+	memset(&cmdSubscription, 0, sizeof(cmdSubscription));
+	cmdSubscription.info.address = 2; //node address
+	cmdSubscription.info.hardwareAddress = dht11->getAddress();
+	cmdSubscription.info.hardwareType = HWType_temprature;
+	cmdSubscription.info.millisecondsDelay = 1347;
+	cmdSubscription.info.onEvent = 1;
+
+	packet_application_numbered_cmd_t appCmd3;
+	memset(&appCmd3, 0, sizeof(appCmd3));
+	appCmd3.packetType = HARDWARE_SUBSCRIPTION_SET;
+	memcpy(&appCmd3.payload, &cmdSubscription, sizeof(cmdSubscription));
+
+	//networking numbered
+	packet_numbered_t numbered3;
+	memset(&numbered3, 0, sizeof(numbered3));
+	numbered3.seqNumber = 37;
+	memcpy(numbered3.payload, (byte*) &appCmd3, sizeof(appCmd3));
+	numbered3.payloadLen = sizeof(appCmd3);
+
+	//network packet
+	Layer3::packet_t p3;
+	p3.data.destination = address_local;
+	p3.data.hopcount = 5;
+	p3.data.source = 12;
+	p3.data.type = PACKET_NUMBERED;
+	memcpy(p3.data.payload, (byte*) &numbered3, sizeof(numbered3));
+	p3.data.payloadLen = sizeof(numbered3);
+
+	//processing
+	dispatcher->handleNumberedFromNetwork(p3);
+}
+
+void testDiscovery(PacketDispatcher* dispatcher, DHT11* dht11) {
+		//numbered for discovery
+	//app layer
+	packet_application_numbered_cmd_t appCmd2;
+	memset(&appCmd2, 0, sizeof(appCmd2));
+	appCmd2.packetType = HARDWARE_DISCOVERY_REQ;
+
+	//networking numbered
+	packet_numbered_t numbered2;
+	memset(&numbered2, 0, sizeof(numbered2));
+	numbered2.seqNumber = 37;
+	memcpy(numbered2.payload, (byte*) &appCmd2, sizeof(appCmd2));
+	numbered2.payloadLen = sizeof(appCmd2);
+
+	//network packet
+	Layer3::packet_t p2;
+	memset(&p2, 0, sizeof(p2));
+	p2.data.destination = address_local;
+	p2.data.hopcount = 5;
+	p2.data.source = 12;
+	p2.data.type = PACKET_NUMBERED;
+	memcpy(p2.data.payload, (byte*) &numbered2, sizeof(numbered2));
+	p2.data.payloadLen = sizeof(numbered2);
+
+	//processing
+	dispatcher->handleNumberedFromNetwork(p2);
+}
+
+void testSubscriptionInfo(PacketDispatcher* dispatcher) {
+	////subscription info
+	//app layer
+	packet_application_numbered_cmd_t appCmd4;
+	memset(&appCmd4, 0, sizeof(appCmd4));
+	appCmd4.packetType = HARDWARE_SUBSCRIPTION_INFO;
+	memset(&appCmd4.payload, 0, sizeof(appCmd4.payload));
+
+	//networking numbered
+	packet_numbered_t numbered4;
+	memset(&numbered4, 0, sizeof(numbered4));
+	numbered4.seqNumber = 37;
+	memcpy(numbered4.payload, (byte*) &appCmd4, sizeof(appCmd4));
+	numbered4.payloadLen = sizeof(appCmd4);
+
+	//network packet
+	Layer3::packet_t p4;
+	p4.data.destination = address_local;
+	p4.data.hopcount = 5;
+	p4.data.source = 12;
+	p4.data.type = PACKET_NUMBERED;
+	memcpy(p4.data.payload, (byte*) &numbered4, sizeof(numbered4));
+	p4.data.payloadLen = sizeof(numbered4);
+
+	//processing
+	dispatcher->handleNumberedFromNetwork(p4);
+}
+
 
 
 void setup() {
@@ -85,11 +224,6 @@ void setup() {
 	RCSwitchTevionFSI07 rcsw = RCSwitchTevionFSI07(14, 21);
 	LED led = LED(30, 22);
 
-	led.turnOn();
-	delay(500);
-	led.turnOff();
-
-
 	HardwareInterface hwInterface = HardwareInterface();
 	hwInterface.registerDriver((HardwareDriver*) &dht11);
 	hwInterface.registerDriver((HardwareDriver*) &rcsw);
@@ -97,71 +231,20 @@ void setup() {
 
 	PacketDispatcher dispatcher = PacketDispatcher(l3, &hwInterface);
 
-	command_t cmd_packet;
-	cmd_packet.address = 0;
-	cmd_packet.isRead = true;
-	cmd_packet.type = HWType_temprature;
-	HardwareCommandResult cmd = HardwareCommandResult();
-	cmd.deSerialize(&cmd_packet);
-	hwInterface.executeCommand(&cmd);
-
-
-	////create network packet
-	//cmd
-	command_t cmdX;
-	cmdX.address = dht11.getAddress();
-	cmdX.type = HWType_temprature;
-	cmdX.isRead = 1;
-
-	//app layer
-	packet_application_numbered_cmd_t appCmd;
-	appCmd.packetType = HARDWARE_COMMAND_READ;
-	memcpy(appCmd.payload, (byte*) &cmdX, sizeof(cmdX));
-
-	//networking numbered
-	packet_numbered_t numbered;
-	numbered.seqNumber = 37;
-	memcpy(numbered.payload, (byte*) &appCmd, sizeof(appCmd));
-	numbered.payloadLen = sizeof(appCmd);
-
-	//network packet
-	Layer3::packet_t p;
-	p.data.destination = address_local;
-	p.data.hopcount = 5;
-	p.data.source = 12;
-	p.data.type = PACKET_NUMBERED;
-	memcpy(p.data.payload, (byte*) &numbered, sizeof(numbered));
-	p.data.payloadLen = sizeof(numbered);
-
-	//processing
-	dispatcher.handleNumberedFromNetwork(p);
-
-	//numbered for discovery
-	//app layer
-	packet_application_numbered_cmd_t appCmd2;
-	appCmd2.packetType = HARDWARE_DISCOVERY_REQ;
-
-	//networking numbered
-	packet_numbered_t numbered2;
-	numbered2.seqNumber = 37;
-	memcpy(numbered2.payload, (byte*) &appCmd2, sizeof(appCmd2));
-	numbered2.payloadLen = sizeof(appCmd2);
-
-	//network packet
-	Layer3::packet_t p2;
-	p2.data.destination = address_local;
-	p2.data.hopcount = 5;
-	p2.data.source = 12;
-	p2.data.type = PACKET_NUMBERED;
-	memcpy(p2.data.payload, (byte*) &numbered2, sizeof(numbered2));
-	p2.data.payloadLen = sizeof(numbered2);
-
-	//processing
-	dispatcher.handleNumberedFromNetwork(p2);
+	testHardwareCommand(&hwInterface, &dht11, &dispatcher);
+	testHardwareCommandRead(&dht11, &dispatcher);
+	testDiscovery(&dispatcher, &dht11);
+	testDiscoverySet(&dht11, &dispatcher);
+	testSubscriptionInfo(&dispatcher);
 
 
 	//turn off LED
 	pinMode(LED_BUILTIN, LOW);
+
+	led.turnOn();
+	delay(500);
+	led.turnOff();
+
 }
 
 void loop() {
