@@ -39,7 +39,7 @@ class DiscoveryService {
 		 * @param l3 remote address
 		 * @param applayer packet (will be reused, i.e. modified)
 		 */
-		boolean handleInfoRequest(EventCallbackInterface* callback, seq_t seq, packet_type_application type, l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
+		boolean handleInfoRequest(EventCallbackInterface* callback, seq_t seq, packet_type_application_t type, l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
 			#ifdef DEBUG_HANDLER_ENABLE
 				Serial.print(millis());
 				Serial.println(F(": DiscoveryService::handleInfoRequest()"));

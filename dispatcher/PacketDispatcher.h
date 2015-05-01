@@ -89,7 +89,7 @@ class PacketDispatcher {
 			packet_numbered_t* numbered = (packet_numbered_t*) packet.data.payload;
 			packet_application_numbered_cmd_t* appPacket = (packet_application_numbered_cmd_t*) numbered->payload;
 
-			packet_type_application type = (packet_type_application) appPacket->packetType;
+			packet_type_application_t type = (packet_type_application_t) appPacket->packetType;
 			seq_t seq = numbered->seqNumber;
 			l3_address_t remote = packet.data.source;
 
@@ -106,7 +106,7 @@ class PacketDispatcher {
 			packet_unnumbered_t* unnumbered = (packet_unnumbered_t*) packet.data.payload;
 			packet_application_unnumbered_cmd_t* appPacket = (packet_application_unnumbered_cmd_t*) unnumbered->payload;
 
-			packet_type_application type = (packet_type_application) appPacket->packetType;
+			packet_type_application_t type = (packet_type_application_t) appPacket->packetType;
 			l3_address_t remote = packet.data.source;
 
 			return handleUnNumbered(type, remote, appPacket);
@@ -121,7 +121,7 @@ class PacketDispatcher {
 		 * @param actual application packet
 		 * @return success
 		 */
-		boolean handleNumbered( seq_t seq, packet_type_application type, l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
+		boolean handleNumbered( seq_t seq, packet_type_application_t type, l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
 			switch(type) {
 				case HARDWARE_COMMAND_READ:
 				case HARDWARE_COMMAND_WRITE:
@@ -138,6 +138,7 @@ class PacketDispatcher {
 				case HARDWARE_DISCOVERY_REQ:
 					return discoveryService.handleInfoRequest(l3->getCallbackInterface(), seq, type, remote, appPacket);
 				case HARDWARE_DISCOVERY_RES:
+
 				default:
 					return false;
 			}
@@ -151,7 +152,7 @@ class PacketDispatcher {
 		 * @param actual application packet
 		 * @return success
 		 */
-		boolean handleUnNumbered( packet_type_application type, l3_address_t remote, packet_application_unnumbered_cmd_t* appPacket) {
+		boolean handleUnNumbered( packet_type_application_t type, l3_address_t remote, packet_application_unnumbered_cmd_t* appPacket) {
 			switch(type) {
 				default:
 					return false;

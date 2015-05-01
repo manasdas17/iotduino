@@ -44,7 +44,7 @@ class ResponseHandler {
 		 * @param applayer packet
 		 * @return success if listener is found.
 		 */
-		boolean handleReponseNumbered(seq_t seq, packet_type_application type, l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
+		boolean handleReponseNumbered(seq_t seq, packet_type_application_t type, l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
 			responseListener_t* listener = getListener(seq, remote);
 
 			if(listener == NULL)

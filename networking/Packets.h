@@ -78,24 +78,36 @@ typedef struct packet_beacon_t_struct{
  * Application packet
  *
  */
-enum packet_type_application { HARDWARE_COMMAND_WRITE, HARDWARE_COMMAND_READ, HARDWARE_DISCOVERY_REQ, HARDWARE_DISCOVERY_RES, ACK, NACK, HARDWARE_SUBSCRIPTION_SET, HARDWARE_SUBSCRIPTION_INFO };
+typedef enum packet_type_application_enum {
+	HARDWARE_COMMAND_WRITE,
+	HARDWARE_COMMAND_READ,
+
+	HARDWARE_DISCOVERY_REQ,
+	HARDWARE_DISCOVERY_RES,
+
+	HARDWARE_SUBSCRIPTION_SET,
+	HARDWARE_SUBSCRIPTION_INFO,
+
+	ACK,
+	NACK
+} packet_type_application_t;
 
 #define CONFIG_APP_LAYER_PAYLOAD_SIZE (CONFIG_L3_PACKET_NUMBERED_MAX_LEN - 1)
 
 typedef struct packet_application_numbered_cmd_struct {
-	uint8_t packetType; //1b
+	int8_t packetType; //1b
 	uint8_t payload[CONFIG_L3_PACKET_NUMBERED_MAX_LEN - 1];
 } packet_application_numbered_cmd_t;
 
 typedef struct packet_application_unnumbered_cmd_struct {
-	uint8_t packetType; //1b
+	int8_t packetType; //1b
 	uint8_t payload[CONFIG_L3_PACKET_UNNUMBERED_MAX_LEN - 1];
 } packet_application_unnumbered_cmd_t;
 
 //discovery
 typedef struct discoveryInfo_helper_struct {
 	uint8_t hardwareAddress;
-	uint8_t hardwareType;
+	int8_t hardwareType;
 } packet_application_numbered_discovery_info_helper_t;
 
 typedef struct discoveryInfo_struct {
@@ -120,6 +132,6 @@ typedef struct substcripton_info_struct {
 
 typedef struct subscription_set_struct {
 	subscriptopn_helper_t info;
-} subscription_stop_t;
+} subscription_set_t;
 
 #endif //__PACKETS_H__

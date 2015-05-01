@@ -1,4 +1,4 @@
-/* 
+/*
 * HardwareInterface.h
 *
 * Created: 13.02.2015 09:01:57
@@ -21,12 +21,12 @@ class HardwareInterface {
 	private:
 		//const static resultSetSize = 10;
 		//const static driverPointerListSize = 5;
-		
+
 		HardwareCommandResult resultset[resultSetSize];
 		boolean resultSetInUse[resultSetSize];
-		
+
 		HardwareDriver* driver[driverPointerListSize];
-		
+
 	protected:
 		/**
 		 *
@@ -38,13 +38,6 @@ class HardwareInterface {
 		 * @param type
 		 */
 		boolean hasHardwareDriver(HardwareTypeIdentifier type);
-
-		/**
-		 * check for a certain hardware driver
-		 * @param type
-		 * @param address
-		 */
-		boolean hasHardwareDriver(HardwareTypeIdentifier type, uint8_t address);
 
 		/**
 		 * get a driver according to filter settings
@@ -113,6 +106,12 @@ class HardwareInterface {
 			return driverPointerListSize;
 		}
 
+		/**
+		 * check for a certain hardware driver
+		 * @param type
+		 * @param address
+		 */
+		boolean hasHardwareDriver(HardwareTypeIdentifier type, uint8_t address);
 };
 
 #endif //__HARDWAREINTERFACE_H__
