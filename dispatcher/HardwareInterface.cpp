@@ -32,7 +32,7 @@
 
 boolean HardwareInterface::registerDriver( HardwareDriver* mydriver ) {
 	if(mydriver == NULL)
-	return false;
+		return false;
 
 	#ifdef DEBUG_HARDWARE_ENABLE
 		Serial.print(millis());
