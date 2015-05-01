@@ -53,6 +53,9 @@ class CommandHandler {
 		 * handle hardware command payload.
 		 */
 		boolean handleHardwareCommand(packet_application_numbered_cmd_t* appPacket, EventCallbackInterface* callback, l3_address_t remote, seq_t seq) {
+			if(appPacket == NULL)
+				return false;
+
 			HardwareCommandResult cmd = HardwareCommandResult();
 			cmd.deSerialize((command_t*) appPacket->payload);
 
@@ -82,13 +85,18 @@ class CommandHandler {
 
 			if(result == NULL) {
 				appLayerPacket.packetType = NACK;
-				callback->doCallback(&appLayerPacket, remote, seq);
+
+				if(callback != NULL)
+					callback->doCallback(&appLayerPacket, remote, seq);
 				return false;
 			}
 
 			//create response
 			appLayerPacket.packetType = ACK;
 			result->serialize((command_t*) appLayerPacket.payload);
+
+			if(callback == NULL)
+				return false;
 
 			callback->doCallback(&appLayerPacket, remote, seq);
 			hardwareInterface->releaseHardwareCommandResultEntry(result);
@@ -101,7 +109,6 @@ class CommandHandler {
 		 * @param packet
 		 */
 		void handleUnnumbered( EventCallbackInterface* callback, Layer3::packet_t packet ) {
-
 		}
 
 		void setHardwareInterface(HardwareInterface* hwinterface) {

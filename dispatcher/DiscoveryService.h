@@ -46,6 +46,9 @@ class DiscoveryService {
 				Serial.flush();
 			#endif
 
+			if(callback == NULL || appPacket == NULL)
+				return false;
+
 			//create response - add info in place.
 			//info
 			packet_application_numbered_discovery_info_t* info = (packet_application_numbered_discovery_info_t*) appPacket->payload;
@@ -66,9 +69,8 @@ class DiscoveryService {
 		 * @param application packet
 		 */
 		uint8_t getDriverInterfacesAll(packet_application_numbered_discovery_info_t* info) {
-			if(info == NULL) {
+			if(info == NULL)
 				return 0;
-			}
 
 			HardwareDriver** drivers = hardwareInterface->getHardwareDrivers();
 			uint8_t numDrivers = 0;

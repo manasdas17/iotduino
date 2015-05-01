@@ -45,12 +45,13 @@ class ResponseHandler {
 		 * @return success if listener is found.
 		 */
 		boolean handleReponseNumbered(seq_t seq, packet_type_application_t type, l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
+
 			responseListener_t* listener = getListener(seq, remote);
 
 			if(listener == NULL)
 				return false;
 
-			if(appPacket->packetType == NACK) {
+			if(type == NACK) {
 				listener->callbackObj->fail(seq, remote);
 				return true;
 			}

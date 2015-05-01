@@ -46,7 +46,8 @@ class HardwareDriver {
 		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen)=0;
 
 		virtual HardwareTypeIdentifier* addImplementedInterface(HardwareTypeIdentifier* arr, uint8_t maxLen, HardwareTypeIdentifier type) {
-			if(arr == NULL) return NULL;
+			if(arr == NULL)
+				return NULL;
 
 			for(uint8_t i = 0; i < maxLen; i++) {
 				if(arr[i] == 0) {

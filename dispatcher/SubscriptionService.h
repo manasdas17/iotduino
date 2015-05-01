@@ -28,6 +28,9 @@ class SubscriptionService {
 		 *
 		 */
 		boolean handleRequest(EventCallbackInterface* callback, seq_t seq, packet_type_application_t type, l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
+			if(callback == NULL || appPacket == NULL)
+				return false;
+
 			switch(type) {
 				case HARDWARE_SUBSCRIPTION_SET:
 					return handleSubscriptionRequest(callback, seq, type, remote, appPacket);
@@ -66,7 +69,7 @@ class SubscriptionService {
 		 */
 		uint8_t getSubscriptionInfos(l3_address_t remote, subscription_helper_struct* buffer, uint8_t buffer_len) {
 			//sanity check.
-			if(buffer_len < sizeof(subscriptions)) {
+			if(buffer == NULL || buffer_len < sizeof(subscriptions)) {
 				return 0;
 			}
 
@@ -83,6 +86,9 @@ class SubscriptionService {
 		}
 
 		boolean setSubscription(subscriptopn_helper_t* s) {
+			if(s == NULL)
+				return false;
+
 			//do we know this hardware?
 			if(!hwinterface->hasHardwareDriver((HardwareTypeIdentifier) s->hardwareType, s->hardwareAddress))
 				return false;
@@ -117,6 +123,9 @@ class SubscriptionService {
 		 * @return success
 		 */
 		boolean deleteSubscription(subscriptopn_helper_t* s) {
+			if(s == NULL)
+				return true; //not present, it is "deleted"
+
 			uint8_t index = getSubscriptionIndex(s);
 
 			if(index == 0xff)
@@ -133,10 +142,12 @@ class SubscriptionService {
 		 * @return index, 0xff is none found
 		 */
 		uint8_t getSubscriptionIndex(subscriptopn_helper_t* s) {
-			for(uint8_t i = 0; i < numSubscriptionList; i++) {
-				//do we have this subscription?
-				if(subscriptions[i].address == s->address && subscriptions[i].hardwareAddress == s->hardwareAddress && subscriptions[i].hardwareType == s->hardwareType) {
-					return i;
+			if(s != NULL) {
+				for(uint8_t i = 0; i < numSubscriptionList; i++) {
+					//do we have this subscription?
+					if(subscriptions[i].address == s->address && subscriptions[i].hardwareAddress == s->hardwareAddress && subscriptions[i].hardwareType == s->hardwareType) {
+						return i;
+					}
 				}
 			}
 			return 0xff;
@@ -165,6 +176,9 @@ class SubscriptionService {
 		 * @return success
 		 */
 		boolean handleSubscriptionInfoRequest(EventCallbackInterface* callback, seq_t seq, packet_type_application_t type, l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
+			if(appPacket == NULL || callback == NULL)
+				return false;
+
 			subscription_info_t* subscriptionInfo = (subscription_info_t*) appPacket->payload;
 
 			//create buffer for info
@@ -206,6 +220,9 @@ class SubscriptionService {
 		 * @return success
 		 */
 		boolean handleSubscriptionRequest(EventCallbackInterface* callback, seq_t seq, packet_type_application_t type, l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
+			if(appPacket == NULL || callback == NULL)
+				return false;
+
 			subscription_set_struct* subscriptionSet = (subscription_set_struct*) appPacket->payload;
 
 			//set.

@@ -31,6 +31,9 @@
 #include "drivers/digitalio/DHT11.h"
 
 boolean HardwareInterface::registerDriver( HardwareDriver* mydriver ) {
+	if(mydriver == NULL)
+	return false;
+
 	#ifdef DEBUG_HARDWARE_ENABLE
 		Serial.print(millis());
 		Serial.println(F(": HardwareInterface::registerDriver()"));
@@ -104,6 +107,9 @@ HardwareDriver* HardwareInterface::getHardwareDriver( HardwareTypeIdentifier typ
 }
 
 HardwareCommandResult* HardwareInterface::executeCommand(HardwareCommandResult* cmd) {
+	if(cmd == NULL)
+		return NULL;
+
 	#ifdef DEBUG_HARDWARE_ENABLE
 		Serial.print(millis());
 		Serial.println(F(": HardwareInterface::executeCommand()"));
