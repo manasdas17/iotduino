@@ -635,7 +635,8 @@ boolean Layer3::handleAck( packet_t* packet ) {
 		return false;
 
 	//get seq number
-	seq_t seq = ((packet_ack_t*) packet->data.payload)->ack;
+	packet_ack_t* ptr = (packet_ack_t*) packet->data.payload;
+	seq_t seq = ptr->ack;
 
 	#ifdef DEBUG_NETWORK_ENABLE
 		Serial.print(millis());
@@ -648,7 +649,8 @@ boolean Layer3::handleAck( packet_t* packet ) {
 
 	//search index
 	for(uint8_t i = 0; i < CONFIG_L3_SEND_BUFFER_LEN; i++) {
-		if(((packet_numbered_t*) sendingNumberedBuffer[i].packet.data.payload)->seqNumber == seq) {
+		packet_numbered_t* ptr = (packet_numbered_t*) sendingNumberedBuffer[i].packet.data.payload;
+		if(ptr->seqNumber == seq) {
 			#ifdef DEBUG_NETWORK_ENABLE
 				uint16_t rtt = millis() - sendingNumberedBuffer[i].lasttimestamp;
 				Serial.print(F(" probable RTT="));
