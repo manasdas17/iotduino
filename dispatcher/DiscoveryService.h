@@ -49,7 +49,7 @@ class DiscoveryService {
 			//create response - add info in place.
 			//info
 			packet_application_numbered_discovery_info_t* info = (packet_application_numbered_discovery_info_t*) appPacket->payload;
-			memset(&info, 0, sizeof(info));
+			//memset(info, 0, sizeof(info)); //should not be necessary
 			uint8_t num = getDriverInterfacesAll(info);
 			info->numSensors = num;
 
@@ -66,6 +66,10 @@ class DiscoveryService {
 		 * @param application packet
 		 */
 		uint8_t getDriverInterfacesAll(packet_application_numbered_discovery_info_t* info) {
+			if(info == NULL) {
+				return 0;
+			}
+
 			HardwareDriver** drivers = hardwareInterface->getHardwareDrivers();
 			uint8_t numDrivers = 0;
 
