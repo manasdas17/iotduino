@@ -67,7 +67,7 @@ class SubscriptionService {
 		 * @param buffer len
 		 * @return num subscriptions
 		 */
-		uint8_t getSubscriptionInfos(l3_address_t remote, subscription_helper_struct* buffer, uint8_t buffer_len) {
+		uint8_t getSubscriptionInfos(l3_address_t forAddress, subscription_helper_struct* buffer, uint8_t buffer_len) {
 			//sanity check.
 			if(buffer == NULL || buffer_len < sizeof(subscriptions)) {
 				return 0;
@@ -76,8 +76,8 @@ class SubscriptionService {
 			//iterate
 			uint8_t numFound = 0;
 			for(uint8_t i = 0; i < numSubscriptionList; i++) {
-				if(remote != 0 && subscriptions[i].address == remote) {
-					memcpy(&buffer, &subscriptions[i], sizeof(subscriptopn_helper_t));
+				if(subscriptions[i].address != 0 && (forAddress == 0 || subscriptions[i].address == forAddress)) {
+					memcpy(&buffer[numFound], &subscriptions[i], sizeof(subscriptopn_helper_t));
 					numFound++;
 				}
 			}
