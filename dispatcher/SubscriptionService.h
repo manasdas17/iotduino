@@ -20,9 +20,28 @@ class SubscriptionService {
 	protected:
 	private:
 		subscriptopn_helper_t subscriptions[numSubscriptionList];
+		HardwareInterface* hwinterface;
 
 	//functions
 	public:
+		/**
+		 *
+		 */
+		boolean handleRequest(EventCallbackInterface* callback, seq_t seq, packet_type_application_t type, l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
+			switch(type) {
+				case HARDWARE_SUBSCRIPTION_SET:
+					return handleSubscriptionRequest(callback, seq, type, remote, appPacket);
+				case HARDWARE_SUBSCRIPTION_INFO:
+					return handleSubscriptionInfoRequest(callback, seq, type, remote, appPacket);
+				default:
+					return false;
+			}
+		}
+
+		void setHardwareInterface(HardwareInterface* hwinterface) {
+			this->hwinterface = hwinterface;
+		}
+
 		SubscriptionService() {
 			memset(subscriptions, 0, sizeof(subscriptions));
 		}
@@ -35,20 +54,6 @@ class SubscriptionService {
 		 */
 		inline static uint8_t getSubscriptionListeSize() {
 			return numSubscriptionList;
-		}
-
-		/**
-		 *
-		 */
-		boolean handleRequest(EventCallbackInterface* callback, seq_t seq, packet_type_application type, l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
-			switch(type) {
-				case HARDWARE_SUBSCRIPTION_INFO:
-					return handleSubscriptionInfoRequest(callback, seq, type, remote, appPacket);
-				case HARDWARE_SUBSCRIPTION_SET:
-					return handleSubscriptionRequest(callback, seq, type, remote, appPacket);
-				default:
-					return false;
-			}
 		}
 
 	protected:
@@ -78,6 +83,10 @@ class SubscriptionService {
 		}
 
 		boolean setSubscription(subscriptopn_helper_t* s) {
+			//do we know this hardware?
+			if(!hwinterface->hasHardwareDriver((HardwareTypeIdentifier) s->hardwareType, s->hardwareAddress))
+				return false;
+
 			//we do not want any update and this subscription has no event trigger
 			if(s->millisecondsDelay == 0 && s->onEvent == false) {
 				return deleteSubscription(s);
@@ -155,25 +164,29 @@ class SubscriptionService {
 		 * @param applayer packet (is being changed)
 		 * @return success
 		 */
-		boolean handleSubscriptionInfoRequest(EventCallbackInterface* callback, seq_t seq, packet_type_application type, l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
+		boolean handleSubscriptionInfoRequest(EventCallbackInterface* callback, seq_t seq, packet_type_application_t type, l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
 			subscription_info_t* subscriptionInfo = (subscription_info_t*) appPacket->payload;
 
+			//create buffer for info
 			subscriptopn_helper_t buffer[getSubscriptionListeSize()];
 			memset(buffer, 0, sizeof(buffer));
 
 			uint8_t num = getSubscriptionInfos(subscriptionInfo->forAddress, buffer, sizeof(buffer));
 
+			//we have no subscriptions
 			if(num == 0) {
 				callback->fail(seq, remote);
 				return true;
 			}
 
+			//return answer
 			packet_application_numbered_cmd_t newPkt;
 			memset(&newPkt, 0, sizeof(newPkt));
 			newPkt.packetType = HARDWARE_SUBSCRIPTION_INFO;
 			subscription_info_t* info = (subscription_info_t*) newPkt.payload;
 			info->forAddress = subscriptionInfo->forAddress; //not yet changed, everything is fine.
 
+			//send one packet for each entry - currently on same sequence, should be changed. TODO!
 			for(; num > 0; num--) {
 				info->numInfosFollowing = num - 1;
 				memcpy(&info->info, &buffer[num - 1], sizeof(subscriptopn_helper_t));
@@ -192,16 +205,19 @@ class SubscriptionService {
 		 * @param applayer packet (is being changed)
 		 * @return success
 		 */
-		boolean handleSubscriptionRequest(EventCallbackInterface* callback, seq_t seq, packet_type_application type, l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
+		boolean handleSubscriptionRequest(EventCallbackInterface* callback, seq_t seq, packet_type_application_t type, l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
 			subscription_set_struct* subscriptionSet = (subscription_set_struct*) appPacket->payload;
 
+			//set.
 			boolean result = setSubscription(&subscriptionSet->info);
 
+			//no failed
 			if(!result) {
 				callback->fail(seq, remote);
 				return false;
 			}
 
+			//success
 			appPacket->packetType = ACK;
 			callback->doCallback(appPacket, remote, seq);
 			return true;
