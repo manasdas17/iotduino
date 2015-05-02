@@ -3,7 +3,7 @@
  *
  * Created: 10.11.2014 21:26:27
  *  Author: helge
- */ 
+ */
 
 
 #ifndef IRRECEIVEATTINY85_H_
@@ -26,11 +26,11 @@
 class IRreceiverATtiny85 : public I2C, public IRreceive {
 	private:
 		Queue<uint32_t> queue;
-		
+
 		//blocking call.
 		boolean waitUntilAvailable(uint8_t milliseconds) {
 			uint16_t start = millis();
-			
+
 			while(millis() - start < milliseconds) {
 				if(Wire.available())
 					return true;
@@ -42,28 +42,28 @@ class IRreceiverATtiny85 : public I2C, public IRreceive {
 			this->address = 0x04;
 			Wire.begin();
 		}
-		
+
 		void pollSensor() {
 			Wire.beginTransmission(this->address);
 			Wire.write(CMD_POP_ALL);
 			Wire.endTransmission();
 			Wire.requestFrom(this->address, 2);
-				
+
 			//get answer
 			if(!waitUntilAvailable(MAX_WAIT_FOR_ANSWER_MILLIS)) return;
 			uint8_t tmp = Wire.read();
-				
+
 			//should be OK
 			if(tmp == CMD_OK) {
 				//get number of available bytes
 				if(!waitUntilAvailable(MAX_WAIT_FOR_ANSWER_MILLIS)) return;
 				tmp = Wire.read();
-						
+
 				//are there available ones? - we are looking for uint32...
 				if(tmp > 0 && tmp % 4 == 0) {
 					//request the number of bytes for reading.
 					Wire.requestFrom(address, tmp);
-						
+
 					//construct the uint - lsb first.
 					uint32_t reading = 0;
 					for(uint8_t i = 0; i < tmp / 4; i++) {
@@ -73,22 +73,22 @@ class IRreceiverATtiny85 : public I2C, public IRreceive {
 						reading |= ((uint32_t) Wire.read()) << 24;
 						queue.push(reading);
 					}
-						
+
 				}
 			}
 		}
-		
+
 		virtual uint8_t availabe() {
 			pollSensor();
 			return queue.size();
 		}
-	
+
 		virtual uint32_t peek() {
 			if(availabe())
 				return queue.peek();
 			return 0;
 		}
-	
+
 		virtual uint32_t pop() {
 			if(availabe())
 				return queue.pop();
@@ -97,10 +97,10 @@ class IRreceiverATtiny85 : public I2C, public IRreceive {
 
 		virtual void pop( HardwareResult* hwresult ) {
 			if(!availabe()) return;
-			
+
 			hwresult->setUintListNum(4);
 			uint8_t* list = hwresult->getUintList();
-			
+
 			uint32_t val = pop();
 			list[0] = val >> 24;
 			list[1] = val >> 16;
@@ -119,6 +119,12 @@ class IRreceiverATtiny85 : public I2C, public IRreceive {
 				return true;
 			return false;
 		}
+
+		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
+			I2C::getImplementedInterfaces(arr, maxLen);
+			return this->addImplementedInterface(arr, maxLen, HWType_ir);
+		}
+
 };
 
 

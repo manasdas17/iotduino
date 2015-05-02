@@ -5,7 +5,7 @@
 //  @ Project : Untitled
 //  @ File Name : BMP085.h
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
@@ -49,7 +49,7 @@ class BMP085 : public I2C, public Pressure, public Temperature {
 
 	// Read 1 byte from the BMP085 at 'address'
 	char bmp085Read(unsigned char address);
-	
+
 	// Read 2 bytes from the BMP085
 	// First byte will be from 'address'
 	// Second byte will be from 'address'+1
@@ -83,7 +83,7 @@ class BMP085 : public I2C, public Pressure, public Temperature {
 			Wire.begin();
 			bmp085Calibration();
 		}
-		
+
 		virtual float readPressure();
 
 		virtual void readPressure( HardwareCommandResult* hwresult );
@@ -102,6 +102,11 @@ class BMP085 : public I2C, public Pressure, public Temperature {
 
 		virtual boolean implementsInterface( HardwareTypeIdentifier type );
 
+		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
+			I2C::getImplementedInterfaces(arr, maxLen);
+			this->addImplementedInterface(arr, maxLen, HWType_pressure);
+			return this->addImplementedInterface(arr, maxLen, HWType_temprature);
+		}
 };
 
 #endif  //_BMP085_H

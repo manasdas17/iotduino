@@ -5,7 +5,7 @@
 //  @ Project : Untitled
 //  @ File Name : RCSwitch.h
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
@@ -60,7 +60,7 @@ class RCSwitchTevionFSI07 : public DigitalIO {
 		const void turnOffC();
 		const void turnOffD();
 		const void turnOffALL();
-		
+
 		/**
 		 * @param pin
 		 * @param address
@@ -79,6 +79,8 @@ class RCSwitchTevionFSI07 : public DigitalIO {
 		 * @return success
 		 */
 		virtual boolean writeVal( HardwareTypeIdentifier type, HardwareCommandResult* result );
+
+		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen);
 
 };
 

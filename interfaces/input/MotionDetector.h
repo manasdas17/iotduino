@@ -5,7 +5,7 @@
 //  @ Project : Untitled
 //  @ File Name : MotionDetector.h
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
@@ -36,6 +36,11 @@ class MotionDetector : public DigitalIO, public ToBePolled {
 
 		virtual boolean hasPollResult();
 		virtual boolean getPollResult( HardwareCommandResult* result );
+
+		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
+			DigitalIO::getImplementedInterfaces(arr, maxLen);
+			return this->addImplementedInterface(arr, maxLen, HWType_motion);
+		}
 
 };
 

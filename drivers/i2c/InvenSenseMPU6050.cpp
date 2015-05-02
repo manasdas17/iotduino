@@ -8,7 +8,7 @@ Triple<int16_t> InvenSenseMPU6050::readGyro() {
 void InvenSenseMPU6050::readGyro( HardwareCommandResult* hwresult ) {
 	hwresult->setUintListNum(6);
 	uint8_t* list = hwresult->getUintList();
-			
+
 	Triple<int16_t> result = readAccels();
 	list[0] = result.getA() >> 8;
 	list[1] = result.getA() & 0xff;
@@ -26,7 +26,7 @@ Triple<int16_t> InvenSenseMPU6050::readAccels() {
 void InvenSenseMPU6050::readAccels( HardwareCommandResult* hwresult ) {
 	hwresult->setUintListNum(6);
 	uint8_t* list = hwresult->getUintList();
-			
+
 	Triple<int16_t> result = readAccels();
 	list[0] = result.getA() >> 8;
 	list[1] = result.getA() & 0xff;
@@ -60,7 +60,7 @@ void InvenSenseMPU6050::getSensorData() {
 	// there is no filter enabled, and the values
 	// are not very stable.
 	error = MPU6050_read (MPU6050_ACCEL_XOUT_H, (uint8_t*) &this->accel_t_gyro, sizeof(accel_t_gyro_union));
-			
+
 	// Swap all high and low bytes.
 	// After this, the registers values are swapped,
 	// so the structure name like x_accel_l does no
@@ -75,7 +75,7 @@ void InvenSenseMPU6050::getSensorData() {
 	SWAP (accel_t_gyro.reg.x_gyro_h, accel_t_gyro.reg.x_gyro_l);
 	SWAP (accel_t_gyro.reg.y_gyro_h, accel_t_gyro.reg.y_gyro_l);
 	SWAP (accel_t_gyro.reg.z_gyro_h, accel_t_gyro.reg.z_gyro_l);
-			  
+
 	// The temperature sensor is -40 to +85 degrees Celsius.
 	// It is a signed integer.
 	// According to the datasheet:
@@ -149,7 +149,7 @@ int InvenSenseMPU6050::MPU6050_read(int start, uint8_t *buffer, int size) {
 	while(Wire.available() && i<size) {
 		buffer[i++] = Wire.read();
 	}
-	
+
 	if (i != size)
 		return -11;
 
@@ -167,7 +167,7 @@ boolean InvenSenseMPU6050::readVal( HardwareTypeIdentifier type, HardwareCommand
 		readGyro(result);
 		return true;
 	}
-	
+
 	return false;
 }
 
@@ -176,3 +176,4 @@ boolean InvenSenseMPU6050::implementsInterface( HardwareTypeIdentifier type ) {
 		return true;
 	return false;
 }
+

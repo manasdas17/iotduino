@@ -5,7 +5,7 @@
 //  @ Project : Untitled
 //  @ File Name : I2C.h
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
@@ -20,6 +20,8 @@
 class I2C : public HardwareDriver {
 	public:
 		uint8_t address;
+
+		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) = 0;
 };
 
 #endif  //_I2C_H

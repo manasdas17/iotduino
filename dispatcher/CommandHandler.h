@@ -102,7 +102,7 @@ class CommandHandler {
 			hardwareInterface->releaseHardwareCommandResultEntry(result);
 
 			return true;
-}
+		}
 
 		/**
 		 * handle UNnumbered packet

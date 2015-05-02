@@ -5,7 +5,7 @@
 //  @ Project : Untitled
 //  @ File Name : InvenSenseMPU6050.h
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
@@ -616,10 +616,10 @@ class InvenSenseMPU6050 : public I2C, public Temperature, public Accelerometer, 
 	int error;
 	uint8_t c;
 	double dT;
-	
+
 	unsigned long lastReadTimestamp;
 	static const unsigned long readNewMillisThreshold = 1000;
-  
+
 	// Declaring an union for the registers and the axis values.
 	// The byte order does not match the byte order of
 	// the compiler and AVR chip.
@@ -713,17 +713,17 @@ class InvenSenseMPU6050 : public I2C, public Temperature, public Accelerometer, 
 		InvenSenseMPU6050();
 
 		void getSensorData();
-	
+
 		void checkForTimeStampAndReadIfThresholdPassed();
 
 		int readTemperature();
 
 		virtual void readTemperature( HardwareCommandResult* hwresult );
-		
+
 		virtual Triple<int16_t> readAccels();
 
 		virtual void readAccels( HardwareCommandResult* hwresult );
-		
+
 		virtual Triple<int16_t> readGyro();
 
 		virtual void readGyro( HardwareCommandResult* hwresult );
@@ -732,7 +732,14 @@ class InvenSenseMPU6050 : public I2C, public Temperature, public Accelerometer, 
 
 		virtual boolean implementsInterface( HardwareTypeIdentifier type );
 
-		
+		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
+			I2C::getImplementedInterfaces(arr, maxLen);
+			this->addImplementedInterface(arr, maxLen, HWType_gyroscope);
+			this->addImplementedInterface(arr, maxLen, HWType_accelerometer);
+			return this->addImplementedInterface(arr, maxLen, HWType_temprature);
+		}
+
+
 };
 
 #endif  //_INVENSENSEMPU6050_H

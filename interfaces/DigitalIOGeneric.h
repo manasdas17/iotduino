@@ -5,7 +5,7 @@
 //  @ Project : Untitled
 //  @ File Name : DigitalIOGeneric.h
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
@@ -26,7 +26,7 @@ class DigitalIOGeneric : public DigitalIO {
 
 		DigitalIOGeneric(uint8_t pin, boolean pullup, uint8_t hwaddress) : DigitalIO(pin, pullup, hwaddress) {
 		}
-		
+
 		virtual boolean read();
 		virtual boolean outputRead();
 		virtual void write(int boolean);
@@ -35,6 +35,10 @@ class DigitalIOGeneric : public DigitalIO {
 		virtual boolean implementsInterface( HardwareTypeIdentifier type );
 		virtual boolean readVal( HardwareTypeIdentifier type, HardwareCommandResult* result );
 		virtual boolean writeVal( HardwareTypeIdentifier type, HardwareCommandResult* result );
+
+		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
+			return DigitalIO::getImplementedInterfaces(arr, maxLen);
+		}
 
 };
 #endif  //_DIGITALIOGENERIC_H

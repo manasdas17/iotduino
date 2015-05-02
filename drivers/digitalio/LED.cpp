@@ -40,7 +40,7 @@ boolean LED::readVal( HardwareTypeIdentifier type, HardwareCommandResult* result
 boolean LED::writeVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) {
 	if(type == HWTYPE_led && result != NULL)
 		return DigitalIOGeneric::writeVal(HWType_DIGITAL, result);
-	
+
 	return false;
 }
 

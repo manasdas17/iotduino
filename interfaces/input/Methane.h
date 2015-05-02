@@ -5,7 +5,7 @@
 //  @ Project : Untitled
 //  @ File Name : Methane.h
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
@@ -30,6 +30,11 @@ class Methane : public AnalogIOGeneric {
 	private:
 		virtual boolean writeVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) {
 			return false;
+		}
+
+		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
+			AnalogIOGeneric::getImplementedInterfaces(arr, maxLen);
+			return this->addImplementedInterface(arr, maxLen, HWType_methane);
 		}
 
 };

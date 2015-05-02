@@ -5,7 +5,7 @@
 //  @ Project : Untitled
 //  @ File Name : Sonar.h
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
@@ -24,7 +24,7 @@ class Sonar : public I2C {
 		virtual uint8_t read() = 0;
 		//void setMaxDistance(float cm);
 		virtual  void read(HardwareCommandResult* hwresult) = 0;
-		
+
 		Sonar() {
 			this->address = 0x43;
 			Wire.begin();
@@ -33,6 +33,11 @@ class Sonar : public I2C {
 		virtual boolean readVal( HardwareTypeIdentifier type, HardwareCommandResult* result );
 
 		virtual boolean implementsInterface( HardwareTypeIdentifier type );
+
+		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
+			I2C::getImplementedInterfaces(arr, maxLen);
+			return this->addImplementedInterface(arr, maxLen, HWType_sonar);
+		}
 
 };
 

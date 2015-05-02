@@ -176,7 +176,7 @@ boolean BMP085::readVal( HardwareTypeIdentifier type, HardwareCommandResult* res
 		readPressure(result);
 		return true;
 	}
-	
+
 	return false;
 }
 

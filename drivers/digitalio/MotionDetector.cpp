@@ -67,21 +67,21 @@ boolean MotionDetector::readVal( HardwareTypeIdentifier type, HardwareCommandRes
 		result->getUintList()[2] = diffSeconds >> 8 & 0xff;
 		result->getUintList()[3] = diffSeconds >> 16 & 0xff;
 		result->getUintList()[4] = diffSeconds >> 24 & 0xff;
-		
+
 		return true;
 	}
-	
+
 	return false;
 }
 
 boolean MotionDetector::hasPollResult() {
 		read();
-		
+
 		updatePollingTime();
-		
+
+		return false;
 }
 
 boolean MotionDetector::getPollResult( HardwareCommandResult* result ) {
-
+	return false;
 }
-

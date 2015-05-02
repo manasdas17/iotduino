@@ -5,7 +5,7 @@
 //  @ Project : Untitled
 //  @ File Name : HMC5883.h
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
@@ -28,30 +28,30 @@ class HMC5883 : public I2C, public MagneticField {
 			Wire.begin();
 			Wire.beginTransmission(this->address);
 			Wire.write(byte(0x02));
-			
+
 			//Wire.write(byte(0x00)); //continuous
 			Wire.write(byte(0x01)); //single
 			//Wire.write(byte(0x02)); //idle
-			
+
 			Wire.write(byte(0x03)); // Send request to X MSB register
 			Wire.requestFrom(Addr, 6);    // Request 6 bytes; 2 bytes per axis
-			
+
 			if(Wire.available() <=6) { // If 6 bytes available
 				magneticField.a = Wire.read() << 8 | Wire.read();
 				magneticField.c = Wire.read() << 8 | Wire.read();
 				magneticField.b = Wire.read() << 8 | Wire.read();
 			}
-			
+
 			Wire.endTransmission();
-			
-			
+
+
 			return magneticField;
 		}
 
 		virtual void readMagnetic( HardwareResult* hwresult ) {
 			hwresult->setUintListNum(6);
 			uint8_t[] list = hwresult->getUintList();
-			
+
 			Triple<int16_t> result = readMagnetic();
 			list[0] = result.getA() >> 8;
 			list[1] = result.getA() & 0xff;
@@ -73,6 +73,11 @@ class HMC5883 : public I2C, public MagneticField {
 			if(type == HWType_magneticField)
 				return true;
 			return false;
+		}
+
+		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
+			I2C::getImplementedInterfaces(arr, maxLen);
+			return this->addImplementedInterface(arr, maxLen, HWType_magneticField);
 		}
 
 };

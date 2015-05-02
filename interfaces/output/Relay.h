@@ -5,7 +5,7 @@
 //  @ Project : Untitled
 //  @ File Name : Relay.h
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
@@ -21,11 +21,11 @@ class Relay : public DigitalIOGeneric {
 	public:
 		Relay(uint8_t pin) : DigitalIOGeneric(pin, false) {
 		}
-		
+
 		Relay(uint8_t pin, boolean highIsOn) : DigitalIOGeneric(pin, false) {
 			this->highIsOn = highIsOn;
 		}
-		
+
 		boolean highIsOn;
 		virtual void turnOn();
 		virtual void turnOff();
@@ -48,10 +48,18 @@ class Relay : public DigitalIOGeneric {
 		 */
 		virtual boolean writeVal( HardwareTypeIdentifier type, HardwareCommandResult* result );
 
+
+		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
+			DigitalIOGeneric::getImplementedInterfaces(arr, maxLen);
+			return this->addImplementedInterface(arr, maxLen, HWType_relay);
+		}
+
 	private:
 		virtual boolean read();
 		virtual void write( int boolean );
 		virtual void toggle();
+
+
 };
 
 #endif  //_RELAY_H

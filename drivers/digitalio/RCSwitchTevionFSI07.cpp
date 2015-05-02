@@ -121,11 +121,16 @@ boolean RCSwitchTevionFSI07::writeVal( HardwareTypeIdentifier type, HardwareComm
 					turnOffALL();
 				break;
 			default:
-				return false;	
+				return false;
 		}
-		
+
 		return true;
 	}
-	
+
 	return false;
+}
+
+HardwareTypeIdentifier* RCSwitchTevionFSI07::getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
+	this->getImplementedInterfaces(arr, maxLen);
+	return this->addImplementedInterface(arr, maxLen, HWType_rcswitch);
 }

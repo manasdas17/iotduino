@@ -30,11 +30,16 @@ class AnalogIO : public HardwareDriver {
 		AnalogIO(uint8_t pin) {
 			this->pin = new NoMultiplex(pin);
 		}
-	
+
 		virtual uint8_t getPIN();
 
 		virtual boolean implementsInterface( HardwareTypeIdentifier type ) = 0;
-		
+
+		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
+			return this->addImplementedInterface(arr, maxLen, HWType_ANALOG);
+		}
+
+
 };
 
 #endif  //_ANALOGIO_H

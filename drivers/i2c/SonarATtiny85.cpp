@@ -5,7 +5,7 @@
 //  @ Project : Untitled
 //  @ File Name : Sonar.cpp
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
@@ -14,7 +14,7 @@
 
 uint8_t Sonar::read() {
 	Wire.requestFrom(this->address, 1);
-	uint8_t val = Wire.read();	
+	uint8_t val = Wire.read();
 	return (val != 0xff) ? val : 0;
 }
 
@@ -22,10 +22,10 @@ boolean Sonar::readVal( HardwareTypeIdentifier type, HardwareCommandResult* resu
 	if(implementsInterface(type)) {
 		result->setUintListNum(1);
 		result->getUintList()[0] = read();
-		
+
 		return true;
 	}
-	
+
 	return false;
 }
 
