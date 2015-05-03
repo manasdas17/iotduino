@@ -160,41 +160,31 @@ HardwareCommandResult* HardwareInterface::readHardware(HardwareDriver* driver, H
 		Serial.println(F(": HardwareInterface::readHardware()"));
 	#endif
 
-	uint8_t freeResultIndex = getFreeResultIndex();
+	HardwareCommandResult* res = getFreeHardwareCommandResultEntry();
 
-	#ifdef DEBUG_HARDWARE_ENABLE
-		Serial.print(millis());
-		Serial.print(F(": hwresultIndex="));
-		Serial.println(freeResultIndex);
-		Serial.flush();
-	#endif
-
-	if(freeResultIndex == 255)
+	if(res == NULL)
 		return NULL;
 
-	resultSetInUse[freeResultIndex] = true;
-	resultset[freeResultIndex].reset();
+	driver->readVal(cmd->getHardwareType(), res);
 
-	driver->readVal(cmd->getHardwareType(), &resultset[freeResultIndex]);
+	res->setAddress(cmd->getAddress());
+	res->setHardwareType(cmd->getHardwareType());
+	res->setReadRequest(cmd->isReadRequest());
 
-	resultset[freeResultIndex].setAddress(cmd->getAddress());
-	resultset[freeResultIndex].setHardwareType(cmd->getHardwareType());
-
-	return &resultset[freeResultIndex];
+	return res;
 }
 
 HardwareCommandResult* HardwareInterface::writeHardware(HardwareDriver* driver, HardwareCommandResult* cmd) {
-	uint8_t freeResultIndex = getFreeResultIndex();
+	HardwareCommandResult* res = getFreeHardwareCommandResultEntry();
 
-	if(freeResultIndex == 255)
+	if(res == NULL)
 		return NULL;
 
-	driver->writeVal(cmd->getHardwareType(), &resultset[freeResultIndex]);
+	driver->writeVal(cmd->getHardwareType(), res);
+	res->setAddress(cmd->getAddress());
+	res->setHardwareType(cmd->getHardwareType());
 
-	resultset[freeResultIndex].setAddress(cmd->getAddress());
-	resultset[freeResultIndex].setHardwareType(cmd->getHardwareType());
-
-	return &resultset[freeResultIndex];
+	return res;
 }
 
 HardwareInterface::~HardwareInterface() {
@@ -221,4 +211,14 @@ boolean HardwareInterface::releaseHardwareCommandResultEntry(HardwareCommandResu
 	}
 
 	return false;
+}
+
+HardwareCommandResult* HardwareInterface::getFreeHardwareCommandResultEntry() {
+	uint8_t freeIndex = getFreeResultIndex();
+
+	if(freeIndex == 0xff)
+		return NULL;
+
+	resultSetInUse[freeIndex] = true;
+	return &resultset[freeIndex];
 }

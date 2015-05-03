@@ -77,7 +77,8 @@ class DiscoveryService {
 
 			#define tempArraySize 5
 			HardwareTypeIdentifier tempArray[tempArraySize];
-			for(uint8_t i = 0; i < hardwareInterface->getHardwareDriversListSize(); i++) {
+			uint8_t driverListSize = hardwareInterface->getHardwareDriversListSize();
+			for(uint8_t i = 0; i < driverListSize; i++) {
 				if(drivers[i] != NULL) {
 					//this is a driver.
 					memset(tempArray, 0, sizeof(tempArray));

@@ -56,7 +56,7 @@ class CommandHandler {
 			if(appPacket == NULL)
 				return false;
 
-			HardwareCommandResult cmd = HardwareCommandResult();
+			HardwareCommandResult cmd = HardwareCommandResult(); //todo, we use such kind of object for returning results anyway, however this takes place in the hwinterface
 			cmd.deSerialize((command_t*) appPacket->payload);
 
 			#ifdef DEBUG_HANDLER_ENABLE
@@ -82,6 +82,7 @@ class CommandHandler {
 			#endif
 
 			packet_application_numbered_cmd_t appLayerPacket;
+			memset(&appLayerPacket, 0, sizeof(appLayerPacket));
 
 			if(result == NULL) {
 				appLayerPacket.packetType = NACK;

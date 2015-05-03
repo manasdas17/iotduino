@@ -44,7 +44,7 @@ boolean Layer3::sendPacket( packet_t &packet )
 		//unknown.
 		if(neighbour == NULL) {
 			#ifdef DEBUG_NETWORK_ENABLE
-				Serial.println(F("\tno neighbour found."));
+				Serial.println(F("\tno neighbour found - no route to host."));
 			#endif
 
 			return false;
@@ -575,11 +575,11 @@ boolean Layer3::addToSendingQueue( packet_t* packet ) {
 }
 
 void Layer3::updateSendingBuffer() {
-	#ifdef DEBUG_NETWORK_ENABLE
-		Serial.print(millis());
-		Serial.println(F(": L3.updateSendingBuffer()"));
-		Serial.flush();
-	#endif
+	////#ifdef DEBUG_NETWORK_ENABLE
+		////Serial.print(millis());
+		////Serial.println(F(": L3.updateSendingBuffer()"));
+		////Serial.flush();
+	////#endif
 
 	for(uint8_t i = 0; i < CONFIG_L3_SEND_BUFFER_LEN; i++) {
 		//is this a packet to be retransmitted?

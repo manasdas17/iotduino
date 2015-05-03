@@ -29,7 +29,8 @@ class HardwareInterface {
 
 	protected:
 		/**
-		 *
+		 * return the index of a free result set
+		 * @return index, 0xff if there is none.
 		 */
 		uint8_t getFreeResultIndex();
 
@@ -98,11 +99,23 @@ class HardwareInterface {
 		 */
 		boolean releaseHardwareCommandResultEntry(HardwareCommandResult* ptr);
 
+		/**
+		 * get an unused resultset
+		 * @return set
+		 */
+		HardwareCommandResult* getFreeHardwareCommandResultEntry();
+
+		/**
+		 * @return list of pointers to driver instances
+		 */
 		HardwareDriver** getHardwareDrivers() {
 			return driver;
 		}
 
-		inline uint8_t getHardwareDriversListSize() {
+		/**
+		 * get the maximum size of the driver pointer list size
+		 */
+		inline uint8_t getHardwareDriversListSize() const {
 			return driverPointerListSize;
 		}
 

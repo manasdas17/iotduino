@@ -1,4 +1,4 @@
-/* 
+/*
 * Routing.h
 *
 * Created: 04.01.2015 02:37:58
@@ -32,19 +32,19 @@
 *           ACTIVE               ACTIVE
 */
 class Layer3 {
-	
+
 	class callbackClass : public EventCallbackInterface {
 		Layer3* parent;
-		
+
 		public:
 			callbackClass(Layer3* l3) {
 				parent = l3;
 			}
-			
+
 			void doCallback(packet_application_numbered_cmd_t* appLayerPacket, l3_address_t address, seq_t seq);
 			virtual void fail(seq_t seq, l3_address_t remote);
 	};
-	
+
 	//variables
 	public:
 		typedef union packet_t_union {
@@ -58,7 +58,7 @@ class Layer3 {
 			} data;
 			uint8_t bytes[CONFIG_L3_PAYLOAD_SIZE];
 		} packet_t;
-	
+
 		typedef struct packet_sending_queue_item_struct {
 			packet_t packet;
 			uint8_t retransmissions;
@@ -86,20 +86,20 @@ class Layer3 {
 	//functions
 	public:
 		EventCallbackInterface* getCallbackInterface();
-	
+
 		void Loop();
-	
+
 		~Layer3() {
 			delete eventCallbackClass;
 		}
-		
+
 		Layer3(l3_address_t localAddress);
-	
+
 		void setLayer2(Layer2rf24* l2) {
 			this->l2 = l2;
 			l2->setLayer3(this);
 		}
-	
+
 		/**
 		* receive a new packet.
 		* @param payload from l2
@@ -135,7 +135,7 @@ class Layer3 {
 		* @return num of neighbours
 		*/
 		uint8_t neighboursSize();
-	
+
 		/**
 		* get the complete neighbourtable
 		* @return neighbourData
@@ -151,7 +151,7 @@ class Layer3 {
 		* @return sequence number
 		*/
 		seq_t sendNumbered(l3_address_t destination, seq_t seq, uint8_t* payload, uint8_t payloadLen);
-	
+
 		/**
 		* send numbered packet (random seq)
 		* @param destination
@@ -169,7 +169,7 @@ class Layer3 {
 		* @return success
 		*/
 		boolean sendUnnumbered(l3_address_t destination, uint8_t* payload, uint8_t payloadLen);
-	
+
 		/**
 		* send unnumbered packet
 		* @param destination
@@ -185,7 +185,7 @@ class Layer3 {
 		* cleans the neighbourlist and sends beacon
 		*/
 		boolean sendBeacon();
-	
+
 		/**
 		* print debug information.
 		* @param packet
@@ -196,17 +196,17 @@ class Layer3 {
 		* add numbered packet to sending queue - retries on layer3
 		*/
 		boolean addToSendingQueue(packet_t* packet);
-	
+
 		/**
 		* check sending queue and resend
 		*/
 		void updateSendingBuffer();
-	
+
 		/**
 		* handle an acked packet
 		*/
 		boolean handleAck(packet_t* packet);
-	
+
 		/**
 		* send ACK for this packet.
 		*/
@@ -217,7 +217,7 @@ class Layer3 {
 		* @param neighbour
 		*/
 		neighbourData* getNeighbour(l3_address_t detination);
-	
+
 		/**
 		* send a packet to destination
 		* @param packet
@@ -247,7 +247,7 @@ class Layer3 {
 		* @return success
 		*/
 		boolean routePacket( packet_t* packet );
-	
+
 		/**
 		* handle beacon packet.
 		* @param packet
@@ -269,14 +269,14 @@ class Layer3 {
 		* @return success
 		*/
 		boolean updateNeighbour( l3_address_t destination, l3_address_t nextHop, uint8_t hopCount);
-	
+
 		/**
 		* update neighbours
 		* @param beacon
 		* @return success
 		*/
 		boolean updateNeighbours(packet_beacon_t* beacon);
-	
+
 		/**
 		* neighbourtable maintenance, to be called periodically
 		*/
