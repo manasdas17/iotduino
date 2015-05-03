@@ -120,7 +120,7 @@ typedef struct subscription_helper_struct {
 	l3_address_t address;
 	uint8_t hardwareAddress;
 	uint8_t hardwareType;
-	uint16_t millisecondsDelay;
+	uint32_t millisecondsDelay;
 	uint8_t onEvent;
 	seq_t sequence;
 } subscription_helper_t;
