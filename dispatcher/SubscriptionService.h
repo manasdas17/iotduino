@@ -341,7 +341,30 @@ class SubscriptionService {
 			return commandHandler->handleHardwareCommand(&pan, networking->getCallbackInterface(), subscription->address, subscription->sequence);
 		}
 
+		/**
+		 * get all event subscriptions & poll them
+		 */
+		void doPollingForSubscriptions() {
+			for(uint8_t i = 0; i < getSubscriptionListSize(); i++) {
+				//is this an event subscription?
+				if(subscriptions[i].onEvent == 1) {
+					//get driver
+					HardwareDriver* drv = hwinterface->getHardwareDriver((HardwareTypeIdentifier) subscriptions[i].hardwareType, subscriptions[i].hardwareAddress);
 
+					//does it support events?
+					if(drv == NULL || !drv->canDetectEvents())
+						continue;
+
+					//check for new event
+					uint32_t t = drv->checkForEvent();
+
+					//did we detect an event? - execute subscription
+					if(t > 0 && t - subscriptions[i].onEventBlackout > subscriptionsLastExecution[i]) {
+						executeSubscription(&subscriptions[i]);
+					}
+				}
+			}
+		}
 	private:
 
 }; //SubscriptionService

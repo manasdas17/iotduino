@@ -122,6 +122,7 @@ typedef struct subscription_helper_struct {
 	uint8_t hardwareType;
 	uint32_t millisecondsDelay;
 	uint8_t onEvent;
+	uint16_t onEventBlackout;
 	seq_t sequence;
 } subscription_helper_t;
 

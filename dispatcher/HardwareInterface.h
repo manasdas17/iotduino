@@ -47,13 +47,6 @@ class HardwareInterface {
 		HardwareDriver* getHardwareDriver(HardwareTypeIdentifier type) const;
 
 		/**
-		 * get a driver according to filter settings
-		 * @param type
-		 * @param address
-		 */
-		HardwareDriver* getHardwareDriver(const HardwareTypeIdentifier type, const uint8_t address) const;
-
-		/**
 		 * read hardware
 		 * @param driver
 		 * @param command
@@ -68,6 +61,13 @@ class HardwareInterface {
 		HardwareCommandResult* writeHardware( HardwareDriver* driver, HardwareCommandResult* cmd );
 
 	public:
+		/**
+		 * get a driver according to filter settings
+		 * @param type
+		 * @param address
+		 */
+		HardwareDriver* getHardwareDriver(const HardwareTypeIdentifier type, const uint8_t address) const;
+
 		/**
 		 * constructor
 		 */

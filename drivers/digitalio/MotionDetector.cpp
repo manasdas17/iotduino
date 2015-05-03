@@ -29,3 +29,31 @@ boolean MotionDetector::readVal( HardwareTypeIdentifier type, HardwareCommandRes
 
 	return false;
 }
+
+boolean MotionDetector::canDetectEvents() {
+	return true;
+}
+
+uint32_t MotionDetector::checkForEvent() {
+	//get old data
+	HardwareCommandResult* last = this->getLastResult();
+	const uint32_t lastT = this->getLastResultTimestamp();
+
+	//setup temporary new values
+	HardwareCommandResult newReading;
+	newReading.setAddress(getAddress());
+	newReading.setHardwareType(HWType_motion);
+
+	//read data
+	if(!readVal(HWType_motion, &newReading))
+		return 0;
+
+	//detect event
+	if(last->getUintList()[0] != newReading.getUintList()[0]) {
+		this->updateResult(&newReading);
+		return lastT;
+	}
+
+	//do not update data nor timestamp
+	return 0;
+}

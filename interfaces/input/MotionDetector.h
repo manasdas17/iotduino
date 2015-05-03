@@ -37,6 +37,13 @@ class MotionDetector : public DigitalIO {
 			return this->addImplementedInterface(arr, maxLen, HWType_motion);
 		}
 
+		virtual boolean canDetectEvents();
+		virtual uint32_t checkForEvent();
+
+	private:
+		virtual boolean writeVal(HardwareTypeIdentifier type, HardwareCommandResult* result) {
+			return false;
+		};
 };
 
 #endif  //_MOTIONDETECTOR_H

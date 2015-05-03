@@ -14,11 +14,11 @@
 #define _HARDWAREDRIVER_H
 
 #include <Arduino.h>
-#include <utils/LinkedList.h>
 #include "HardwareID.h"
 #include <dispatcher/Commands.h>
+#include <dispatcher/EventDetector.h>
 
-class HardwareDriver {
+class HardwareDriver : public EventDetector {
 	public:
 		uint8_t hardwareAddress;
 
@@ -57,7 +57,6 @@ class HardwareDriver {
 			}
 			return NULL;
 		}
-
 };
 
 #endif  //_HARDWAREDRIVER_H
