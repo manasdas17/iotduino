@@ -112,7 +112,7 @@ void testHardwareCommand(HardwareInterface* hwInterface, DHT11* dht11, PacketDis
 	hwInterface->executeCommand(&cmd);
 }
 
-void testDiscoverySet(DHT11* dht11, PacketDispatcher* dispatcher) {
+void testSubscriptionSet(DHT11* dht11, PacketDispatcher* dispatcher) {
 		//numbered for subscription
 	//app layer
 	subscription_set_t cmdSubscription;
@@ -121,6 +121,7 @@ void testDiscoverySet(DHT11* dht11, PacketDispatcher* dispatcher) {
 	cmdSubscription.info.hardwareAddress = dht11->getAddress();
 	cmdSubscription.info.hardwareType = HWType_temprature;
 	cmdSubscription.info.millisecondsDelay = 1347;
+	cmdSubscription.info.sequence = 1337;
 	cmdSubscription.info.onEvent = 1;
 
 	packet_application_numbered_cmd_t appCmd3;
@@ -169,7 +170,7 @@ void testDiscovery(PacketDispatcher* dispatcher, DHT11* dht11) {
 	p2.data.hopcount = 5;
 	p2.data.source = 12;
 	p2.data.type = PACKET_NUMBERED;
-	memcpy(p2.data.payload, (byte*) &numbered2, sizeof(numbered2));
+	memcpy(p2.data.payload, (byte*) &numbered2, sizeof(packet_numbered_t));
 	p2.data.payloadLen = sizeof(numbered2);
 
 	//processing
@@ -206,6 +207,11 @@ void testSubscriptionInfo(PacketDispatcher* dispatcher) {
 
 
 
+void testSubscriptionExecution(PacketDispatcher* dispatcher) {
+	delay(2000); //enough for our test.
+	dispatcher->loop();
+}
+
 void setup() {
 	Serial.begin(115200);
 	Serial.println("start test...");
@@ -234,9 +240,9 @@ void setup() {
 	testHardwareCommand(&hwInterface, &dht11, &dispatcher);
 	testHardwareCommandRead(&dht11, &dispatcher);
 	testDiscovery(&dispatcher, &dht11);
-	testDiscoverySet(&dht11, &dispatcher);
+	testSubscriptionSet(&dht11, &dispatcher);
 	testSubscriptionInfo(&dispatcher);
-
+	testSubscriptionExecution(&dispatcher);
 
 	//turn off LED
 	pinMode(LED_BUILTIN, LOW);

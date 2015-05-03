@@ -122,16 +122,17 @@ typedef struct subscription_helper_struct {
 	uint8_t hardwareType;
 	uint16_t millisecondsDelay;
 	uint8_t onEvent;
-} subscriptopn_helper_t;
+	seq_t sequence;
+} subscription_helper_t;
 
 typedef struct substcripton_info_struct {
 	l3_address_t forAddress;
 	uint8_t numInfosFollowing;
-	subscriptopn_helper_t info;
+	subscription_helper_t info;
 } subscription_info_t;
 
 typedef struct subscription_set_struct {
-	subscriptopn_helper_t info;
+	subscription_helper_t info;
 } subscription_set_t;
 
 #endif //__PACKETS_H__

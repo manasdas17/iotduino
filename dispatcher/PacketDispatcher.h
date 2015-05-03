@@ -36,6 +36,8 @@ class PacketDispatcher {
 			this->commandHandler.setHardwareInterface(hwinterface);
 			this->discoveryService.setHardwareInterface(hwinterface);
 			this->subscriptionService.setHardwareInterface(hwinterface);
+			this->subscriptionService.setCommandHandler(&commandHandler);
+			this->subscriptionService.setNetworking(networking);
 		}
 
 		~PacketDispatcher() {
@@ -53,6 +55,7 @@ class PacketDispatcher {
 				Serial.flush();
 			#endif
 
+			//networking
 			while(l3->receiveQueueSize() > 0) {
 				Layer3::packet_t packet;
 				l3->receiveQueuePop(&packet);
@@ -78,6 +81,8 @@ class PacketDispatcher {
 				}
 			}
 
+			//subscriptions
+			subscriptionService.executeSubscriptions();
 		}
 
 		/**
@@ -160,7 +165,19 @@ class PacketDispatcher {
 			}
 		}
 
+		/**
+		 * @return service
+		 */
+		SubscriptionService* getSubscriptionsService() {
+			return &subscriptionService;
+		}
 
+		/**
+		 * @return service
+		 */
+		DiscoveryService* getDiscoveryService() {
+			return &discoveryService;
+		}
 }; //PacketDispatcher
 
 #endif //__PACKETDISPATCHER_H__

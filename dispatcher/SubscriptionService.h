@@ -11,6 +11,9 @@
 
 #include <networking/Packets.h>
 #include "EventCallbackInterface.h"
+#include "CommandHandler.h"
+#include "HardwareInterface.h"
+#include "../networking/Layer3.h"
 
 #define numSubscriptionList 10
 
@@ -19,13 +22,30 @@ class SubscriptionService {
 	public:
 	protected:
 	private:
-		subscriptopn_helper_t subscriptions[numSubscriptionList];
+		/** internal list for subscriptions */
+		subscription_helper_t subscriptions[numSubscriptionList];
+
+		/** list for storing last subscription execution times */
+		uint32_t subscriptionsLastExecution[numSubscriptionList];
+
+		/** */
 		HardwareInterface* hwinterface;
+
+		/** used for subscription execution */
+		CommandHandler* commandHandler;
+
+		/** used for networking callback */
+		Layer3* networking;
 
 	//functions
 	public:
 		/**
-		 *
+		 * handles a new subscriptio request
+		 * @param callback
+		 * @param sequence
+		 * @param request type
+		 * @param remote address
+		 * @param application layer packet
 		 */
 		boolean handleRequest(EventCallbackInterface* callback, seq_t seq, packet_type_application_t type, l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
 			if(callback == NULL || appPacket == NULL)
@@ -41,14 +61,40 @@ class SubscriptionService {
 			}
 		}
 
+		/**
+		 * set reference for hardware drivers
+		 * @param interface
+		 */
 		void setHardwareInterface(HardwareInterface* hwinterface) {
 			this->hwinterface = hwinterface;
 		}
 
-		SubscriptionService() {
-			memset(subscriptions, 0, sizeof(subscriptions));
+		/**
+		 * set reference for command handler
+		 * @param interface
+		 */
+		void setCommandHandler(CommandHandler* handler) {
+			this->commandHandler = handler;
 		}
 
+		/**
+		 * set reference for networking - used for networking callback.
+		 * @param netowrk
+		 */
+		void setNetworking(Layer3* networking) {
+			this->networking = networking;
+		}
+
+		/**
+		 * constructor.
+		 * basically sets the subcription list to 0
+		 */
+		SubscriptionService() {
+			memset(subscriptions, 0, sizeof(subscriptions));
+			memset(subscriptionsLastExecution, 0, sizeof(subscriptionsLastExecution));
+		}
+
+		/** */
 		~SubscriptionService() {}
 
 		/**
@@ -57,6 +103,21 @@ class SubscriptionService {
 		 */
 		inline static uint8_t getSubscriptionListeSize() {
 			return numSubscriptionList;
+		}
+
+		/**
+		 * check all subscriptions and execute if timed out
+		 */
+		void executeSubscriptions() {
+			uint32_t now = millis();
+
+			for(uint8_t i = 0; i < numSubscriptionList; i++) {
+				if(subscriptions[i].address != 0 && now - subscriptionsLastExecution[i] > subscriptions[i].millisecondsDelay) {
+				//if(subscriptions[i].address != 0 && subscriptions[i].onEvent == 0 && now - subscriptionsLastExecution[i] > subscriptions[i].millisecondsDelay) {
+					subscriptionsLastExecution[i] = now;
+					executeSubscription(&subscriptions[i]);
+				}
+			}
 		}
 
 	protected:
@@ -77,7 +138,7 @@ class SubscriptionService {
 			uint8_t numFound = 0;
 			for(uint8_t i = 0; i < numSubscriptionList; i++) {
 				if(subscriptions[i].address != 0 && (forAddress == 0 || subscriptions[i].address == forAddress)) {
-					memcpy(&buffer[numFound], &subscriptions[i], sizeof(subscriptopn_helper_t));
+					memcpy(&buffer[numFound], &subscriptions[i], sizeof(subscription_helper_t));
 					numFound++;
 				}
 			}
@@ -85,7 +146,19 @@ class SubscriptionService {
 			return numFound;
 		}
 
-		boolean setSubscription(subscriptopn_helper_t* s) {
+		/**
+		 * add, update or delete a subscription
+		 * a subscription is determined by:
+		 * - remote node
+		 * - hardware type
+		 * - hardware address
+		 * in case no subscription exists, it is added
+		 * in case a subsciption exists, it is updated
+		 * a deletion is performaned in case of onError=0 (no trigger) and a delay of 0ms
+		 * @param helper
+		 * @return success
+		 */
+		boolean setSubscription(subscription_helper_t* s) {
 			if(s == NULL)
 				return false;
 
@@ -109,7 +182,8 @@ class SubscriptionService {
 
 			//update
 			if(index != 0xff) {
-				memcpy(&subscriptions[index], s, sizeof(subscriptopn_helper_t));
+				memcpy(&subscriptions[index], s, sizeof(subscription_helper_t));
+				subscriptionsLastExecution[index] = 0;
 				return true;
 			}
 
@@ -122,7 +196,7 @@ class SubscriptionService {
 		 * @param subscription info
 		 * @return success
 		 */
-		boolean deleteSubscription(subscriptopn_helper_t* s) {
+		boolean deleteSubscription(subscription_helper_t* s) {
 			if(s == NULL)
 				return true; //not present, it is "deleted"
 
@@ -132,7 +206,8 @@ class SubscriptionService {
 				return false;
 
 			//delete
-			memset(&subscriptions[index], 0, sizeof(subscriptopn_helper_t));
+			memset(&subscriptions[index], 0, sizeof(subscription_helper_t));
+			subscriptionsLastExecution[index] = 0;
 			return true;
 		}
 
@@ -141,7 +216,7 @@ class SubscriptionService {
 		 * @param subscription info
 		 * @return index, 0xff is none found
 		 */
-		uint8_t getSubscriptionIndex(subscriptopn_helper_t* s) {
+		uint8_t getSubscriptionIndex(subscription_helper_t* s) {
 			if(s != NULL) {
 				for(uint8_t i = 0; i < numSubscriptionList; i++) {
 					//do we have this subscription?
@@ -182,7 +257,7 @@ class SubscriptionService {
 			subscription_info_t* subscriptionInfo = (subscription_info_t*) appPacket->payload;
 
 			//create buffer for info
-			subscriptopn_helper_t buffer[getSubscriptionListeSize()];
+			subscription_helper_t buffer[getSubscriptionListeSize()];
 			memset(buffer, 0, sizeof(buffer));
 
 			uint8_t num = getSubscriptionInfos(subscriptionInfo->forAddress, buffer, sizeof(buffer));
@@ -203,7 +278,7 @@ class SubscriptionService {
 			//send one packet for each entry - currently on same sequence, should be changed. TODO!
 			for(; num > 0; num--) {
 				info->numInfosFollowing = num - 1;
-				memcpy(&info->info, &buffer[num - 1], sizeof(subscriptopn_helper_t));
+				memcpy(&info->info, &buffer[num - 1], sizeof(subscription_helper_t));
 
 				callback->doCallback(&newPkt, remote, seq);
 			}
@@ -239,6 +314,33 @@ class SubscriptionService {
 			callback->doCallback(appPacket, remote, seq);
 			return true;
 		}
+
+		/**
+		 * execute a subscription
+		 * setup packet and send it into system as if it were send from remote
+		 * @param parameters
+		 * @param success
+		 */
+		boolean executeSubscription(subscription_helper_t* subscription) {
+			if(networking == NULL || subscription == NULL || commandHandler == NULL)
+				return false;
+
+			//setup application packet data
+			packet_application_numbered_cmd_t pan;
+			memset(&pan, 0, sizeof(pan));
+			//this is a hardware read
+			pan.packetType = HARDWARE_COMMAND_READ;
+
+			//the actual command gets the hardware type and address
+			command_t* cmd = (command_t*) pan.payload;
+			cmd->address = subscription->hardwareAddress;
+			cmd->type = (HardwareTypeIdentifier) subscription->hardwareType;
+			cmd->isRead = 1;
+
+			//fire into the system - with networking callback.
+			return commandHandler->handleHardwareCommand(&pan, networking->getCallbackInterface(), subscription->address, subscription->sequence);
+		}
+
 
 	private:
 
