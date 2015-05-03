@@ -44,7 +44,7 @@ class ResponseHandler {
 		 * @param applayer packet
 		 * @return success if listener is found.
 		 */
-		boolean handleReponseNumbered(seq_t seq, packet_type_application_t type, l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
+		boolean handleReponseNumbered(const seq_t seq, const packet_type_application_t type, const l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
 
 			responseListener_t* listener = getListener(seq, remote);
 
@@ -68,7 +68,7 @@ class ResponseHandler {
 		 * @param callback object
 		 * @return true on success, false otherwise
 		 */
-		boolean registerListener(seq_t seqNumber, l3_address_t remoteAddress, EventCallbackInterface* callbackObject) {
+		boolean registerListener(const seq_t seqNumber, const l3_address_t remoteAddress, EventCallbackInterface* callbackObject) {
 			if(callbackObject == NULL)
 				return false;
 
@@ -107,7 +107,7 @@ class ResponseHandler {
 		 * @param desired sequence number
 		 * @param desired l3 remote address
 		 */
-		 responseListener_t* getListener(seq_t seq, l3_address_t remote) {
+		 responseListener_t* getListener(const seq_t seq, const l3_address_t remote) {
 			for(uint8_t i = 0; i < LISTENER_NUM; i++) {
 				if(listeners[i].timestamp > 0 && listeners[i].seqNumber == seq && listeners[i].remote == remote)
 					return &listeners[i];
@@ -135,7 +135,7 @@ class ResponseHandler {
 		/**
 		 * @return free slot index, 255 otherwise
 		 */
-		uint8_t getListenerSlot() {
+		uint8_t getListenerSlot() const {
 			uint8_t freeIndex = 0xff;
 			for(uint8_t i = 0; i < LISTENER_NUM; i++) {
 				if(listeners[i].timestamp == 0) {

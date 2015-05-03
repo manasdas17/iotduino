@@ -32,26 +32,26 @@ class HardwareInterface {
 		 * return the index of a free result set
 		 * @return index, 0xff if there is none.
 		 */
-		uint8_t getFreeResultIndex();
+		uint8_t getFreeResultIndex() const;
 
 		/**
 		 * check for a certain hardware driver
 		 * @param type
 		 */
-		boolean hasHardwareDriver(HardwareTypeIdentifier type);
+		boolean hasHardwareDriver(HardwareTypeIdentifier type) const;
 
 		/**
 		 * get a driver according to filter settings
 		 * @param type
 		 */
-		HardwareDriver* getHardwareDriver(HardwareTypeIdentifier type);
+		HardwareDriver* getHardwareDriver(HardwareTypeIdentifier type) const;
 
 		/**
 		 * get a driver according to filter settings
 		 * @param type
 		 * @param address
 		 */
-		HardwareDriver* getHardwareDriver(HardwareTypeIdentifier type, uint8_t address);
+		HardwareDriver* getHardwareDriver(const HardwareTypeIdentifier type, const uint8_t address) const;
 
 		/**
 		 * read hardware
@@ -124,7 +124,7 @@ class HardwareInterface {
 		 * @param type
 		 * @param address
 		 */
-		boolean hasHardwareDriver(HardwareTypeIdentifier type, uint8_t address);
+		boolean hasHardwareDriver(const HardwareTypeIdentifier type, const uint8_t address) const;
 };
 
 #endif //__HARDWAREINTERFACE_H__

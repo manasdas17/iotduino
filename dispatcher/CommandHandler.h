@@ -27,7 +27,7 @@ class CommandHandler {
 		 * by now only for hardware requests
 		 * @param packet
 		 */
-		boolean handleNumbered( EventCallbackInterface* callback, seq_t seq, packet_type_application_t type, l3_address_t remote, packet_application_numbered_cmd_t* appPacket ) {
+		boolean handleNumbered( EventCallbackInterface* callback, const seq_t seq, const packet_type_application_t type, const l3_address_t remote, packet_application_numbered_cmd_t* appPacket ) {
 			#ifdef DEBUG_HANDLER_ENABLE
 				Serial.print(millis());
 				Serial.print(F(": CommandHandler::handleNumbered() from="));
@@ -52,7 +52,7 @@ class CommandHandler {
 		/**
 		 * handle hardware command payload.
 		 */
-		boolean handleHardwareCommand(packet_application_numbered_cmd_t* appPacket, EventCallbackInterface* callback, l3_address_t remote, seq_t seq) {
+		boolean handleHardwareCommand(packet_application_numbered_cmd_t* appPacket, EventCallbackInterface* callback, const l3_address_t remote, const seq_t seq) {
 			if(appPacket == NULL)
 				return false;
 

@@ -50,15 +50,15 @@ boolean HardwareInterface::registerDriver( HardwareDriver* mydriver ) {
 	return false;
 }
 
-boolean HardwareInterface::hasHardwareDriver( HardwareTypeIdentifier type ) {
+boolean HardwareInterface::hasHardwareDriver( const HardwareTypeIdentifier type ) const {
 	return getHardwareDriver(type) != NULL;
 }
 
-boolean HardwareInterface::hasHardwareDriver( HardwareTypeIdentifier type, uint8_t address ) {
+boolean HardwareInterface::hasHardwareDriver( const HardwareTypeIdentifier type, const uint8_t address ) const {
 	return getHardwareDriver(type, address) != NULL;
 }
 
-HardwareDriver* HardwareInterface::getHardwareDriver( HardwareTypeIdentifier type ) {
+HardwareDriver* HardwareInterface::getHardwareDriver( HardwareTypeIdentifier type ) const {
 	#ifdef DEBUG_HARDWARE_ENABLE
 		Serial.print(millis());
 		Serial.print(F(": HardwareInterface::getHardwareDriver() hwType="));
@@ -81,7 +81,7 @@ HardwareDriver* HardwareInterface::getHardwareDriver( HardwareTypeIdentifier typ
 	return NULL;
 }
 
-HardwareDriver* HardwareInterface::getHardwareDriver( HardwareTypeIdentifier type, uint8_t address ) {
+HardwareDriver* HardwareInterface::getHardwareDriver( const HardwareTypeIdentifier type, const uint8_t address ) const {
 	#ifdef DEBUG_HARDWARE_ENABLE
 		Serial.print(millis());
 		Serial.print(F(": HardwareInterface::getHardwareDriver() hwType="));
@@ -145,7 +145,7 @@ HardwareCommandResult* HardwareInterface::executeCommand(HardwareCommandResult* 
 	}
 }
 
-uint8_t HardwareInterface::getFreeResultIndex() {
+uint8_t HardwareInterface::getFreeResultIndex() const {
 	for(uint8_t i = 0; i < resultSetSize; i++) {
 		if(!resultSetInUse[i])
 			return i;

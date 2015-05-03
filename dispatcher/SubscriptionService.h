@@ -47,7 +47,7 @@ class SubscriptionService {
 		 * @param remote address
 		 * @param application layer packet
 		 */
-		boolean handleRequest(EventCallbackInterface* callback, seq_t seq, packet_type_application_t type, l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
+		boolean handleRequest(EventCallbackInterface* callback, const seq_t seq, const packet_type_application_t type, const l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
 			if(callback == NULL || appPacket == NULL)
 				return false;
 
@@ -63,7 +63,7 @@ class SubscriptionService {
 
 		/**
 		 * set reference for hardware drivers
-		 * @param interface
+		 * @param hwinterface
 		 */
 		void setHardwareInterface(HardwareInterface* hwinterface) {
 			this->hwinterface = hwinterface;
@@ -71,7 +71,7 @@ class SubscriptionService {
 
 		/**
 		 * set reference for command handler
-		 * @param interface
+		 * @param handler
 		 */
 		void setCommandHandler(CommandHandler* handler) {
 			this->commandHandler = handler;
@@ -79,7 +79,7 @@ class SubscriptionService {
 
 		/**
 		 * set reference for networking - used for networking callback.
-		 * @param netowrk
+		 * @param networking
 		 */
 		void setNetworking(Layer3* networking) {
 			this->networking = networking;
@@ -101,7 +101,7 @@ class SubscriptionService {
 		 * get size of internal list
 		 * @return size
 		 */
-		inline static uint8_t getSubscriptionListeSize() {
+		const static uint8_t getSubscriptionListSize() {
 			return numSubscriptionList;
 		}
 
@@ -128,7 +128,7 @@ class SubscriptionService {
 		 * @param buffer len
 		 * @return num subscriptions
 		 */
-		uint8_t getSubscriptionInfos(l3_address_t forAddress, subscription_helper_struct* buffer, uint8_t buffer_len) {
+		uint8_t getSubscriptionInfos(l3_address_t forAddress, subscription_helper_struct* buffer, uint8_t buffer_len) const {
 			//sanity check.
 			if(buffer == NULL || buffer_len < sizeof(subscriptions)) {
 				return 0;
@@ -155,7 +155,7 @@ class SubscriptionService {
 		 * in case no subscription exists, it is added
 		 * in case a subsciption exists, it is updated
 		 * a deletion is performaned in case of onError=0 (no trigger) and a delay of 0ms
-		 * @param helper
+		 * @param s
 		 * @return success
 		 */
 		boolean setSubscription(subscription_helper_t* s) {
@@ -250,14 +250,14 @@ class SubscriptionService {
 		 * @param applayer packet (is being changed)
 		 * @return success
 		 */
-		boolean handleSubscriptionInfoRequest(EventCallbackInterface* callback, seq_t seq, packet_type_application_t type, l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
+		boolean handleSubscriptionInfoRequest(EventCallbackInterface* callback, seq_t seq, packet_type_application_t type, l3_address_t remote, packet_application_numbered_cmd_t* appPacket) const {
 			if(appPacket == NULL || callback == NULL)
 				return false;
 
 			subscription_info_t* subscriptionInfo = (subscription_info_t*) appPacket->payload;
 
 			//create buffer for info
-			subscription_helper_t buffer[getSubscriptionListeSize()];
+			subscription_helper_t buffer[getSubscriptionListSize()];
 			memset(buffer, 0, sizeof(buffer));
 
 			uint8_t num = getSubscriptionInfos(subscriptionInfo->forAddress, buffer, sizeof(buffer));
@@ -294,7 +294,7 @@ class SubscriptionService {
 		 * @param applayer packet (is being changed)
 		 * @return success
 		 */
-		boolean handleSubscriptionRequest(EventCallbackInterface* callback, seq_t seq, packet_type_application_t type, l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
+		boolean handleSubscriptionRequest(EventCallbackInterface* callback, const seq_t seq, const packet_type_application_t type, const l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
 			if(appPacket == NULL || callback == NULL)
 				return false;
 
@@ -321,7 +321,7 @@ class SubscriptionService {
 		 * @param parameters
 		 * @param success
 		 */
-		boolean executeSubscription(subscription_helper_t* subscription) {
+		boolean executeSubscription(const subscription_helper_t* subscription) {
 			if(networking == NULL || subscription == NULL || commandHandler == NULL)
 				return false;
 

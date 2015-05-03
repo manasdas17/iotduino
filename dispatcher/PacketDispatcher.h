@@ -108,7 +108,7 @@ class PacketDispatcher {
 		 * @param l3 network packet
 		 * @return success
 		 */
-		boolean handleUnNumberedFromNetwork( Layer3::packet_t packet ) {
+		boolean handleUnNumberedFromNetwork( Layer3::packet_t packet ) const {
 			packet_unnumbered_t* unnumbered = (packet_unnumbered_t*) packet.data.payload;
 			packet_application_unnumbered_cmd_t* appPacket = (packet_application_unnumbered_cmd_t*) unnumbered->payload;
 
@@ -127,7 +127,7 @@ class PacketDispatcher {
 		 * @param actual application packet
 		 * @return success
 		 */
-		boolean handleNumbered( seq_t seq, packet_type_application_t type, l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
+		boolean handleNumbered( const seq_t seq, const packet_type_application_t type, const l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
 			switch(type) {
 				case HARDWARE_COMMAND_READ:
 				case HARDWARE_COMMAND_WRITE:
@@ -158,7 +158,7 @@ class PacketDispatcher {
 		 * @param actual application packet
 		 * @return success
 		 */
-		boolean handleUnNumbered( packet_type_application_t type, l3_address_t remote, packet_application_unnumbered_cmd_t* appPacket) {
+		boolean handleUnNumbered( const packet_type_application_t type, const l3_address_t remote, packet_application_unnumbered_cmd_t* appPacket) const {
 			switch(type) {
 				default:
 					return false;
