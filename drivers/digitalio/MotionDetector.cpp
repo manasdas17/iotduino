@@ -5,41 +5,12 @@
 //  @ Project : Untitled
 //  @ File Name : MotionDetector.cpp
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
 
 #include "../../interfaces/input/MotionDetector.h"
-
-boolean MotionDetector::read() {
-	uint8_t pin = getPIN();
-	pinMode(pin, getPullUp());
-	boolean val = digitalRead(pin);
-
-	updateTimes(val);
-
-	return val;
-}
-
-
-void MotionDetector::updateTimes(boolean val) {
-	uint32_t t = millis();
-	timestampLastRead = t;
-
-	if(timestampLastLow > t) {
-		timestampLastLow = 0;
-	}
-	if(timestampLastHigh > t) {
-		timestampLastLow = 0;
-	}
-
-	if(val == false) {
-		timestampLastLow = t;
-	} else {
-		timestampLastHigh = t;
-	}
-}
 
 boolean MotionDetector::implementsInterface( HardwareTypeIdentifier type ) {
 	if(type == HWType_motion)
@@ -52,36 +23,9 @@ boolean MotionDetector::readVal( HardwareTypeIdentifier type, HardwareCommandRes
 		result->setUintListNum(1);
 		boolean val = read();
 		result->getUintList()[0] = val;
-		
-		uint32_t diffSeconds = 0;
-		if(val == true) {
-			//signal is high, we want to know when it last was LOW
-			diffSeconds = (timestampLastRead - timestampLastLow) / 1000;
-		} else {
-			//signal is low, we want to know when it last was HIGH
-			diffSeconds = (timestampLastRead - timestampLastHigh) / 1000;
-		}
-
-		//lsb first
-		result->getUintList()[1] = diffSeconds & 0xff;
-		result->getUintList()[2] = diffSeconds >> 8 & 0xff;
-		result->getUintList()[3] = diffSeconds >> 16 & 0xff;
-		result->getUintList()[4] = diffSeconds >> 24 & 0xff;
 
 		return true;
 	}
 
-	return false;
-}
-
-boolean MotionDetector::hasPollResult() {
-		read();
-
-		updatePollingTime();
-
-		return false;
-}
-
-boolean MotionDetector::getPollResult( HardwareCommandResult* result ) {
 	return false;
 }
