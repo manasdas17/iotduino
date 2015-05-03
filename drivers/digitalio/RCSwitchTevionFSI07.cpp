@@ -5,7 +5,7 @@
 //  @ Project : Untitled
 //  @ File Name : RCSwitch.cpp
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
@@ -85,10 +85,10 @@ boolean RCSwitchTevionFSI07::implementsInterface( HardwareTypeIdentifier type ) 
 
 boolean RCSwitchTevionFSI07::writeVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) {
 	if(implementsInterface(type) && result != NULL && result->getUintListNum() > 1) {
-		
+
 		uint8_t switchNumber = result->getUintList()[0];
 		uint8_t action = result->getUintList()[1];
-		
+
 		switch(switchNumber) {
 			case 1:
 				if(action == 1)
@@ -131,6 +131,6 @@ boolean RCSwitchTevionFSI07::writeVal( HardwareTypeIdentifier type, HardwareComm
 }
 
 HardwareTypeIdentifier* RCSwitchTevionFSI07::getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
-	this->getImplementedInterfaces(arr, maxLen);
+	DigitalIO::getImplementedInterfaces(arr, maxLen);
 	return this->addImplementedInterface(arr, maxLen, HWType_rcswitch);
 }
