@@ -81,8 +81,11 @@ class PacketDispatcher {
 				}
 			}
 
-			//subscriptions
+			////subscriptions
+			//actual timed subscriptions
 			subscriptionService.executeSubscriptions();
+			//event detection
+			subscriptionService.doPollingForSubscriptions();
 		}
 
 		/**
