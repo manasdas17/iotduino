@@ -62,14 +62,14 @@ private:
   uint16_t spi_speed; /**< SPI Bus Speed */
   uint8_t spi_rxbuff[32+1] ; //SPI receive buffer (payload max 32 bytes)
   uint8_t spi_txbuff[32+1] ; //SPI transmit buffer (payload max 32 bytes + 1 byte for the command)
-#endif  
+#endif
   bool p_variant; /* False for RF24L01 and true for RF24L01P */
   uint8_t payload_size; /**< Fixed size of payloads */
   bool dynamic_payloads_enabled; /**< Whether dynamic payloads are enabled. */
   uint8_t pipe0_reading_address[5]; /**< Last address set on pipe 0 for reading. */
   uint8_t addr_width; /**< The address width to use - 3,4 or 5 bytes. */
   uint32_t txRxDelay; /**< Var for adjusting delays depending on datarate */
-  
+
 public:
 
   /**
@@ -90,7 +90,7 @@ public:
    */
   RF24(uint8_t _cepin, uint8_t _cspin);
   //#if defined (RF24_LINUX)
-  
+
     /**
   * Raspberry Pi Constructor
   *
@@ -101,12 +101,12 @@ public:
   * @param _cspin The pin attached to Chip Select
   * @param spispeed For RPi, the SPI speed in MHZ ie: BCM2835_SPI_SPEED_8MHZ
   */
-  
+
   RF24(uint8_t _cepin, uint8_t _cspin, uint32_t spispeed );
   //#endif
   /**
    * Begin operation of the chip
-   * 
+   *
    * Call this in setup(), before calling any other methods.
    * @code radio.begin() @endcode
    */
@@ -115,13 +115,13 @@ public:
   /**
    * Start listening on the pipes opened for reading.
    *
-   * 1. Be sure to call openReadingPipe() first.  
+   * 1. Be sure to call openReadingPipe() first.
    * 2. Do not call write() while in this mode, without first calling stopListening().
-   * 3. Call available() to check for incoming traffic, and read() to get it. 
-   *  
+   * 3. Call available() to check for incoming traffic, and read() to get it.
+   *
    * @code
    * Open reading pipe 1 using address CCCECCCECC
-   *  
+   *
    * byte address[] = { 0xCC,0xCE,0xCC,0xCE,0xCC };
    * radio.openReadingPipe(1,address);
    * radio.startListening();
@@ -236,7 +236,7 @@ s   *
    * @see openWritingPipe
    * @see setAddressWidth
    *
-   * @note Pipes 0 and 1 will store a full 5-byte address. Pipes 2-5 will technically 
+   * @note Pipes 0 and 1 will store a full 5-byte address. Pipes 2-5 will technically
    * only store a single byte, borrowing up to 4 additional bytes from pipe #1 per the
    * assigned address width.
    * @warning Pipes 1-5 should share the same address, except the first byte.
@@ -283,10 +283,10 @@ s   *
 
   /**
    * Test whether there are bytes available to be read in the
-   * FIFO buffers. 
+   * FIFO buffers.
    *
    * @param[out] pipe_num Which pipe has the payload available
-   *  
+   *
    * @code
    * uint8_t pipeNum;
    * if(radio.available(&pipeNum)){
@@ -314,7 +314,7 @@ s   *
    * at max PA level.
    * During active transmission, the radio will consume about 11.5mA, but this will
    * be reduced to 26uA (.026mA) between sending.
-   * In full powerDown mode, the radio will consume approximately 900nA (.0009mA)   
+   * In full powerDown mode, the radio will consume approximately 900nA (.0009mA)
    *
    * @code
    * radio.powerDown();
@@ -326,9 +326,9 @@ s   *
 
   /**
    * Leave low-power mode - required for normal radio operation after calling powerDown()
-   * 
+   *
    * To return to low power mode, call powerDown().
-   * @note This will take up to 5ms for maximum compatibility 
+   * @note This will take up to 5ms for maximum compatibility
    */
   void powerUp(void) ;
 
@@ -647,7 +647,7 @@ s   *
   * @param rx_ready Mask payload received interrupts
   */
   void maskIRQ(bool tx_ok,bool tx_fail,bool rx_ready);
-  
+
   /**
   * Set the address width from 3 to 5 bytes (24, 32 or 40 bit)
   *
@@ -656,14 +656,14 @@ s   *
 
   void setAddressWidth(uint8_t a_width);
 
-  
+
    /**
    * Close a pipe after it has been previously opened.
    * Can be safely called without having previously opened a pipe.
    * @param pipe Which pipe # to close, 0-5.
    */
   void closeReadingPipe( uint8_t pipe ) ;
-  
+
   /**@}*/
 
   /**@}*/
@@ -727,7 +727,7 @@ s   *
    * if(radio.available()){
    *   if(radio.getDynamicPayloadSize() < 1){
    *     // Corrupt payload has been flushed
-   *     return; 
+   *     return;
    *   }
    *   radio.read(&data,sizeof(data));
    * }
@@ -846,19 +846,19 @@ s   *
    * @warning CRC cannot be disabled if auto-ack/ESB is enabled.
    */
   void disableCRC( void ) ;
-  
+
    /**
    * Enable error detection by un-commenting #define FAILURE_HANDLING in RF24_config.h
    * If a failure has been detected, it usually indicates a hardware issue. By default the library
-   * will cease operation when a failure is detected.  
-   * This should allow advanced users to detect and resolve intermittent hardware issues.  
-   *   
+   * will cease operation when a failure is detected.
+   * This should allow advanced users to detect and resolve intermittent hardware issues.
+   *
    * In most cases, the radio must be re-enabled via radio.begin(); and the appropriate settings
    * applied after a failure occurs, if wanting to re-enable the device immediately.
-   * 
+   *
    * Usage: (Failure handling must be enabled per above)
    *  @code
-   *  if(radio.failureDetected){ 
+   *  if(radio.failureDetected){
    *    radio.begin();                       // Attempt to re-configure the radio with defaults
    *    radio.failureDetected = 0;           // Reset the detection value
    *	radio.openWritingPipe(addresses[1]); // Re-configure pipe addresses
@@ -868,10 +868,10 @@ s   *
    * @endcode
   */
   //#if defined (FAILURE_HANDLING)
-    bool failureDetected; 
+    bool failureDetected;
   //#endif
-  
-  
+
+
   /**@}*/
   /**
    * @name Deprecated
@@ -1077,273 +1077,14 @@ private:
    */
 
   uint8_t spiTrans(uint8_t cmd);
-  
+
   #if defined (FAILURE_HANDLING) || defined (RF24_LINUX)
 	void errNotify(void);
   #endif
-  
+
   /**@}*/
 
 };
-
-/**
- * @example GettingStarted.ino
- * <b>For Arduino</b><br>
- * <b>Updated: TMRh20 2014 </b><br>
- *
- * This is an example of how to use the RF24 class to communicate on a basic level. Configure and write this sketch to two
- * different nodes. Put one of the nodes into 'transmit' mode by connecting with the serial monitor and <br>
- * sending a 'T'. The ping node sends the current time to the pong node, which responds by sending the value
- * back. The ping node can then see how long the whole cycle took. <br>
- * @note For a more efficient call-response scenario see the GettingStarted_CallResponse.ino example.
- * @note When switching between sketches, the radio may need to be powered down to clear settings that are not "un-set" otherwise
- */
-
- /**
- * @example GettingStarted.cpp
- * <b>For Raspberry Pi</b><br>
- * <b>Updated: TMRh20 2014 </b><br>
- *
- * This is an example of how to use the RF24 class to communicate on a basic level. Configure and write this sketch to two
- * different nodes. Put one of the nodes into 'transmit' mode by connecting with the serial monitor and <br>
- * sending a 'T'. The ping node sends the current time to the pong node, which responds by sending the value
- * back. The ping node can then see how long the whole cycle took. <br>
- * @note For a more efficient call-response scenario see the GettingStarted_CallResponse.ino example.
- */
- 
-/**
- * @example GettingStarted_CallResponse.ino
- * <b>For Arduino</b><br>
- * <b>New: TMRh20 2014</b><br>
- *
- * This example continues to make use of all the normal functionality of the radios including
- * the auto-ack and auto-retry features, but allows ack-payloads to be written optionlly as well. <br>
- * This allows very fast call-response communication, with the responding radio never having to
- * switch out of Primary Receiver mode to send back a payload, but having the option to switch to <br>
- * primary transmitter if wanting to initiate communication instead of respond to a commmunication.
- */
- 
- /**
- * @example GettingStarted_CallResponse.cpp
- * <b>For Raspberry Pi</b><br>
- * <b>New: TMRh20 2014</b><br>
- *
- * This example continues to make use of all the normal functionality of the radios including
- * the auto-ack and auto-retry features, but allows ack-payloads to be written optionlly as well. <br>
- * This allows very fast call-response communication, with the responding radio never having to
- * switch out of Primary Receiver mode to send back a payload, but having the option to switch to <br>
- * primary transmitter if wanting to initiate communication instead of respond to a commmunication.
- */
-
- /**
- * @example GettingStarted_HandlingData.ino
- * <b>Dec 2014 - TMRh20</b><br>
- *
- * This example demonstrates how to send multiple variables in a single payload and work with data. As usual, it is
- * generally important to include an incrementing value like millis() in the payloads to prevent errors.
- */
- 
-/**
- * @example Transfer.ino
- * <b>For Arduino</b><br>
- * This example demonstrates half-rate transfer using the FIFO buffers<br>
- *
- * It is an example of how to use the RF24 class.  Write this sketch to two
- * different nodes.  Put one of the nodes into 'transmit' mode by connecting <br>
- * with the serial monitor and sending a 'T'.  The data transfer will begin,
- * with the receiver displaying the payload count. (32Byte Payloads) <br>
- */
- 
- /**
- * @example Transfer.cpp
- * <b>For Raspberry Pi</b><br>
- * This example demonstrates half-rate transfer using the FIFO buffers<br>
- *
- * It is an example of how to use the RF24 class.  Write this sketch to two
- * different nodes.  Put one of the nodes into 'transmit' mode by connecting <br>
- * with the serial monitor and sending a 'T'.  The data transfer will begin,
- * with the receiver displaying the payload count. (32Byte Payloads) <br>
- */
-
-/**
- * @example TransferTimeouts.ino
- * <b>New: TMRh20 </b><br>
- * This example demonstrates the use of and extended timeout period and
- * auto-retries/auto-reUse to increase reliability in noisy or low signal scenarios. <br>
- *
- * Write this sketch to two different nodes.  Put one of the nodes into 'transmit'
- * mode by connecting with the serial monitor and sending a 'T'.  The data <br>
- * transfer will begin, with the receiver displaying the payload count and the
- * data transfer rate.
- */
-
-/**
- * @example starping.pde
- *
- * This sketch is a more complex example of using the RF24 library for Arduino.
- * Deploy this on up to six nodes.  Set one as the 'pong receiver' by tying the
- * role_pin low, and the others will be 'ping transmit' units.  The ping units
- * unit will send out the value of millis() once a second.  The pong unit will
- * respond back with a copy of the value.  Each ping unit can get that response
- * back, and determine how long the whole cycle took.
- *
- * This example requires a bit more complexity to determine which unit is which.
- * The pong receiver is identified by having its role_pin tied to ground.
- * The ping senders are further differentiated by a byte in eeprom.
- */
-
-/**
- * @example pingpair_ack.ino
- * <b>Update: TMRh20</b><br>
- * This example continues to make use of all the normal functionality of the radios including
- * the auto-ack and auto-retry features, but allows ack-payloads to be written optionlly as well.<br>
- * This allows very fast call-response communication, with the responding radio never having to
- * switch out of Primary Receiver mode to send back a payload, but having the option to if wanting<br>
- * to initiate communication instead of respond to a commmunication.
- */
-
-/**
- * @example pingpair_irq.ino
- * <b>Update: TMRh20</b><br>
- * This is an example of how to user interrupts to interact with the radio, and a demonstration
- * of how to use them to sleep when receiving, and not miss any payloads.<br>
- * The pingpair_sleepy example expands on sleep functionality with a timed sleep option for the transmitter.
- * Sleep functionality is built directly into my fork of the RF24Network library<br>
- */
-
- /**
- * @example pingpair_irq_simple.ino
- * <b>Dec 2014 - TMRh20</b><br>
- * This is an example of how to user interrupts to interact with the radio, with bidirectional communication.
- */
- 
-/**
- * @example pingpair_sleepy.ino
- * <b>Update: TMRh20</b><br>
- * This is an example of how to use the RF24 class to create a battery-
- * efficient system.  It is just like the GettingStarted_CallResponse example, but the<br>
- * ping node powers down the radio and sleeps the MCU after every
- * ping/pong cycle, and the receiver sleeps between payloads. <br>
- */
-
- /**
- * @example rf24ping85.ino
- * <b>New: Contributed by https://github.com/tong67</b><br>
- * This is an example of how to use the RF24 class to communicate with ATtiny85 and other node. <br>
- */
- 
- /**
- * @example timingSearch3pin.ino
- * <b>New: Contributed by https://github.com/tong67</b><br>
- * This is an example of how to determine the correct timing for ATtiny when using only 3-pins
- */
-  
-/**
- * @example pingpair_dyn.ino
- *
- * This is an example of how to use payloads of a varying (dynamic) size on Arduino.
- */
- 
- /**
- * @example pingpair_dyn.cpp
- *
- * This is an example of how to use payloads of a varying (dynamic) size on Raspberry Pi.
- */
-
-/**
- * @example pingpair_dyn.py
- *
- * This is a python example for RPi of how to use payloads of a varying (dynamic) size.
- */ 
- 
-/**
- * @example pingpair_dyn.ino
- *
- * This is an example of how to use payloads of a varying (dynamic) size.
- */
- 
- /**
- * @example pingpair_dyn.ino
- *
- * This is an example of how to use payloads of a varying (dynamic) size.
- */
-
-/**
- * @example scanner.ino
- *
- * Example to detect interference on the various channels available.
- * This is a good diagnostic tool to check whether you're picking a
- * good channel for your application.
- *
- * Inspired by cpixip.
- * See http://arduino.cc/forum/index.php/topic,54795.0.html
- */
-
-/**
- * @mainpage Optimized High Speed Driver for nRF24L01(+) 2.4GHz Wireless Transceiver
- *
- * @section Goals Design Goals
- *
- * This library fork is designed to be...
- * @li More compliant with the manufacturer specified operation of the chip, while allowing advanced users
- * to work outside the recommended operation.
- * @li Utilize the capabilities of the radio to their full potential via Arduino
- * @li More reliable, responsive, bug-free and feature rich
- * @li Easy for beginners to use, with well documented examples and features
- * @li Consumed with a public interface that's similiar to other Arduino standard libraries
- *
- * @section News News
- *
- * <b>Dec 2014 </b><br>
- * - New: Intel Galileo now supported
- * - New: Python wrapper for RPi included
- * - Documentation updated
- * - Example files have been updated
- * - See the links below and class documentation for more info.
- *
- * If issues are discovered with the documentation, please report them <a href="https://github.com/TMRh20/tmrh20.github.io/issues"> here</a>
- * @section Useful Useful References
- *
- * Please refer to:
- *
- * @li <a href="http://tmrh20.github.io/RF24/classRF24.html"><b>RF24</b> Class Documentation</a>
- * @li <a href="https://github.com/TMRh20/RF24/archive/master.zip"><b>Download</b></a>
- * @li <a href="http://tmrh20.blogspot.com/2014/03/high-speed-data-transfers-and-wireless.html"><b>My Blog:</b> RF24 Optimization Overview</a>
- * @li <a href="http://tmrh20.github.io/RF24Network"> <b>RF24Network:</b> OSI Network Layer for multi-device communication. Create a home sensor network.</a>
- * @li <a href="http://tmrh20.github.io/RF24Mesh"> <b>RF24Mesh:</b> Dynamic Mesh Layer for RF24Network</a>
- * @li <a href="http://tmrh20.github.io/RF24Ethernet"> <b>RF24Ethernet:</b> TCP/IP over RF24Network </a>
- * @li <a href="http://tmrh20.github.io/RF24Audio"> <b>RF24Audio:</b> Realtime Wireless Audio streaming</a>
- * @li <a href="https://github.com/tmrh20/RF24/"><b>Source Code</b></a>
- * @li <a href="http://www.nordicsemi.com/files/Product/data_sheet/nRF24L01_Product_Specification_v2_0.pdf">Chip Datasheet</a>
- * @li <a href="http://tmrh20.github.io/">All TMRh20 Documentation Main Page</a>
- * @li <a href="https://github.com/maniacbug/RF24">Original Library</a>
- *
- * This chip uses the SPI bus, plus two chip control pins.  Remember that pin 10 must still remain an output, or
- * the SPI hardware will go into 'slave' mode.
- *
- * @section Board_Support Board Support
- *
- * Most standard Arduino based boards are supported:
- * - ATMega 328 based boards (Uno, Nano, etc)
- * - Mega Boards (1280, 2560, etc)
- * - Arduino Due: Must use one of the hardware SS/CSN pins as extended SPI methods are used.
- *  Initial Due support taken from https://github.com/mcrosson/RF24/tree/due
- * - Intel Galileo support
- * - ATTiny board support initially added from https://github.com/jscrane/RF24
- * Note: ATTiny support is built into the library. Do not include SPI.h. <br>
- * See the included examples for more info on using ATTiny with RF24 <br>
- * See https://github.com/TCWORLD/ATTinyCore/tree/master/PCREL%20Patch%20for%20GCC for ATTiny patch
- * - Raspberry Pi Support: See the readme at https://github.com/TMRh20/RF24/tree/master/RPi/RF24
- * - A python wrapper is also available for RPi: https://github.com/TMRh20/RF24/tree/master/RPi/pyRF24
- *
- * @section More More Information
- *
- * @section Info and Projects
- *
- * @li <a href="http://TMRh20.blogspot.com"> Project Blog: TMRh20.blogspot.com </a>
- * @li <a href="https://github.com/maniacbug/RF24"> ManiacBug on GitHub (Original Library Author)</a>
- */
-
 #endif // __RF24_H__
 
 
