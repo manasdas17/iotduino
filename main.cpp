@@ -122,7 +122,7 @@ void testSubscriptionSet(DHT11* dht11, PacketDispatcher* dispatcher) {
 	cmdSubscription.info.hardwareType = HWType_temprature;
 	cmdSubscription.info.millisecondsDelay = 1347;
 	cmdSubscription.info.sequence = 1337;
-	cmdSubscription.info.onEvent = 1;
+	cmdSubscription.info.onEventType = EVENT_TYPE_DISABLED;
 
 	packet_application_numbered_cmd_t appCmd3;
 	memset(&appCmd3, 0, sizeof(appCmd3));

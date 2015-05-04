@@ -45,7 +45,7 @@ class SubscriptionService {
 		void doPollingForSubscriptions() {
 			for(uint8_t i = 0; i < getSubscriptionListSize(); i++) {
 				//is this an event subscription?
-				if(subscriptions[i].onEvent == 1) {
+				if(subscriptions[i].onEventType != EVENT_TYPE_DISABLED) {
 					//get driver
 					HardwareDriver* drv = hwinterface->getHardwareDriver((HardwareTypeIdentifier) subscriptions[i].hardwareType, subscriptions[i].hardwareAddress);
 
@@ -192,7 +192,7 @@ class SubscriptionService {
 				return false;
 
 			//we do not want any update and this subscription has no event trigger
-			if(s->millisecondsDelay == 0 && s->onEvent == false) {
+			if(s->millisecondsDelay == 0 && s->onEventType == EVENT_TYPE_DISABLED) {
 				return deleteSubscription(s);
 			}
 

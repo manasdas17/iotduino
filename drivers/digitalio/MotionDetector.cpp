@@ -64,10 +64,13 @@ uint32_t MotionDetector::checkForEvent(subscription_event_type_t type) {
 			break;
 
 		case EVENT_TYPE_CHANGE:
-		default:
 			if(last->getUintList()[0] != newReading.getUintList()[0]) {
 				eventDetected = true;
 			}
+			break;
+		case EVENT_TYPE_DISABLED:
+		default:
+			break;
 	}
 
 	if(eventDetected) {
