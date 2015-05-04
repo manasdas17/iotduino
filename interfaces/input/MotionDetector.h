@@ -38,7 +38,7 @@ class MotionDetector : public DigitalIO {
 		}
 
 		virtual boolean canDetectEvents();
-		virtual uint32_t checkForEvent();
+		virtual uint32_t checkForEvent(subscription_event_type_t type);
 
 	private:
 		virtual boolean writeVal(HardwareTypeIdentifier type, HardwareCommandResult* result) {

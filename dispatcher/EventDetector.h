@@ -63,7 +63,7 @@ class EventDetector {
 		/**
 		 * @return true in case of event, false otherwise
 		 */
-		virtual uint32_t checkForEvent() {
+		virtual uint32_t checkForEvent(subscription_event_type_t type) {
 			return 0;
 		}
 };

@@ -54,7 +54,7 @@ class SubscriptionService {
 						continue;
 
 					//check for new event
-					uint32_t t = drv->checkForEvent();
+					uint32_t t = drv->checkForEvent(subscriptions[i].onEventType);
 
 					//did we detect an event? - execute subscription
 					if(t > 0 && t - subscriptions[i].onEventBlackout > subscriptionsLastExecution[i]) {

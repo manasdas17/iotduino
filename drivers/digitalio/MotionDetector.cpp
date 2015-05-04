@@ -34,7 +34,7 @@ boolean MotionDetector::canDetectEvents() {
 	return true;
 }
 
-uint32_t MotionDetector::checkForEvent() {
+uint32_t MotionDetector::checkForEvent(subscription_event_type_t type) {
 	//get old data
 	HardwareCommandResult* last = this->getLastResult();
 	const uint32_t lastT = this->getLastResultTimestamp();
@@ -49,7 +49,28 @@ uint32_t MotionDetector::checkForEvent() {
 		return 0;
 
 	//detect event
-	if(last->getUintList()[0] != newReading.getUintList()[0]) {
+	boolean eventDetected = false;
+	switch(type) {
+		case EVENT_TYPE_EDGE_FALLING:
+			if(last->getUintList()[0] > newReading.getUintList()[0]) {
+				eventDetected = true;
+			}
+			break;
+
+		case EVENT_TYPE_EDGE_RISING:
+			if(last->getUintList()[0] < newReading.getUintList()[0]) {
+				eventDetected = true;
+			}
+			break;
+
+		case EVENT_TYPE_CHANGE:
+		default:
+			if(last->getUintList()[0] != newReading.getUintList()[0]) {
+				eventDetected = true;
+			}
+	}
+
+	if(eventDetected) {
 		this->updateResult(&newReading);
 		return lastT;
 	}

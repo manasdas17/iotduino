@@ -116,6 +116,8 @@ typedef struct discoveryInfo_struct {
 } packet_application_numbered_discovery_info_t;
 
 //subscriptions
+enum subscription_event_type_t {EVENT_TYPE_CHANGE = 0, EVENT_TYPE_EDGE_RISING, EVENT_TYPE_EDGE_FALLING};
+
 typedef struct subscription_helper_struct {
 	l3_address_t address;
 	uint8_t hardwareAddress;
@@ -123,6 +125,7 @@ typedef struct subscription_helper_struct {
 	uint32_t millisecondsDelay;
 	uint8_t onEvent;
 	uint16_t onEventBlackout;
+	subscription_event_type_t onEventType;
 	seq_t sequence;
 } subscription_helper_t;
 
