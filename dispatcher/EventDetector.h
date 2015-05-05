@@ -66,6 +66,50 @@ class EventDetector {
 		virtual uint32_t checkForEvent(subscription_event_type_t type) {
 			return 0;
 		}
+
+		/**
+		 * check for an event of a uint8
+		 * the logic should be quite similar for all hardware, thus it is put here.
+		 * @param val_old
+		 * @param val_new
+		 * @param type
+		 * @return eventDetected
+		 */
+		template<typename T>
+		const static subscription_event_type_t checkForEvent(T val_old, T val_new) {
+			if(val_old > val_new) {
+				return EVENT_TYPE_EDGE_FALLING;
+			}
+
+			if(val_old < val_new) {
+				return EVENT_TYPE_EDGE_RISING;
+			}
+
+			return EVENT_TYPE_DISABLED;
+		}
+
+		/**
+		 * check is an event has a certain type
+		 * this includes type CHANGE which is are more generic typ of EDGE_RISING and EDGE_FALLING
+		 * @param type detected event
+		 * @param reference event for comparison
+		 * @return
+		 */
+		const static boolean isEvent(subscription_event_type_t type, subscription_event_type_t reference) {
+			if(reference == type) {
+				return true;
+			}
+
+			if(reference == EVENT_TYPE_CHANGE && type == EVENT_TYPE_EDGE_RISING) {
+				return true;
+			}
+
+			if(reference == EVENT_TYPE_CHANGE && type == EVENT_TYPE_EDGE_FALLING) {
+				return true;
+			}
+
+			return false;
+		}
 };
 
 

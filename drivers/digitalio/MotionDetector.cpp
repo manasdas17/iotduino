@@ -41,40 +41,15 @@ uint32_t MotionDetector::checkForEvent(subscription_event_type_t type) {
 
 	//setup temporary new values
 	HardwareCommandResult newReading;
-	newReading.setAddress(getAddress());
-	newReading.setHardwareType(HWType_motion);
 
 	//read data
 	if(!readVal(HWType_motion, &newReading))
 		return 0;
 
 	//detect event
-	boolean eventDetected = false;
-	switch(type) {
-		case EVENT_TYPE_EDGE_FALLING:
-			if(last->getUintList()[0] > newReading.getUintList()[0]) {
-				eventDetected = true;
-			}
-			break;
+	subscription_event_type_t eventDetected = EventDetector::checkForEvent(last->getUintList()[0], newReading.getUintList()[0]);
 
-		case EVENT_TYPE_EDGE_RISING:
-			if(last->getUintList()[0] < newReading.getUintList()[0]) {
-				eventDetected = true;
-			}
-			break;
-
-		case EVENT_TYPE_CHANGE:
-			if(last->getUintList()[0] != newReading.getUintList()[0]) {
-				eventDetected = true;
-			}
-			break;
-		case EVENT_TYPE_DISABLED:
-		default:
-			break;
-	}
-
-	if(eventDetected) {
-		this->updateResult(&newReading);
+	if(EventDetector::isEvent(type, eventDetected)) {
 		return lastT;
 	}
 

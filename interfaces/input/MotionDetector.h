@@ -21,10 +21,6 @@
 
 class MotionDetector : public DigitalIO {
 	public:
-		volatile uint32_t timestampLastLow;
-		volatile uint32_t timestampLastHigh;
-		volatile uint32_t timestampLastRead;
-
 		virtual boolean read() = 0;
 		virtual void read(HardwareCommandResult* hwresult)=0;
 
