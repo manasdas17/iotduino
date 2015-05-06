@@ -5,7 +5,7 @@
 //  @ Project : Untitled
 //  @ File Name : OutputDevice.h
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
@@ -14,7 +14,7 @@
 #define _OUTPUTDEVICE_H
 
 #include <Arduino.h>
-#include "../../HardwareDriver.h"
+#include <drivers/HardwareDriver.h>
 
 namespace inoutput {
 	class OutputDevice : public HardwareDriver {

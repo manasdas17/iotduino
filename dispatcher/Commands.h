@@ -11,7 +11,7 @@
 
 #include <Arduino.h>
 #include "networking/Packets.h"
-#include <HardwareID.h>
+#include <drivers/HardwareID.h>
 
 #define sizeFloatList 1
 #define sizeUInt8List 4

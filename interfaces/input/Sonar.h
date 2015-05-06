@@ -14,8 +14,8 @@
 #define _SONAR_H
 
 #include <Arduino.h>
-#include "../../drivers/i2c/I2C.h"
-#include "../../HardwareID.h"
+#include <drivers/i2c/I2C.h>
+#include <drivers/HardwareID.h>
 #include <dispatcher/Commands.h>
 
 

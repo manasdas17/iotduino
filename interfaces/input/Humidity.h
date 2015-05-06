@@ -3,7 +3,7 @@
  *
  * Created: 11.11.2014 22:11:44
  *  Author: helge
- */ 
+ */
 
 
 #ifndef HUMIDITY_H_
@@ -11,7 +11,7 @@
 
 
 #include <Arduino.h>
-#include "../../HardwareID.h"
+#include <drivers/HardwareID.h>
 #include <dispatcher/Commands.h>
 
 class Humidity {

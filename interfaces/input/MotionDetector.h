@@ -15,7 +15,7 @@
 
 #include <Arduino.h>
 #include <drivers/digitalio/DigitalIO.h>
-#include <HardwareID.h>
+#include <drivers/HardwareID.h>
 #include <dispatcher/Commands.h>
 
 

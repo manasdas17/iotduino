@@ -5,7 +5,7 @@
 //  @ Project : Untitled
 //  @ File Name : Switch.h
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
@@ -14,8 +14,8 @@
 #define _SWITCH_H
 
 #include <Arduino.h>
-#include "../../drivers/inoutput/InputDevice.h"
-#include "../../HardwareID.h"
+#include <drivers/inoutput/InputDevice.h>
+#include <drivers/HardwareID.h>
 #include <dispatcher/Commands.h>
 
 class Switch {

@@ -5,7 +5,7 @@
 //  @ Project : Untitled
 //  @ File Name : Temperature.h
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
@@ -14,8 +14,8 @@
 #define _TEMPERATURE_H
 
 #include <Arduino.h>
-#include "../../HardwareID.h"
-#include "../../HardwareDriver.h"
+#include <drivers/HardwareID.h>
+#include <drivers/HardwareDriver.h>
 #include <dispatcher/Commands.h>
 
 class Temperature {

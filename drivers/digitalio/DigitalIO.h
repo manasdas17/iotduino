@@ -5,7 +5,7 @@
 //  @ Project : Untitled
 //  @ File Name : DigitalIO.h
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
@@ -14,10 +14,10 @@
 #define _DIGITALIO_H
 
 #include <Arduino.h>
-#include "../../HardwareDriver.h"
-#include "../multiplex/Multiplexible.h"
-#include "../multiplex/NoMultiplex.h"
-#include "../multiplex/Multiplexed.h"
+#include <drivers/HardwareDriver.h>
+#include <drivers/multiplex/Multiplexible.h>
+#include <drivers/multiplex/NoMultiplex.h>
+#include <drivers/multiplex/Multiplexed.h>
 
 class DigitalIO : public HardwareDriver {
 	protected:

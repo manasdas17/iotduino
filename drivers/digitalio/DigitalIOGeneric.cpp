@@ -5,12 +5,12 @@
 //  @ Project : Untitled
 //  @ File Name : DigitalIOGeneric.cpp
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
 
-#include "../../interfaces/DigitalIOGeneric.h"
+#include <drivers/DigitalIOGeneric.h>
 
 boolean DigitalIOGeneric::read() {
 	uint8_t pin = this->getPIN();
@@ -52,17 +52,17 @@ boolean DigitalIOGeneric::readVal( HardwareTypeIdentifier type, HardwareCommandR
 	if(implementsInterface(type)) {
 		result->setUintListNum(1);
 		result->getUintList()[0] = read();
-		
+
 		return true;
 	}
-	
+
 	return false;
 }
 
 boolean DigitalIOGeneric::writeVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) {
 	if(implementsInterface(type) && result != NULL) {
 		uint8_t action = result->getUintList()[0];
-		
+
 		switch(action) {
 			case 0:
 				write(false);
@@ -78,7 +78,7 @@ boolean DigitalIOGeneric::writeVal( HardwareTypeIdentifier type, HardwareCommand
 		}
 		return true;
 	}
-	
+
 	return false;
 }
 

@@ -14,8 +14,8 @@
 #define _RELAY_H
 
 #include <Arduino.h>
-#include "HardwareID.h"
-#include "../DigitalIOGeneric.h"
+#include <drivers/HardwareID.h>
+#include <drivers/DigitalIOGeneric.h>
 
 class Relay : public DigitalIOGeneric {
 	public:

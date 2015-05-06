@@ -14,7 +14,7 @@
 #define _I2C_H
 
 #include <Arduino.h>
-#include "../../HardwareDriver.h"
+#include <drivers/HardwareDriver.h>
 #include <Wire.h>
 
 class I2C : public HardwareDriver {

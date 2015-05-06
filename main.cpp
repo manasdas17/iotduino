@@ -27,10 +27,10 @@ Layer3* l3;
 #include <interfaces/output/RCSwitchTevionFSI07.h>
 #include <interfaces/output/LED.h>
 
-#include <HardwareDriver.h>
-#include "dispatcher/HardwareInterface.h"
-#include "dispatcher/PacketDispatcher.h"
-#include <HardwareID.h>
+#include <drivers/HardwareDriver.h>
+#include <dispatcher/HardwareInterface.h>
+#include <dispatcher/PacketDispatcher.h>
+#include <drivers/HardwareID.h>
 
 
 

@@ -5,7 +5,7 @@
 //  @ Project : Untitled
 //  @ File Name : AnalogIOGeneric.h
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
@@ -14,8 +14,8 @@
 #define _ANALOGIOGENERIC_H
 
 #include <Arduino.h>
-#include "HardwareID.h"
-#include "../drivers/analogio/AnalogIO.h"
+#include <drivers/HardwareID.h>
+#include <drivers/analogio/AnalogIO.h>
 #include <dispatcher/Commands.h>
 
 #define CALIBRATION_MEASUREMENTS_NUM 5
@@ -23,16 +23,16 @@
 class AnalogIOGeneric : public AnalogIO {
 	protected:
 		uint8_t zeroVal;
-	
+
 	public:
 		AnalogIOGeneric(Multiplexible* pin) : AnalogIO(pin) {
 		}
 
 		AnalogIOGeneric(uint8_t pin) : AnalogIO(pin) {
 		}
-		
+
 		virtual boolean calibrateZero();
-		
+
 		virtual uint8_t read();
 		virtual void read(HardwareCommandResult* hwresult);
 		virtual int16_t readCalibrated();

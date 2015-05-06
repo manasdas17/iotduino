@@ -5,7 +5,7 @@
 //  @ Project : Untitled
 //  @ File Name : Ethernet.h
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
@@ -14,7 +14,7 @@
 #define _ETHERNET_H
 
 #include <Arduino.h>
-#include "HardwareDriver.h"
+#include <drivers/HardwareDriver.h>
 #include <IPAddress.h>
 
 namespace ethernet {

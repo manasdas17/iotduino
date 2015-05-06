@@ -5,7 +5,7 @@
 //  @ Project : Untitled
 //  @ File Name : InputDevice.h
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
@@ -14,7 +14,7 @@
 #define _INPUTDEVICE_H
 
 #include <Arduino.h>
-#include "../../HardwareDriver.h"
+#include <drivers/HardwareDriver.h>
 
 class InputDevice : public HardwareDriver {
 };

@@ -14,7 +14,7 @@
 #define _METHANE_H
 
 #include <Arduino.h>
-#include "../../interfaces/AnalogIOGeneric.h"
+#include <drivers/AnalogIOGeneric.h>
 
 class Methane : public AnalogIOGeneric {
 	public:

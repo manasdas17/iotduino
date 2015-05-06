@@ -10,8 +10,8 @@
 #define __HARDWAREINTERFACE_H__
 
 #include <Arduino.h>
-#include <HardwareDriver.h>
-#include <HardwareID.h>
+#include <drivers/HardwareDriver.h>
+#include <drivers/HardwareID.h>
 #include <dispatcher/Commands.h>
 #include "Commands.h"
 

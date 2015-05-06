@@ -14,8 +14,8 @@
 #define _RCSWITCH_H
 
 #include <Arduino.h>
-#include "HardwareID.h"
-#include "../../drivers/digitalio/DigitalIO.h"
+#include <drivers/HardwareID.h>
+#include <drivers/DigitalIOGeneric.h>
 
 class RCSwitchTevionFSI07 : public DigitalIO {
 	private:

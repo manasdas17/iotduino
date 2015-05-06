@@ -14,7 +14,7 @@
 #define _ACCELEROMETER_H
 
 #include <utils/Triple.h>
-#include "../../HardwareID.h"
+#include <drivers/HardwareID.h>
 #include <dispatcher/Commands.h>
 
 class Accelerometer {

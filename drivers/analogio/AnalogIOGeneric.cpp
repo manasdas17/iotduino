@@ -5,23 +5,23 @@
 //  @ Project : Untitled
 //  @ File Name : AnalogIOGeneric.cpp
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
 
-#include "../../interfaces/AnalogIOGeneric.h"
+#include <drivers/AnalogIOGeneric.h>
 
 uint8_t AnalogIOGeneric::read() {
 	uint8_t pin = getPIN();
 	pinMode(pin, INPUT);
-	
+
 	return analogRead(pin);
 }
-	
+
 void AnalogIOGeneric::write(uint8_t val) {
 	if(val > 0xff) val = 0xff;
-	
+
 	uint8_t pin = getPIN();
 	pinMode(pin, OUTPUT);
 	analogWrite(pin, val);
@@ -37,9 +37,9 @@ boolean AnalogIOGeneric::calibrateZero() {
 	for(uint8_t i = 0; i < CALIBRATION_MEASUREMENTS_NUM; i++) {
 		measurements += this->read();
 	}
-	
+
 	this->zeroVal = measurements / CALIBRATION_MEASUREMENTS_NUM;
-	
+
 	return true;
 }
 
@@ -55,7 +55,7 @@ boolean AnalogIOGeneric::readVal( HardwareTypeIdentifier type, HardwareCommandRe
 		result->getFloatList()[0] = readCalibrated();
 		return true;
 	}
-	
+
 	return false;
 }
 
@@ -63,9 +63,9 @@ boolean AnalogIOGeneric::writeVal( HardwareTypeIdentifier type, HardwareCommandR
 	if(type == HWType_ANALOG && result != NULL) {
 		uint8_t val = result->getUintList()[0];
 		write(val);
-		
+
 		return true;
 	}
-	
+
 	return false;
 }

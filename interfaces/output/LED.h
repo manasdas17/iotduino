@@ -14,8 +14,8 @@
 #define _LED_H
 
 #include <Arduino.h>
-#include "HardwareID.h"
-#include "../DigitalIOGeneric.h"
+#include <drivers/HardwareID.h>
+#include <drivers/DigitalIOGeneric.h>
 
 class LED : public DigitalIOGeneric {
 	public:

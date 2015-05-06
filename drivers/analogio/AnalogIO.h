@@ -5,7 +5,7 @@
 //  @ Project : Untitled
 //  @ File Name : AnalogIO.h
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
@@ -14,10 +14,10 @@
 #define _ANALOGIO_H
 
 #include <Arduino.h>
-#include "../../HardwareDriver.h"
-#include "../../HardwareID.h"
-#include "../multiplex/Multiplexible.h"
-#include "../multiplex/NoMultiplex.h"
+#include <drivers/HardwareDriver.h>
+#include <drivers/HardwareID.h>
+#include <drivers/multiplex/Multiplexible.h>
+#include <drivers/multiplex/NoMultiplex.h>
 
 class AnalogIO : public HardwareDriver {
 	protected:
