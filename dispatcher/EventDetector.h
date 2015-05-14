@@ -60,7 +60,7 @@ class EventDetector {
 				updateResult(newReading, type);
 				#ifdef DEBUG_HARDWARE_ENABLE
 					Serial.print(millis());
-					Serial.print(F(":EventDetector::CheckForEvent() eventTypeDetected="));
+					Serial.print(F(": EventDetector::CheckForEvent() eventTypeDetected="));
 					Serial.println(type);
 					Serial.flush();
 				#endif
@@ -80,7 +80,7 @@ class EventDetector {
 		 * actual event detection loop
 		 * @return detected event type
 		 */
-		subscription_event_type_t eventLoop() {
+		virtual subscription_event_type_t eventLoop() {
 			return EVENT_TYPE_DISABLED;
 		}
 

@@ -272,10 +272,11 @@ void setup() {
 	l3->setLayer2(l2);
 
 	////setupEventBus();
+	//pin, virtual hw-address
 	dht11 = new DHT11(17, 20);
 	rcsw = new RCSwitchTevionFSI07(14, 21);
 	led = new LED(30, 22);
-	motion = new MotionDetector(50, 12);
+	motion = new MotionDetector(12, 50);
 
 	hwInterface = new HardwareInterface();
 	hwInterface->registerDriver((HardwareDriver*) dht11);

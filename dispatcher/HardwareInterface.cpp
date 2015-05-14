@@ -69,8 +69,7 @@ HardwareDriver* HardwareInterface::getHardwareDriver( HardwareTypeIdentifier typ
 	for(uint8_t i = 0; i < driverPointerListSize; i++) {
 		if(driver[i] != NULL && driver[i]->implementsInterface(type)) {
 			#ifdef DEBUG_HARDWARE_ENABLE
-			Serial.print(millis());
-			Serial.print(F(": found! &drv="));
+			Serial.print(F("\tfound! &drv="));
 			Serial.println((uint16_t) &driver[i], HEX);
 			#endif
 
@@ -94,8 +93,7 @@ HardwareDriver* HardwareInterface::getHardwareDriver( const HardwareTypeIdentifi
 	for(uint8_t i = 0; i < driverPointerListSize; i++) {
 		if(driver[i] != NULL && driver[i]->getAddress() == address && driver[i]->implementsInterface(type)) {
 			#ifdef DEBUG_HARDWARE_ENABLE
-				Serial.print(millis());
-				Serial.print(F(": found! &drv="));
+				Serial.print(F("\tfound! &drv="));
 				Serial.println((uint16_t) &driver[i], HEX);
 			#endif
 

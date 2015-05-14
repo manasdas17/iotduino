@@ -76,13 +76,13 @@ class SubscriptionService {
 						drv->eventLoop();
 
 						//did we detect an event in last check period and does the event match? - execute subscription
-						if(now > SUBSCRIPTION_POLLING_CHECK_PERIOD_MILLIS
-							&& now - SUBSCRIPTION_POLLING_CHECK_PERIOD_MILLIS > drv->getLastEventTimestamp()
+						if(drv->getLastEventTimestamp() > 0
+							&& millis() - drv->getLastEventTimestamp() < SUBSCRIPTION_POLLING_CHECK_PERIOD_MILLIS * 1.5
 							&& drv->lastEventMatchesEventType(subscriptions[i].onEventType))
 						{
 							#ifdef DEBUG_HANDLER_ENABLE
-							Serial.print(millis());
-							Serial.println(F(":\tevent found, trigger subscription execution"));
+							Serial.print(F("\tevent found, trigger subscription execution, matchingType="));
+							Serial.println(subscriptions[i].onEventType);
 							Serial.flush();
 							#endif
 							executeSubscription(&subscriptions[i]);

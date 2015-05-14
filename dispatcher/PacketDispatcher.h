@@ -49,11 +49,11 @@ class PacketDispatcher {
 		 * by now, we only handle numbered packets.
 		 */
 		void loop() {
-			#ifdef DEBUG_HANDLER_ENABLE
-				Serial.print(millis());
-				Serial.println(F(": PacketDispatcher::loop()"));
-				Serial.flush();
-			#endif
+			//#ifdef DEBUG_HANDLER_ENABLE
+				//Serial.print(millis());
+				//Serial.println(F(": PacketDispatcher::loop()"));
+				//Serial.flush();
+			//#endif
 
 			//networking
 			while(networking->receiveQueueSize() > 0) {
