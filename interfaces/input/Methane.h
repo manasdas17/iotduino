@@ -27,14 +27,14 @@ class Methane : public AnalogIOGeneric {
 
 		virtual boolean readVal( HardwareTypeIdentifier type, HardwareCommandResult* result );
 
-	private:
-		virtual boolean writeVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) {
-			return false;
-		}
-
 		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
 			AnalogIOGeneric::getImplementedInterfaces(arr, maxLen);
 			return this->addImplementedInterface(arr, maxLen, HWType_methane);
+		}
+
+	private:
+		virtual boolean writeVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) {
+			return false;
 		}
 
 };
