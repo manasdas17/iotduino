@@ -108,6 +108,7 @@ typedef struct packet_application_unnumbered_cmd_struct {
 typedef struct discoveryInfo_helper_struct {
 	uint8_t hardwareAddress;
 	int8_t hardwareType;
+	uint8_t canDetectEvents;
 } packet_application_numbered_discovery_info_helper_t;
 
 typedef struct discoveryInfo_struct {

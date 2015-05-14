@@ -92,6 +92,7 @@ class DiscoveryService {
 								//this is an interface.
 								info->infos[numDrivers].hardwareAddress = drivers[i]->getAddress();
 								info->infos[numDrivers].hardwareType = tempArray[j];
+								info->infos[numDrivers].canDetectEvents = drivers[i]->canDetectEvents();
 								numDrivers++;
 							} else {
 								break;
