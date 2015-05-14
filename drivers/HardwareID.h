@@ -5,7 +5,7 @@
 //  @ Project : Untitled
 //  @ File Name : HardwareID.h
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
@@ -38,7 +38,8 @@ enum HardwareTypeIdentifier {
 	HWType_touchpad,
 	HWTYPE_led,
 	HWType_rcswitch,
-	HWType_relay
+	HWType_relay,
+	HWType_light
 };
 
 #endif  //_HARDWAREID_H
