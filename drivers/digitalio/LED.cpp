@@ -5,7 +5,7 @@
 //  @ Project : Untitled
 //  @ File Name : LED.cpp
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 

@@ -43,6 +43,10 @@ class AnalogIOGeneric : public AnalogIO {
 		virtual boolean readVal( HardwareTypeIdentifier type, HardwareCommandResult* result );
 		virtual boolean writeVal( HardwareTypeIdentifier type, HardwareCommandResult* result );
 
+		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
+			return AnalogIO::getImplementedInterfaces(arr, maxLen);
+		}
+
 };
 
 #endif  //_ANALOGIOGENERIC_H
