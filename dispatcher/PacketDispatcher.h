@@ -51,18 +51,18 @@ class PacketDispatcher {
 		void loop() {
 			#ifdef DEBUG_HANDLER_ENABLE
 				Serial.print(millis());
-				Serial.println(F("PacketDispatcher::loop()"));
+				Serial.println(F(": PacketDispatcher::loop()"));
 				Serial.flush();
 			#endif
 
 			//networking
-			while(l3->receiveQueueSize() > 0) {
+			while(networking->receiveQueueSize() > 0) {
 				Layer3::packet_t packet;
-				l3->receiveQueuePop(&packet);
+				networking->receiveQueuePop(&packet);
 
 				#ifdef DEBUG_HANDLER_ENABLE
 					Serial.print(millis());
-					Serial.print(F("\treceived packetType="));
+					Serial.print(F(":\treceived packetType="));
 					Serial.println(packet.data.type);
 					Serial.flush();
 				#endif
@@ -111,7 +111,7 @@ class PacketDispatcher {
 		 * @param l3 network packet
 		 * @return success
 		 */
-		boolean handleUnNumberedFromNetwork( Layer3::packet_t packet ) const {
+		boolean handleUnNumberedFromNetwork( Layer3::packet_t packet ) {
 			packet_unnumbered_t* unnumbered = (packet_unnumbered_t*) packet.data.payload;
 			packet_application_unnumbered_cmd_t* appPacket = (packet_application_unnumbered_cmd_t*) unnumbered->payload;
 
@@ -131,10 +131,16 @@ class PacketDispatcher {
 		 * @return success
 		 */
 		boolean handleNumbered( const seq_t seq, const packet_type_application_t type, const l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
+			#ifdef DEBUG_HANDLER_ENABLE
+				Serial.print(millis());
+				Serial.print(F(": PacketDispatcher::handleNumbered() type="));
+				Serial.println(type);
+				Serial.flush();
+			#endif
 			switch(type) {
 				case HARDWARE_COMMAND_READ:
 				case HARDWARE_COMMAND_WRITE:
-					return commandHandler.handleNumbered(l3->getCallbackInterface(), seq, type, remote, appPacket);
+					return commandHandler.handleNumbered(networking->getCallbackInterface(), seq, type, remote, appPacket);
 
 				case ACK:
 				case NACK:
@@ -142,10 +148,10 @@ class PacketDispatcher {
 
 				case HARDWARE_SUBSCRIPTION_SET:
 				case HARDWARE_SUBSCRIPTION_INFO:
-					return subscriptionService.handleRequest(l3->getCallbackInterface(), seq, type, remote, appPacket);
+					return subscriptionService.handleRequest(networking->getCallbackInterface(), seq, type, remote, appPacket);
 
 				case HARDWARE_DISCOVERY_REQ:
-					return discoveryService.handleInfoRequest(l3->getCallbackInterface(), seq, type, remote, appPacket);
+					return discoveryService.handleInfoRequest(networking->getCallbackInterface(), seq, type, remote, appPacket);
 				case HARDWARE_DISCOVERY_RES:
 
 				default:

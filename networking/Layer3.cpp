@@ -29,7 +29,7 @@ boolean Layer3::sendPacket( packet_t &packet )
 {
 	#ifdef DEBUG_NETWORK_ENABLE
 		Serial.print(millis());
-		Serial.println(F(": L3.sendPacket()"));
+		Serial.println(F(": Layer3::sendPacket()"));
 		printPacketInformation(&packet);
 		Serial.flush();
 	#endif
@@ -114,7 +114,7 @@ boolean Layer3::receive( uint8_t* payload )
 
 	#ifdef DEBUG_NETWORK_ENABLE
 		Serial.print(millis());
-		Serial.println(F(": L3.receive()"));
+		Serial.println(F(": Layer3::receive()"));
 		printPacketInformation(packet);
 		Serial.flush();
 	#endif
@@ -240,7 +240,7 @@ boolean Layer3::routePacket( packet_t* packet )
 {
 	#ifdef DEBUG_NETWORK_ENABLE
 		Serial.print(millis());
-		Serial.println(F(" L3.routePacket()"));
+		Serial.println(F(" Layer3::routePacket()"));
 		Serial.flush();
 	#endif
 
@@ -263,7 +263,7 @@ boolean Layer3::routePacket( packet_t* packet )
 boolean Layer3::handleBeacon( packet_t* packet ) {
 	#ifdef DEBUG_NETWORK_ENABLE
 		Serial.print(millis());
-		Serial.println(F(": L3.handleBeacon()"));
+		Serial.println(F(": Layer3::handleBeacon()"));
 		Serial.flush();
 	#endif
 
@@ -379,7 +379,7 @@ boolean Layer3::updateNeighbours(packet_beacon_t* beacon) {
 void Layer3::cleanNeighbours() {
 	#ifdef DEBUG_NETWORK_ENABLE
 		Serial.print(millis());
-		Serial.println(F(": L3.cleanNeighbours()"));
+		Serial.println(F(": Layer3::cleanNeighbours()"));
 		Serial.flush();
 	#endif
 
@@ -434,7 +434,7 @@ boolean Layer3::sendBeacon() {
 
 	#ifdef DEBUG_NETWORK_ENABLE
 		Serial.print(millis());
-		Serial.println(F(": L3.sendBeacon()"));
+		Serial.println(F(": Layer3::sendBeacon()"));
 		Serial.flush();
 	#endif
 
@@ -543,7 +543,7 @@ boolean Layer3::addToSendingQueue( packet_t* packet ) {
 
 			#ifdef DEBUG_NETWORK_ENABLE
 				Serial.print(millis());
-				Serial.println(F(": L3.addToSendingQueue() - duplicate, discarding."));
+				Serial.println(F(": Layer3::addToSendingQueue() - duplicate, discarding."));
 				Serial.flush();
 			#endif
 
@@ -577,7 +577,7 @@ boolean Layer3::addToSendingQueue( packet_t* packet ) {
 void Layer3::updateSendingBuffer() {
 	////#ifdef DEBUG_NETWORK_ENABLE
 		////Serial.print(millis());
-		////Serial.println(F(": L3.updateSendingBuffer()"));
+		////Serial.println(F(": Layer3::updateSendingBuffer()"));
 		////Serial.flush();
 	////#endif
 
@@ -640,7 +640,7 @@ boolean Layer3::handleAck( packet_t* packet ) {
 
 	#ifdef DEBUG_NETWORK_ENABLE
 		Serial.print(millis());
-		Serial.println(F(": L3.handleAck()"));
+		Serial.println(F(": Layer3::handleAck()"));
 		Serial.print(F("\tseqNum="));
 		Serial.print(seq);
 		Serial.flush();

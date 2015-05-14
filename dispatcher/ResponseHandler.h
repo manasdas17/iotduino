@@ -45,6 +45,17 @@ class ResponseHandler {
 		 * @return success if listener is found.
 		 */
 		boolean handleReponseNumbered(const seq_t seq, const packet_type_application_t type, const l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
+			#ifdef DEBUG_HANDLER_ENABLE
+				Serial.print(millis());
+				Serial.println(F(": ResponseHandler::handleResponseNumbered()"));
+				Serial.print(F("\tseq="));
+				Serial.print(seq);
+				Serial.print(F(" type="));
+				Serial.print(type);
+				Serial.print(F(" remote="));
+				Serial.println(remote);
+				Serial.flush();
+			#endif
 
 			responseListener_t* listener = getListener(seq, remote);
 
@@ -69,6 +80,15 @@ class ResponseHandler {
 		 * @return true on success, false otherwise
 		 */
 		boolean registerListener(const seq_t seqNumber, const l3_address_t remoteAddress, EventCallbackInterface* callbackObject) {
+			#ifdef DEBUG_HANDLER_ENABLE
+				Serial.print(millis());
+				Serial.print(F(": ResponseHandler::registerListener() remote="));
+				Serial.print(remoteAddress);
+				Serial.print(F(" seq="));
+				Serial.println(seqNumber);
+				Serial.flush();
+			#endif
+
 			if(callbackObject == NULL)
 				return false;
 
@@ -108,11 +128,30 @@ class ResponseHandler {
 		 * @param desired l3 remote address
 		 */
 		 responseListener_t* getListener(const seq_t seq, const l3_address_t remote) {
+			#ifdef DEBUG_HANDLER_ENABLE
+				Serial.print(millis());
+				Serial.print(F(": ResponseHandler::getListener() seq="));
+				Serial.print(seq);
+				Serial.print(F(" remote="));
+				Serial.println(remote);
+				Serial.flush();
+			#endif
 			for(uint8_t i = 0; i < LISTENER_NUM; i++) {
-				if(listeners[i].timestamp > 0 && listeners[i].seqNumber == seq && listeners[i].remote == remote)
+				if(listeners[i].timestamp > 0 && listeners[i].seqNumber == seq && listeners[i].remote == remote) {
+					#ifdef DEBUG_HANDLER_ENABLE
+						Serial.print(millis());
+						Serial.println(F(":\tfound"));
+						Serial.flush();
+					#endif
 					return &listeners[i];
+				}
 			}
 
+			#ifdef DEBUG_HANDLER_ENABLE
+				Serial.print(millis());
+				Serial.println(F(": \tnone found."));
+				Serial.flush();
+			#endif
 			return NULL;
 		}
 
@@ -120,11 +159,24 @@ class ResponseHandler {
 		 * check callbacks for timeouts; in case of timeout, triggers FAIL() on callback
 		 */
 		void maintainListeners() {
+			#ifdef DEBUG_HANDLER_ENABLE
+				Serial.print(millis());
+				Serial.println(F("ResponseHandler::maintainListeners()"));
+				Serial.flush();
+			#endif
 			if(millis() - lastCheckedTimestampMillis > MAINTENANCE_PERIOD_MILLIS) {
 				lastCheckedTimestampMillis = millis();
 
 				for(uint8_t i = 0; i < LISTENER_NUM; i++) {
 					if(listeners[i].timestamp > 0 && listeners[i].timestamp < millis()) {
+						#ifdef DEBUG_HANDLER_ENABLE
+							Serial.print(millis());
+							Serial.print(F(": remove due to timeout: seq="));
+							Serial.print(listeners[i].seqNumber);
+							Serial.print(F(" remote="));
+							Serial.println(listeners[i].remote);
+							Serial.flush();
+						#endif
 						listeners[i].callbackObj->fail(listeners[i].seqNumber, listeners[i].remote);
 						memset(&listeners[i], 0, sizeof(responseListener_t));
 					}

@@ -118,7 +118,7 @@ typedef struct discoveryInfo_struct {
 //subscriptions
 enum subscription_event_type_t {EVENT_TYPE_DISABLED = 0, EVENT_TYPE_CHANGE, EVENT_TYPE_EDGE_RISING, EVENT_TYPE_EDGE_FALLING};
 
-//max 16b
+//max 19b
 typedef struct subscription_helper_struct {
 	l3_address_t address;					//2b
 	uint8_t hardwareAddress;				//1b
@@ -127,7 +127,7 @@ typedef struct subscription_helper_struct {
 	uint16_t onEventBlackout;				//2b
 	subscription_event_type_t onEventType;	//1b
 	seq_t sequence;							//2b
-} subscription_helper_t;					//sum=14
+} subscription_helper_t;					//sum=13
 
 typedef struct substcripton_info_struct {
 	l3_address_t forAddress;
