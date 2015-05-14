@@ -77,7 +77,7 @@ class SubscriptionService {
 
 						//did we detect an event in last check period and does the event match? - execute subscription
 						if(drv->getLastEventTimestamp() > 0
-							&& millis() - drv->getLastEventTimestamp() < SUBSCRIPTION_POLLING_CHECK_PERIOD_MILLIS * 1.5
+							&& millis() - drv->getLastEventTimestamp() < SUBSCRIPTION_POLLING_CHECK_PERIOD_MILLIS
 							&& drv->lastEventMatchesEventType(subscriptions[i].onEventType))
 						{
 							#ifdef DEBUG_HANDLER_ENABLE
