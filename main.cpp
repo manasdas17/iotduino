@@ -32,11 +32,12 @@ HardwareInterface* hwInterface;
 #include <drivers/digitalio/DHT11.h>
 #include <interfaces/output/RCSwitchTevionFSI07.h>
 #include <interfaces/output/LED.h>
+#include <interfaces/input/MotionDetector.h>
 
 DHT11* dht11;
 RCSwitchTevionFSI07* rcsw;
 LED* led;
-
+MotionDetector* motion;
 
 
 /**
@@ -106,12 +107,12 @@ void testHardwareCommandRead() {
 	dispatcher->handleNumberedFromNetwork(p);
 }
 
-void testHardwareCommand() {
+void testHardwareCommand(uint8_t address, HardwareTypeIdentifier type, uint8_t isRead) {
 	command_t cmd_packet;
 	memset(&cmd_packet, 0, sizeof(cmd_packet));
-	cmd_packet.address = 0;
-	cmd_packet.isRead = true;
-	cmd_packet.type = HWType_temprature;
+	cmd_packet.address = address;
+	cmd_packet.isRead = isRead;
+	cmd_packet.type = type;
 	HardwareCommandResult cmd = HardwareCommandResult();
 	cmd.deSerialize(&cmd_packet);
 	hwInterface->executeCommand(&cmd);
@@ -210,6 +211,46 @@ void testSubscriptionInfo() {
 	dispatcher->handleNumberedFromNetwork(p4);
 }
 
+void testSubscriptionPolling() {
+		//numbered for subscription
+		//app layer
+		subscription_set_t cmdSubscription;
+		memset(&cmdSubscription, 0, sizeof(cmdSubscription));
+		cmdSubscription.info.address = 147; //node address
+		cmdSubscription.info.hardwareAddress = motion->getAddress();
+		cmdSubscription.info.hardwareType = HWType_motion;
+		cmdSubscription.info.millisecondsDelay = 0;
+		cmdSubscription.info.sequence = 1337;
+		cmdSubscription.info.onEventType = EVENT_TYPE_EDGE_RISING;
+
+		packet_application_numbered_cmd_t appCmd3;
+		memset(&appCmd3, 0, sizeof(appCmd3));
+		appCmd3.packetType = HARDWARE_SUBSCRIPTION_SET;
+		memcpy(&appCmd3.payload, &cmdSubscription, sizeof(cmdSubscription));
+
+		//networking numbered
+		packet_numbered_t numbered3;
+		memset(&numbered3, 0, sizeof(numbered3));
+		numbered3.seqNumber = 37;
+		memcpy(numbered3.payload, (byte*) &appCmd3, sizeof(appCmd3));
+		numbered3.payloadLen = sizeof(appCmd3);
+
+		//network packet
+		Layer3::packet_t p3;
+		p3.data.destination = address_local;
+		p3.data.hopcount = 5;
+		p3.data.source = 12;
+		p3.data.type = PACKET_NUMBERED;
+		memcpy(p3.data.payload, (byte*) &numbered3, sizeof(numbered3));
+		p3.data.payloadLen = sizeof(numbered3);
+
+		//processing
+		dispatcher->handleNumberedFromNetwork(p3);
+
+		//wait
+		delay(1000);
+		dispatcher->loop();
+}
 
 
 void testSubscriptionExecution() {
@@ -234,18 +275,24 @@ void setup() {
 	dht11 = new DHT11(17, 20);
 	rcsw = new RCSwitchTevionFSI07(14, 21);
 	led = new LED(30, 22);
+	motion = new MotionDetector(50, 12);
 
 	hwInterface = new HardwareInterface();
 	hwInterface->registerDriver((HardwareDriver*) dht11);
 	hwInterface->registerDriver((HardwareDriver*) rcsw);
 	hwInterface->registerDriver((HardwareDriver*) led);
+	hwInterface->registerDriver((HardwareDriver*) motion);
 
 
 	dispatcher = new PacketDispatcher(l3, hwInterface);
 
-	Serial.println("### testHardwareCommand ###");
+	Serial.println("### testHardwareCommand: Temperature ###");
 	Serial.flush();
-	testHardwareCommand();
+	testHardwareCommand(0, HWType_temprature, true);
+
+	Serial.println("### testHardwareCommand: Motion ###");
+	Serial.flush();
+	testHardwareCommand(0, HWType_motion, true);
 
 	Serial.println("### testHardwareCommandRead ###");
 	Serial.flush();
@@ -266,8 +313,10 @@ void setup() {
 	Serial.println("### testSubscriptionExecution ###");
 	Serial.flush();
 	testSubscriptionExecution();
-	Serial.println("");
+
+	Serial.println("### testSubscriptionPolling ###");
 	Serial.flush();
+	testSubscriptionPolling();
 
 	//turn off LED
 	pinMode(LED_BUILTIN, LOW);

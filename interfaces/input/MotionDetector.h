@@ -14,19 +14,17 @@
 #define _MOTIONDETECTOR_H
 
 #include <Arduino.h>
-#include <drivers/digitalio/DigitalIO.h>
+#include <drivers/DigitalIOGeneric.h>
 #include <drivers/HardwareID.h>
 #include <dispatcher/Commands.h>
 
 
-class MotionDetector : public DigitalIO {
+class MotionDetector : public DigitalIOGeneric {
 	public:
-		virtual boolean read() = 0;
-		virtual void read(HardwareCommandResult* hwresult)=0;
+		MotionDetector(uint8_t pin, uint8_t address) : DigitalIOGeneric(pin, true, address) {
+		}
 
 		virtual boolean implementsInterface( HardwareTypeIdentifier type );
-
-		virtual boolean readVal( HardwareTypeIdentifier type, HardwareCommandResult* result );
 
 		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
 			DigitalIO::getImplementedInterfaces(arr, maxLen);
@@ -34,7 +32,7 @@ class MotionDetector : public DigitalIO {
 		}
 
 		virtual boolean canDetectEvents();
-		virtual uint32_t checkForEvent(subscription_event_type_t type);
+		virtual subscription_event_type_t eventLoop();
 
 	private:
 		virtual boolean writeVal(HardwareTypeIdentifier type, HardwareCommandResult* result) {

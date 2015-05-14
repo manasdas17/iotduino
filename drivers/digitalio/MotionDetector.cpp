@@ -18,41 +18,23 @@ boolean MotionDetector::implementsInterface( HardwareTypeIdentifier type ) {
 	return false;
 }
 
-boolean MotionDetector::readVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) {
-	if(implementsInterface(type)) {
-		result->setUintListNum(1);
-		boolean val = read();
-		result->getUintList()[0] = val;
-
-		return true;
-	}
-
-	return false;
-}
-
 boolean MotionDetector::canDetectEvents() {
 	return true;
 }
 
-uint32_t MotionDetector::checkForEvent(subscription_event_type_t type) {
+subscription_event_type_t MotionDetector::eventLoop() {
 	//get old data
 	HardwareCommandResult* last = this->getLastResult();
-	const uint32_t lastT = this->getLastResultTimestamp();
 
 	//setup temporary new values
 	HardwareCommandResult newReading;
 
 	//read data
 	if(!readVal(HWType_motion, &newReading))
-		return 0;
+		return EVENT_TYPE_DISABLED;
 
 	//detect event
-	subscription_event_type_t eventDetected = EventDetector::checkForEvent(last->getUintList()[0], newReading.getUintList()[0]);
+	subscription_event_type_t eventDetected = EventDetector::checkForEvent(&newReading, last->getUintList()[0], newReading.getUintList()[0]);
 
-	if(EventDetector::isEvent(type, eventDetected)) {
-		return lastT;
-	}
-
-	//do not update data nor timestamp
-	return 0;
+	return eventDetected;
 }

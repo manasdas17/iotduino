@@ -16,20 +16,17 @@ class EventDetector {
 	/** data of last event */
 	HardwareCommandResult lastResult;
 
-	/** timestamp of last event */
-	uint32_t lastResultTimestamp;
+	uint32_t lastEventTimestmap;
+	subscription_event_type_t lastEventType;
 
 	protected:
 		/**
 		 * @param result
 		 */
-		virtual void updateResult(const HardwareCommandResult* result) {
-			updateTimestamp();
+		virtual void updateResult(const HardwareCommandResult* result, subscription_event_type_t type) {
 			memcpy(&lastResult, result, sizeof(HardwareCommandResult));
-		}
-
-		virtual void updateTimestamp() {
-			this->lastResultTimestamp = millis();
+			lastEventType = type;
+			lastEventTimestmap = millis();
 		}
 
 		/**
@@ -40,17 +37,53 @@ class EventDetector {
 		}
 
 		/**
-		 * @return t
+		 * check for an event of a uint8
+		 * the logic should be quite similar for all hardware, thus it is put here.
+		 * @param newReading
+		 * @param val_old
+		 * @param val_new
+		 * @return eventDetected
 		 */
-		virtual const uint32_t getLastResultTimestamp() const {
-			return lastResultTimestamp;
+		template<typename T>
+		subscription_event_type_t checkForEvent(HardwareCommandResult* newReading, T val_old, T val_new) {
+			//check is we have a new event
+			subscription_event_type_t type = EVENT_TYPE_DISABLED;
+
+			if(val_old > val_new) {
+				type = EVENT_TYPE_EDGE_FALLING;
+			} else if(val_old < val_new) {
+				type = EVENT_TYPE_EDGE_RISING;
+			}
+
+			//update
+			if(type != EVENT_TYPE_DISABLED) {
+				updateResult(newReading, type);
+				#ifdef DEBUG_HARDWARE_ENABLE
+					Serial.print(millis());
+					Serial.print(F(":EventDetector::CheckForEvent() eventTypeDetected="));
+					Serial.println(type);
+					Serial.flush();
+				#endif
+			}
+
+			return type;
 		}
 
 	public:
 		EventDetector() {
 			memset(&lastResult, 0, sizeof(lastResult));
-			lastResultTimestamp = 0;
+			lastEventType = EVENT_TYPE_DISABLED;
+			lastEventTimestmap = 0;
 		}
+
+		/**
+		 * actual event detection loop
+		 * @return detected event type
+		 */
+		subscription_event_type_t eventLoop() {
+			return EVENT_TYPE_DISABLED;
+		}
+
 
 		/**
 		 * indicator for the capability of detecting events
@@ -61,53 +94,36 @@ class EventDetector {
 		}
 
 		/**
-		 * @return true in case of event, false otherwise
+		 * @return t
 		 */
-		virtual uint32_t checkForEvent(subscription_event_type_t type) {
-			return 0;
+		virtual const uint32_t getLastEventTimestamp() const {
+			return lastEventTimestmap;
 		}
 
 		/**
-		 * check for an event of a uint8
-		 * the logic should be quite similar for all hardware, thus it is put here.
-		 * @param val_old
-		 * @param val_new
-		 * @param type
-		 * @return eventDetected
+		 * @return type
 		 */
-		template<typename T>
-		const static subscription_event_type_t checkForEvent(T val_old, T val_new) {
-			if(val_old > val_new) {
-				return EVENT_TYPE_EDGE_FALLING;
-			}
-
-			if(val_old < val_new) {
-				return EVENT_TYPE_EDGE_RISING;
-			}
-
-			return EVENT_TYPE_DISABLED;
+		virtual const subscription_event_type_t getLastEventType() const {
+			return lastEventType;
 		}
 
 		/**
-		 * check is an event has a certain type
-		 * this includes type CHANGE which is are more generic typ of EDGE_RISING and EDGE_FALLING
-		 * @param type detected event
-		 * @param reference event for comparison
-		 * @return
+		 * check if we have a "virtual" CHANGE event due to a RISING or FALLING edge event
+		 * @return comparison success
 		 */
-		const static boolean isEvent(subscription_event_type_t type, subscription_event_type_t reference) {
-			if(reference == type) {
-				return true;
-			}
+		const boolean lastEventMatchesEventType(subscription_event_type_t type) {
+			subscription_event_type_t lastType = getLastEventType();
 
-			if(reference == EVENT_TYPE_CHANGE && type == EVENT_TYPE_EDGE_RISING) {
+			if(type == EVENT_TYPE_EDGE_RISING && lastType == EVENT_TYPE_EDGE_RISING)
 				return true;
-			}
-
-			if(reference == EVENT_TYPE_CHANGE && type == EVENT_TYPE_EDGE_FALLING) {
+			if(type == EVENT_TYPE_EDGE_FALLING && lastType == EVENT_TYPE_EDGE_FALLING)
 				return true;
-			}
-
+			if(type == EVENT_TYPE_CHANGE && (lastType == EVENT_TYPE_EDGE_RISING || lastType == EVENT_TYPE_EDGE_FALLING))
+				return true;
+			//if(lastType == EVENT_TYPE_DISABLED)
+				//return false;
+			//if(type == EVENT_TYPE_DISABLED)
+				//return false;
 			return false;
 		}
 };

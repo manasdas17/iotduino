@@ -51,14 +51,16 @@ class SubscriptionService {
 		 * get all event subscriptions & poll them
 		 */
 		void doPollingForSubscriptions() {
-			if(millis() - SUBSCRIPTION_POLLING_CHECK_PERIOD_MILLIS > lastSubscriptionPollingCheckTimestamp) {
-				lastSubscriptionPollingCheckTimestamp = millis();
+			uint32_t now = millis();
+			if(now - SUBSCRIPTION_POLLING_CHECK_PERIOD_MILLIS > lastSubscriptionPollingCheckTimestamp) {
+				lastSubscriptionPollingCheckTimestamp = now;
 
 				#ifdef DEBUG_HANDLER_ENABLE
 					Serial.print(millis());
 					Serial.println(F(": SubscriptionService::doPollingForSubscriptions()"));
 					Serial.flush();
 				#endif
+
 
 				for(uint8_t i = 0; i < getSubscriptionListSize(); i++) {
 					//is this an event subscription?
@@ -68,18 +70,25 @@ class SubscriptionService {
 
 						//does it support events?
 						if(drv == NULL || !drv->canDetectEvents())
-						continue;
+							continue;
 
-						//check for new event
-						uint32_t t = drv->checkForEvent(subscriptions[i].onEventType);
+						//maintain event data in driver
+						drv->eventLoop();
 
-						//did we detect an event? - execute subscription
-						if(t > 0 && t - subscriptions[i].onEventBlackout > subscriptionsLastExecution[i]) {
+						//did we detect an event in last check period and does the event match? - execute subscription
+						if(now > SUBSCRIPTION_POLLING_CHECK_PERIOD_MILLIS
+							&& now - SUBSCRIPTION_POLLING_CHECK_PERIOD_MILLIS > drv->getLastEventTimestamp()
+							&& drv->lastEventMatchesEventType(subscriptions[i].onEventType))
+						{
+							#ifdef DEBUG_HANDLER_ENABLE
+							Serial.print(millis());
+							Serial.println(F(":\tevent found, trigger subscription execution"));
+							Serial.flush();
+							#endif
 							executeSubscription(&subscriptions[i]);
 						}
 					}
 				}
-
 			}
 		}
 

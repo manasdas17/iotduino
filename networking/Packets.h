@@ -125,7 +125,6 @@ typedef struct subscription_helper_struct {
 	uint8_t hardwareAddress;				//1b
 	uint8_t hardwareType;					//1b
 	uint32_t millisecondsDelay;				//4b
-	uint16_t onEventBlackout;				//2b
 	subscription_event_type_t onEventType;	//1b
 	seq_t sequence;							//2b
 } subscription_helper_t;					//sum=13
