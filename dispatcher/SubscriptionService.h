@@ -16,6 +16,10 @@
 #include "../networking/Layer3.h"
 
 #define numSubscriptionList 10
+/** period for subscription execution */
+#define SUBSCRIPTION_CHECK_PERIOD_MILLIS (1*1000)
+/** period for subscription polling check */
+#define SUBSCRIPTION_POLLING_CHECK_PERIOD_MILLIS (250)
 
 class SubscriptionService {
 	//variables
@@ -27,6 +31,10 @@ class SubscriptionService {
 
 		/** list for storing last subscription execution times */
 		uint32_t subscriptionsLastExecution[numSubscriptionList];
+
+		/**  */
+		uint32_t lastSubscriptionCheckTimestamp;
+		uint32_t lastSubscriptionPollingCheckTimestamp;
 
 		/** */
 		HardwareInterface* hwinterface;
@@ -43,24 +51,35 @@ class SubscriptionService {
 		 * get all event subscriptions & poll them
 		 */
 		void doPollingForSubscriptions() {
-			for(uint8_t i = 0; i < getSubscriptionListSize(); i++) {
-				//is this an event subscription?
-				if(subscriptions[i].onEventType != EVENT_TYPE_DISABLED) {
-					//get driver
-					HardwareDriver* drv = hwinterface->getHardwareDriver((HardwareTypeIdentifier) subscriptions[i].hardwareType, subscriptions[i].hardwareAddress);
+			if(millis() - SUBSCRIPTION_POLLING_CHECK_PERIOD_MILLIS > lastSubscriptionPollingCheckTimestamp) {
+				lastSubscriptionPollingCheckTimestamp = millis();
 
-					//does it support events?
-					if(drv == NULL || !drv->canDetectEvents())
+				#ifdef DEBUG_HANDLER_ENABLE
+					Serial.print(millis());
+					Serial.println(F(": SubscriptionService::doPollingForSubscriptions()"));
+					Serial.flush();
+				#endif
+
+				for(uint8_t i = 0; i < getSubscriptionListSize(); i++) {
+					//is this an event subscription?
+					if(subscriptions[i].onEventType != EVENT_TYPE_DISABLED) {
+						//get driver
+						HardwareDriver* drv = hwinterface->getHardwareDriver((HardwareTypeIdentifier) subscriptions[i].hardwareType, subscriptions[i].hardwareAddress);
+
+						//does it support events?
+						if(drv == NULL || !drv->canDetectEvents())
 						continue;
 
-					//check for new event
-					uint32_t t = drv->checkForEvent(subscriptions[i].onEventType);
+						//check for new event
+						uint32_t t = drv->checkForEvent(subscriptions[i].onEventType);
 
-					//did we detect an event? - execute subscription
-					if(t > 0 && t - subscriptions[i].onEventBlackout > subscriptionsLastExecution[i]) {
-						executeSubscription(&subscriptions[i]);
+						//did we detect an event? - execute subscription
+						if(t > 0 && t - subscriptions[i].onEventBlackout > subscriptionsLastExecution[i]) {
+							executeSubscription(&subscriptions[i]);
+						}
 					}
 				}
+
 			}
 		}
 
@@ -117,6 +136,8 @@ class SubscriptionService {
 		SubscriptionService() {
 			memset(subscriptions, 0, sizeof(subscriptions));
 			memset(subscriptionsLastExecution, 0, sizeof(subscriptionsLastExecution));
+			lastSubscriptionCheckTimestamp = 0;
+			lastSubscriptionPollingCheckTimestamp = 0;
 		}
 
 		/** */
@@ -134,13 +155,23 @@ class SubscriptionService {
 		 * check all subscriptions and execute if timed out
 		 */
 		void executeSubscriptions() {
-			uint32_t now = millis();
+			if(millis() - SUBSCRIPTION_CHECK_PERIOD_MILLIS > lastSubscriptionCheckTimestamp) {
+				lastSubscriptionCheckTimestamp = millis();
 
-			for(uint8_t i = 0; i < numSubscriptionList; i++) {
-				if(subscriptions[i].address != 0 && now - subscriptionsLastExecution[i] > subscriptions[i].millisecondsDelay) {
-				//if(subscriptions[i].address != 0 && subscriptions[i].onEvent == 0 && now - subscriptionsLastExecution[i] > subscriptions[i].millisecondsDelay) {
-					subscriptionsLastExecution[i] = now;
-					executeSubscription(&subscriptions[i]);
+				#ifdef DEBUG_HANDLER_ENABLE
+				Serial.print(millis());
+				Serial.println(F(": SubscriptionService::executeSubscriptions()"));
+				Serial.flush();
+				#endif
+
+				uint32_t now = millis();
+
+				for(uint8_t i = 0; i < numSubscriptionList; i++) {
+					if(subscriptions[i].address != 0 && now - subscriptionsLastExecution[i] > subscriptions[i].millisecondsDelay) {
+						//if(subscriptions[i].address != 0 && subscriptions[i].onEvent == 0 && now - subscriptionsLastExecution[i] > subscriptions[i].millisecondsDelay) {
+						subscriptionsLastExecution[i] = now;
+						executeSubscription(&subscriptions[i]);
+					}
 				}
 			}
 		}
