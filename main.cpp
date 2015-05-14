@@ -6,7 +6,11 @@
  */
 #include <Arduino.h>
 
-#include "networking/Layer3.h"
+#include <networking/Layer3.h>
+#include <drivers/HardwareDriver.h>
+#include <dispatcher/HardwareInterface.h>
+#include <dispatcher/PacketDispatcher.h>
+#include <drivers/HardwareID.h>
 
 #define address00 0x1000
 #define address01 0x1001
@@ -22,15 +26,16 @@ boolean isServer;
 #define PIN_CSN 10
 Layer2rf24* l2;
 Layer3* l3;
+PacketDispatcher* dispatcher;
+HardwareInterface* hwInterface;
 
 #include <drivers/digitalio/DHT11.h>
 #include <interfaces/output/RCSwitchTevionFSI07.h>
 #include <interfaces/output/LED.h>
 
-#include <drivers/HardwareDriver.h>
-#include <dispatcher/HardwareInterface.h>
-#include <dispatcher/PacketDispatcher.h>
-#include <drivers/HardwareID.h>
+DHT11* dht11;
+RCSwitchTevionFSI07* rcsw;
+LED* led;
 
 
 
@@ -65,7 +70,7 @@ void getAddress() {
 	#endif
 }
 
-void testHardwareCommandRead(DHT11* dht11, PacketDispatcher* dispatcher) {
+void testHardwareCommandRead() {
 		////create network packet
 	//cmd
 	command_t cmdX;
@@ -101,7 +106,7 @@ void testHardwareCommandRead(DHT11* dht11, PacketDispatcher* dispatcher) {
 	dispatcher->handleNumberedFromNetwork(p);
 }
 
-void testHardwareCommand(HardwareInterface* hwInterface, DHT11* dht11, PacketDispatcher* dispatcher) {
+void testHardwareCommand() {
 	command_t cmd_packet;
 	memset(&cmd_packet, 0, sizeof(cmd_packet));
 	cmd_packet.address = 0;
@@ -112,7 +117,7 @@ void testHardwareCommand(HardwareInterface* hwInterface, DHT11* dht11, PacketDis
 	hwInterface->executeCommand(&cmd);
 }
 
-void testSubscriptionSet(DHT11* dht11, PacketDispatcher* dispatcher) {
+void testSubscriptionSet() {
 		//numbered for subscription
 	//app layer
 	subscription_set_t cmdSubscription;
@@ -149,7 +154,7 @@ void testSubscriptionSet(DHT11* dht11, PacketDispatcher* dispatcher) {
 	dispatcher->handleNumberedFromNetwork(p3);
 }
 
-void testDiscovery(PacketDispatcher* dispatcher, DHT11* dht11) {
+void testDiscovery() {
 		//numbered for discovery
 	//app layer
 	packet_application_numbered_cmd_t appCmd2;
@@ -177,7 +182,7 @@ void testDiscovery(PacketDispatcher* dispatcher, DHT11* dht11) {
 	dispatcher->handleNumberedFromNetwork(p2);
 }
 
-void testSubscriptionInfo(PacketDispatcher* dispatcher) {
+void testSubscriptionInfo() {
 	////subscription info
 	//app layer
 	packet_application_numbered_cmd_t appCmd4;
@@ -207,7 +212,7 @@ void testSubscriptionInfo(PacketDispatcher* dispatcher) {
 
 
 
-void testSubscriptionExecution(PacketDispatcher* dispatcher) {
+void testSubscriptionExecution() {
 	delay(2000); //enough for our test.
 	dispatcher->loop();
 }
@@ -226,36 +231,52 @@ void setup() {
 	l3->setLayer2(l2);
 
 	////setupEventBus();
-	DHT11 dht11 = DHT11(17, 20);
-	RCSwitchTevionFSI07 rcsw = RCSwitchTevionFSI07(14, 21);
-	LED led = LED(30, 22);
+	dht11 = new DHT11(17, 20);
+	rcsw = new RCSwitchTevionFSI07(14, 21);
+	led = new LED(30, 22);
 
-	HardwareInterface hwInterface = HardwareInterface();
-	hwInterface.registerDriver((HardwareDriver*) &dht11);
-	hwInterface.registerDriver((HardwareDriver*) &rcsw);
+	hwInterface = new HardwareInterface();
+	hwInterface->registerDriver((HardwareDriver*) dht11);
+	hwInterface->registerDriver((HardwareDriver*) rcsw);
+	hwInterface->registerDriver((HardwareDriver*) led);
 
 
-	PacketDispatcher dispatcher = PacketDispatcher(l3, &hwInterface);
+	dispatcher = new PacketDispatcher(l3, hwInterface);
 
-	testHardwareCommand(&hwInterface, &dht11, &dispatcher);
-	testHardwareCommandRead(&dht11, &dispatcher);
-	testDiscovery(&dispatcher, &dht11);
-	testSubscriptionSet(&dht11, &dispatcher);
-	testSubscriptionInfo(&dispatcher);
-	testSubscriptionExecution(&dispatcher);
+	Serial.println("### testHardwareCommand ###");
+	Serial.flush();
+	testHardwareCommand();
+
+	Serial.println("### testHardwareCommandRead ###");
+	Serial.flush();
+	testHardwareCommandRead();
+
+	Serial.println("### testDiscovery ###");
+	Serial.flush();
+	testDiscovery();
+
+	Serial.println("### testSubscriptionSet ###");
+	Serial.flush();
+	testSubscriptionSet();
+
+	Serial.println("### testSubscriptionInfo ###");
+	Serial.flush();
+	testSubscriptionInfo();
+
+	Serial.println("### testSubscriptionExecution ###");
+	Serial.flush();
+	testSubscriptionExecution();
+	Serial.println("");
+	Serial.flush();
 
 	//turn off LED
 	pinMode(LED_BUILTIN, LOW);
-
-	led.turnOn();
-	delay(500);
-	led.turnOff();
-
 }
 
 void loop() {
 	//do networking.
 	l3->Loop();
+	dispatcher->loop();
 	//l2->radio->printDetails();
 
 /***
