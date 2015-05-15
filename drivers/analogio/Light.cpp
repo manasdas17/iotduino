@@ -14,5 +14,37 @@ boolean Light::implementsInterface( HardwareTypeIdentifier type ) {
 }
 
 boolean Light::readVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) {
-	return AnalogIOGeneric::readVal(HWType_ANALOG, result);
+	if(type == HWType_light && result != NULL)
+		return AnalogIOGeneric::readVal(type, result);
+	return false;
+}
+
+boolean Light::canDetectEvents() {
+	return true;
+}
+
+subscription_event_type_t Light::eventLoop() {
+	//get old data
+	HardwareCommandResult* last = this->getLastResult();
+
+	//setup temporary new values
+	HardwareCommandResult newReading;
+
+	//read data
+	if(!readVal(HWType_light, &newReading))
+		return EVENT_TYPE_DISABLED;
+
+	//detect event
+	subscription_event_type_t eventDetected = AnalogIO::checkForEvent(&newReading, last->getFloatList()[0], newReading.getFloatList()[0], (float) EVENT_MIN_DIFF);
+
+	#ifdef DEBUG_HARDWARE_ENABLE
+	if(eventDetected != EVENT_TYPE_DISABLED) {
+		Serial.print(millis());
+		Serial.print(F(": Light::eventLoop() has found event type="));
+		Serial.println(eventDetected);
+		Serial.flush();
+	}
+	#endif
+
+	return eventDetected;
 }

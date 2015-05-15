@@ -12,24 +12,34 @@
 
 #include <drivers/AnalogIOGeneric.h>
 
-uint8_t AnalogIOGeneric::read() {
+int16_t AnalogIOGeneric::read() {
 	uint8_t pin = getPIN();
 	pinMode(pin, INPUT);
 
 	return analogRead(pin);
 }
 
-void AnalogIOGeneric::write(uint8_t val) {
-	if(val > 0xff) val = 0xff;
+void AnalogIOGeneric::write(int16_t val) {
+	this->write((float) val);
+}
+
+void AnalogIOGeneric::write(float val) {
+	int16_t tmp = val;
+	if(tmp > 0xff) tmp = 0xff;
 
 	uint8_t pin = getPIN();
 	pinMode(pin, OUTPUT);
-	analogWrite(pin, val);
+	analogWrite(pin, tmp);
 }
 
 int16_t AnalogIOGeneric::readCalibrated() {
-	uint8_t read = this->read();
+	int16_t read = this->read();
 	return (int16_t) read - zeroVal;
+}
+
+void AnalogIOGeneric::readCalibrated(HardwareCommandResult* hwresult) {
+	hwresult->setFloatListNum(1);
+	hwresult->getFloatList()[0] = readCalibrated()*1.0;
 }
 
 boolean AnalogIOGeneric::calibrateZero() {
@@ -51,8 +61,7 @@ boolean AnalogIOGeneric::implementsInterface( HardwareTypeIdentifier type ) {
 
 boolean AnalogIOGeneric::readVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) {
 	if(implementsInterface(type)) {
-		result->setFloatListNum(1);
-		result->getFloatList()[0] = readCalibrated();
+		readCalibrated(result);
 		return true;
 	}
 
@@ -61,7 +70,7 @@ boolean AnalogIOGeneric::readVal( HardwareTypeIdentifier type, HardwareCommandRe
 
 boolean AnalogIOGeneric::writeVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) {
 	if(type == HWType_ANALOG && result != NULL) {
-		uint8_t val = result->getUintList()[0];
+		float val = result->getFloatList()[0];
 		write(val);
 
 		return true;

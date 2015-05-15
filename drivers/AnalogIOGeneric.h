@@ -22,22 +22,24 @@
 
 class AnalogIOGeneric : public AnalogIO {
 	protected:
-		uint8_t zeroVal;
+		uint16_t zeroVal;
 
 	public:
-		AnalogIOGeneric(Multiplexible* pin) : AnalogIO(pin) {
+		AnalogIOGeneric(Multiplexible* pin, uint8_t hwaddress) : AnalogIO(pin, hwaddress) {
+			zeroVal = 0;
 		}
 
-		AnalogIOGeneric(uint8_t pin) : AnalogIO(pin) {
+		AnalogIOGeneric(uint8_t pin, uint8_t hwaddress) : AnalogIO(pin, hwaddress) {
+			zeroVal = 0;
 		}
 
 		virtual boolean calibrateZero();
 
-		virtual uint8_t read();
-		virtual void read(HardwareCommandResult* hwresult);
+		virtual int16_t read();
 		virtual int16_t readCalibrated();
 		virtual void readCalibrated(HardwareCommandResult* hwresult);
-		virtual void write(uint8_t val);
+		virtual void write(int16_t val);
+		virtual void write(float val);
 
 		virtual boolean implementsInterface( HardwareTypeIdentifier type );;
 		virtual boolean readVal( HardwareTypeIdentifier type, HardwareCommandResult* result );

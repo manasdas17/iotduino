@@ -33,11 +33,13 @@
 #include <Arduino.h>
 #include <drivers/AnalogIOGeneric.h>
 
+#define EVENT_MIN_DIFF 50
+
 class Light : public AnalogIOGeneric {
 	public:
-		Light(Multiplexible* pin) : AnalogIOGeneric(pin) {
+		Light(Multiplexible* pin, uint8_t hwaddress) : AnalogIOGeneric(pin, hwaddress) {
 		}
-		Light(uint8_t pin) : AnalogIOGeneric(pin) {
+		Light(uint8_t pin, uint8_t hwaddress) : AnalogIOGeneric(pin, hwaddress) {
 		}
 
 		virtual boolean implementsInterface( HardwareTypeIdentifier type );
@@ -50,6 +52,8 @@ class Light : public AnalogIOGeneric {
 			return this->addImplementedInterface(arr, maxLen, HWType_light);
 		}
 
+		virtual boolean canDetectEvents();
+		virtual subscription_event_type_t eventLoop();
 	private:
 		virtual boolean writeVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) {
 			return false;

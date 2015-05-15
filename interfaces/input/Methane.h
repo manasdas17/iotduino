@@ -18,9 +18,9 @@
 
 class Methane : public AnalogIOGeneric {
 	public:
-		Methane(Multiplexible* pin) : AnalogIOGeneric(pin) {
+		Methane(Multiplexible* pin, uint8_t hwaddress) : AnalogIOGeneric(pin, hwaddress) {
 		}
-		Methane(uint8_t pin) : AnalogIOGeneric(pin) {
+		Methane(uint8_t pin, uint8_t hwaddress) : AnalogIOGeneric(pin, hwaddress) {
 		}
 
 		virtual boolean implementsInterface( HardwareTypeIdentifier type );

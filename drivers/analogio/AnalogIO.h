@@ -24,10 +24,10 @@ class AnalogIO : public HardwareDriver {
 		Multiplexible* pin;
 		boolean pullup;
 	public:
-		AnalogIO(Multiplexible* pin) {
+		AnalogIO(Multiplexible* pin, uint8_t hwaddress) : HardwareDriver(hwaddress) {
 			this->pin = pin;
 		}
-		AnalogIO(uint8_t pin) {
+		AnalogIO(uint8_t pin, uint8_t hwaddress) : HardwareDriver(hwaddress) {
 			this->pin = new NoMultiplex(pin);
 		}
 
@@ -39,6 +39,33 @@ class AnalogIO : public HardwareDriver {
 			return this->addImplementedInterface(arr, maxLen, HWType_ANALOG);
 		}
 
+		virtual boolean readVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) = 0;
+		virtual boolean writeVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) = 0;
+
+		template<typename T>
+		subscription_event_type_t checkForEvent(HardwareCommandResult* newReading, T val_old, T val_new, T minDiff) {
+			//check is we have a new event
+			subscription_event_type_t type = EVENT_TYPE_DISABLED;
+
+			if(val_old - minDiff > val_new) {
+				type = EVENT_TYPE_EDGE_FALLING;
+			} else if(val_old + minDiff < val_new) {
+				type = EVENT_TYPE_EDGE_RISING;
+			}
+
+			//update
+			if(type != EVENT_TYPE_DISABLED) {
+				updateResult(newReading, type);
+				#ifdef DEBUG_HARDWARE_ENABLE
+				Serial.print(millis());
+				Serial.print(F(": AnalogIO::CheckForEvent() eventTypeDetected="));
+				Serial.println(type);
+				Serial.flush();
+				#endif
+			}
+
+			return type;
+		}
 
 };
 

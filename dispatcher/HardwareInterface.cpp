@@ -163,7 +163,10 @@ HardwareCommandResult* HardwareInterface::readHardware(HardwareDriver* driver, H
 	if(res == NULL)
 		return NULL;
 
-	driver->readVal(cmd->getHardwareType(), res);
+	if(!driver->readVal(cmd->getHardwareType(), res)) {
+		releaseHardwareCommandResultEntry(res);
+		return NULL;
+	}
 
 	res->setAddress(cmd->getAddress());
 	res->setHardwareType(cmd->getHardwareType());
