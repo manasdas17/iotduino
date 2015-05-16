@@ -1,5 +1,5 @@
- iotduino is an arduino based framework containing various hardware drivers
- for easy to use internet of things with microcontrollers
+ iotduino (http://iotduino.de) is an arduino based framework containing
+ various hardware drivers for easy to use internet of things with microcontrollers
     Copyright (C) 2015  Helge Reelfs (helge@iotduino.de)
 
     This program is free software: you can redistribute it and/or modify
