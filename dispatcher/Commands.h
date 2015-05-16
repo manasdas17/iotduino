@@ -164,7 +164,7 @@ class HardwareCommandResult {
 			this->numInt8 = hwresult->numInt8;
 			this->numInt16 = hwresult->numInt16;
 
-			memcpy(this->uint8List, hwresult->uint8list, sizeof(uint8List));
+			memcpy(this->uint8List, hwresult->uint8list, sizeof(hwresult->uint8list));
 
 			return true;
 		}
