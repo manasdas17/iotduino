@@ -52,8 +52,10 @@ class Light : public AnalogIOGeneric {
 			return this->addImplementedInterface(arr, maxLen, HWType_light);
 		}
 
+		#ifdef ENABLE_EVENTS
 		virtual boolean canDetectEvents();
 		virtual subscription_event_type_t eventLoop();
+		#endif
 	private:
 		virtual boolean writeVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) {
 			return false;

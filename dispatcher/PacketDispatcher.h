@@ -23,8 +23,14 @@ class PacketDispatcher {
 		//modules for handling different packets
 		CommandHandler commandHandler;
 		ResponseHandler responseHandler;
-		DiscoveryService discoveryService;
-		SubscriptionService subscriptionService;
+
+		#ifdef ENABLE_DISCOVERY_SERVICE
+			DiscoveryService discoveryService;
+		#endif
+
+		#ifdef ENABLE_SUBSCRIPTION_SERVICE
+			SubscriptionService subscriptionService;
+		#endif
 
 		//network
 		Layer3* networking;
@@ -34,10 +40,16 @@ class PacketDispatcher {
 		PacketDispatcher(Layer3* networking, HardwareInterface* hwinterface) {
 			this->networking = networking;
 			this->commandHandler.setHardwareInterface(hwinterface);
+
+			#ifdef ENABLE_DISCOVERY_SERVICE
 			this->discoveryService.setHardwareInterface(hwinterface);
+			#endif
+
+			#ifdef ENABLE_SUBSCRIPTION_SERVICE
 			this->subscriptionService.setHardwareInterface(hwinterface);
 			this->subscriptionService.setCommandHandler(&commandHandler);
 			this->subscriptionService.setNetworking(networking);
+			#endif
 		}
 
 		~PacketDispatcher() {
@@ -68,24 +80,29 @@ class PacketDispatcher {
 				#endif
 
 				switch(packet.data.type) {
+					case PACKET_ACK:
+						continue;
 					case PACKET_NUMBERED:
-							handleNumberedFromNetwork(packet);
+						handleNumberedFromNetwork(packet);
 						break;
 					case PACKET_UNNUMBERED:
-							handleUnNumberedFromNetwork(packet);
+						handleUnNumberedFromNetwork(packet);
 						break;
-					case PACKET_ACK:
 					case PACKET_BEACON:
 					default:
 						continue;
 				}
 			}
 
+			#ifdef ENABLE_SUBSCRIPTION_SERVICE
 			////subscriptions
 			//actual timed subscriptions
 			subscriptionService.executeSubscriptions();
 			//event detection
-			subscriptionService.doPollingForSubscriptions();
+				#ifdef ENABLE_EVENTS
+				subscriptionService.doPollingForSubscriptions();
+				#endif
+			#endif
 		}
 
 		/**
@@ -138,21 +155,26 @@ class PacketDispatcher {
 				Serial.flush();
 			#endif
 			switch(type) {
-				case HARDWARE_COMMAND_READ:
 				case HARDWARE_COMMAND_WRITE:
+				case HARDWARE_COMMAND_READ:
 					return commandHandler.handleNumbered(networking->getCallbackInterface(), seq, type, remote, appPacket);
+
+			#ifdef ENABLE_DISCOVERY_SERVICE
+				case HARDWARE_DISCOVERY_REQ:
+					return discoveryService.handleInfoRequest(networking->getCallbackInterface(), seq, type, remote, appPacket);
+				case HARDWARE_DISCOVERY_RES:
+					return responseHandler.handleReponseNumbered(seq, type, remote, appPacket);
+			#endif
+
+			#ifdef ENABLE_SUBSCRIPTION_SERVICE
+				case HARDWARE_SUBSCRIPTION_SET:
+				case HARDWARE_SUBSCRIPTION_INFO:
+					return subscriptionService.handleRequest(networking->getCallbackInterface(), seq, type, remote, appPacket);
+			#endif
 
 				case ACK:
 				case NACK:
 					return responseHandler.handleReponseNumbered(seq, type, remote, appPacket);
-
-				case HARDWARE_SUBSCRIPTION_SET:
-				case HARDWARE_SUBSCRIPTION_INFO:
-					return subscriptionService.handleRequest(networking->getCallbackInterface(), seq, type, remote, appPacket);
-
-				case HARDWARE_DISCOVERY_REQ:
-					return discoveryService.handleInfoRequest(networking->getCallbackInterface(), seq, type, remote, appPacket);
-				case HARDWARE_DISCOVERY_RES:
 
 				default:
 					return false;
@@ -174,19 +196,23 @@ class PacketDispatcher {
 			}
 		}
 
+		#ifdef ENABLE_SUBSCRIPTION_SERVICE
 		/**
 		 * @return service
 		 */
 		SubscriptionService* getSubscriptionsService() {
 			return &subscriptionService;
 		}
+		#endif
 
+		#ifdef ENABLE_DISCOVERY_SERVICE
 		/**
 		 * @return service
 		 */
 		DiscoveryService* getDiscoveryService() {
 			return &discoveryService;
 		}
+		#endif
 }; //PacketDispatcher
 
 #endif //__PACKETDISPATCHER_H__

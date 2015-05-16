@@ -18,7 +18,11 @@
 #include <dispatcher/Commands.h>
 #include <dispatcher/EventDetector.h>
 
-class HardwareDriver : public EventDetector {
+class HardwareDriver
+#ifdef ENABLE_EVENTS
+: public EventDetector
+#endif
+{
 	public:
 		uint8_t hardwareAddress;
 

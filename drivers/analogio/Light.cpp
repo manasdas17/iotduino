@@ -19,6 +19,7 @@ boolean Light::readVal( HardwareTypeIdentifier type, HardwareCommandResult* resu
 	return false;
 }
 
+#ifdef ENABLE_EVENTS
 boolean Light::canDetectEvents() {
 	return true;
 }
@@ -48,3 +49,4 @@ subscription_event_type_t Light::eventLoop() {
 
 	return eventDetected;
 }
+#endif

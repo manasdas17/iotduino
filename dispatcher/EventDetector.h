@@ -9,6 +9,8 @@
 #ifndef EVENTDETECTOR_H_
 #define EVENTDETECTOR_H_
 
+#ifdef ENABLE_EVENTS
+
 #include <Arduino.h>
 #include <dispatcher/Commands.h>
 
@@ -128,5 +130,6 @@ class EventDetector {
 		}
 };
 
+#endif
 
 #endif /* EVENTDETECTOR_H_ */

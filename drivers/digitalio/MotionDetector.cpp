@@ -18,6 +18,9 @@ boolean MotionDetector::implementsInterface( HardwareTypeIdentifier type ) {
 	return false;
 }
 
+
+#ifdef ENABLE_EVENTS
+
 boolean MotionDetector::canDetectEvents() {
 	return true;
 }
@@ -47,3 +50,5 @@ subscription_event_type_t MotionDetector::eventLoop() {
 
 	return eventDetected;
 }
+
+#endif

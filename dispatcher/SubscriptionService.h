@@ -9,6 +9,8 @@
 #ifndef __SUBSCRIPTIONSERVICE_H__
 #define __SUBSCRIPTIONSERVICE_H__
 
+#ifdef ENABLE_SUBSCRIPTION_SERVICE
+
 #include <networking/Packets.h>
 #include "EventCallbackInterface.h"
 #include "CommandHandler.h"
@@ -34,7 +36,10 @@ class SubscriptionService {
 
 		/**  */
 		uint32_t lastSubscriptionCheckTimestamp;
+
+		#ifdef ENABLE_EVENTS
 		uint32_t lastSubscriptionPollingCheckTimestamp;
+		#endif
 
 		/** */
 		HardwareInterface* hwinterface;
@@ -47,6 +52,7 @@ class SubscriptionService {
 
 	//functions
 	public:
+		#ifdef ENABLE_EVENTS
 		/**
 		 * get all event subscriptions & poll them
 		 */
@@ -91,6 +97,7 @@ class SubscriptionService {
 				}
 			}
 		}
+		#endif
 
 		/**
 		 * handles a new subscriptio request
@@ -146,7 +153,10 @@ class SubscriptionService {
 			memset(subscriptions, 0, sizeof(subscriptions));
 			memset(subscriptionsLastExecution, 0, sizeof(subscriptionsLastExecution));
 			lastSubscriptionCheckTimestamp = 0;
+
+			#ifdef ENABLE_EVENTS
 			lastSubscriptionPollingCheckTimestamp = 0;
+			#endif
 		}
 
 		/** */
@@ -410,5 +420,7 @@ class SubscriptionService {
 	private:
 
 }; //SubscriptionService
+
+#endif
 
 #endif //__SUBSCRIPTIONSERVICE_H__

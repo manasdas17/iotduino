@@ -42,6 +42,7 @@ class AnalogIO : public HardwareDriver {
 		virtual boolean readVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) = 0;
 		virtual boolean writeVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) = 0;
 
+	#ifdef ENABLE_EVENTS
 		template<typename T>
 		subscription_event_type_t checkForEvent(HardwareCommandResult* newReading, T val_old, T val_new, T minDiff) {
 			//check is we have a new event
@@ -66,7 +67,7 @@ class AnalogIO : public HardwareDriver {
 
 			return type;
 		}
-
+	#endif
 };
 
 #endif  //_ANALOGIO_H

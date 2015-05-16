@@ -9,6 +9,8 @@
 #ifndef __DISCOVERYSERVICE_H__
 #define __DISCOVERYSERVICE_H__
 
+#ifdef ENABLE_DISCOVERY_SERVICE
+
 #include <networking/Packets.h>
 
 class DiscoveryService {
@@ -92,7 +94,13 @@ class DiscoveryService {
 								//this is an interface.
 								info->infos[numDrivers].hardwareAddress = drivers[i]->getAddress();
 								info->infos[numDrivers].hardwareType = tempArray[j];
-								info->infos[numDrivers].canDetectEvents = drivers[i]->canDetectEvents();
+								
+								#ifdef ENABLE_EVENTS
+									info->infos[numDrivers].canDetectEvents = drivers[i]->canDetectEvents();
+								#else
+									info->infos[numDrivers].canDetectEvents = 0;
+								#endif
+								
 								numDrivers++;
 							} else {
 								break;
@@ -114,4 +122,5 @@ class DiscoveryService {
 
 }; //DiscoveryService
 
+#endif //ENABLE_DISCOVERY_SERVICE
 #endif //__DISCOVERYSERVICE_H__
