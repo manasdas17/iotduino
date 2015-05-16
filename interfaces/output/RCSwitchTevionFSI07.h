@@ -45,7 +45,7 @@ class RCSwitchTevionFSI07 : public DigitalIO {
 		const void sendCode(uint32_t val);
 		const void sendByte(char i, uint8_t pin);
 
-		virtual boolean readVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) {
+		boolean readVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) {
 			return false;
 		}
 
@@ -69,7 +69,7 @@ class RCSwitchTevionFSI07 : public DigitalIO {
 			pinMode(pin, OUTPUT);
 		}
 
-		virtual boolean implementsInterface( HardwareTypeIdentifier type );
+		boolean implementsInterface( HardwareTypeIdentifier type );
 
 		/**
 		 * send data to remote rc plug
@@ -78,9 +78,9 @@ class RCSwitchTevionFSI07 : public DigitalIO {
 		 *        - uintlist[0]: action, 1=on, 0=off
 		 * @return success
 		 */
-		virtual boolean writeVal( HardwareTypeIdentifier type, HardwareCommandResult* result );
+		boolean writeVal( HardwareTypeIdentifier type, HardwareCommandResult* result );
 
-		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen);
+		HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen);
 
 };
 

@@ -88,25 +88,25 @@ class BMP085 : public I2C, public Pressure, public Temperature {
 			bmp085Calibration();
 		}
 
-		virtual uint16_t readPressure();
+		uint16_t readPressure();
 
-		virtual void readPressure( HardwareCommandResult* hwresult );
+		void readPressure( HardwareCommandResult* hwresult );
 
-		virtual int8_t readTemperature();
+		int8_t readTemperature();
 
-		virtual void readTemperature( HardwareCommandResult* hwresult );
+		void readTemperature( HardwareCommandResult* hwresult );
 
 		static uint16_t getAltitude(uint16_t pressure);
 
-		virtual uint16_t getAltitude();
+		uint16_t getAltitude();
 
-		virtual void getAltitude( HardwareCommandResult* hwresult );
+		void getAltitude( HardwareCommandResult* hwresult );
 
-		virtual boolean readVal( HardwareTypeIdentifier type, HardwareCommandResult* result );
+		boolean readVal( HardwareTypeIdentifier type, HardwareCommandResult* result );
 
-		virtual boolean implementsInterface( HardwareTypeIdentifier type );
+		boolean implementsInterface( HardwareTypeIdentifier type );
 
-		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
+		HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
 			I2C::getImplementedInterfaces(arr, maxLen);
 			this->addImplementedInterface(arr, maxLen, HWType_pressure);
 			return this->addImplementedInterface(arr, maxLen, HWType_temprature);

@@ -78,24 +78,24 @@ class IRreceiverATtiny85 : public I2C, public IRreceive {
 			}
 		}
 
-		virtual uint8_t availabe() {
+		uint8_t availabe() {
 			pollSensor();
 			return queue.size();
 		}
 
-		virtual uint32_t peek() {
+		uint32_t peek() {
 			if(availabe())
 				return queue.peek();
 			return 0;
 		}
 
-		virtual uint32_t pop() {
+		uint32_t pop() {
 			if(availabe())
 				return queue.pop();
 			return 0;
 		}
 
-		virtual void pop( HardwareResult* hwresult ) {
+		void pop( HardwareResult* hwresult ) {
 			if(!availabe()) return;
 
 			hwresult->setUintListNum(4);
@@ -108,19 +108,19 @@ class IRreceiverATtiny85 : public I2C, public IRreceive {
 			list[3] = val 0xff;
 		}
 
-		virtual boolean readVal( HardwareTypeIdentifier type, HardwareResult* result ) {
+		boolean readVal( HardwareTypeIdentifier type, HardwareResult* result ) {
 			if(implementsInterface(type))
 				return pop(result);
 			return false;
 		}
 
-		virtual boolean implementsInterface( HardwareTypeIdentifier type ) {
+		boolean implementsInterface( HardwareTypeIdentifier type ) {
 			if(type == HWType_ir)
 				return true;
 			return false;
 		}
 
-		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
+		HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
 			I2C::getImplementedInterfaces(arr, maxLen);
 			return this->addImplementedInterface(arr, maxLen, HWType_ir);
 		}

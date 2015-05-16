@@ -49,7 +49,7 @@ class DHT11 : public DigitalIO, public Temperature, public Humidity {
 	int temperature;
 
 	private:
-		virtual boolean writeVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) {
+		boolean writeVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) {
 			return false;
 		}
 
@@ -168,9 +168,9 @@ class DHT11 : public DigitalIO, public Temperature, public Humidity {
 
 
 	public:
-		virtual boolean implementsInterface( HardwareTypeIdentifier type );
+		boolean implementsInterface( HardwareTypeIdentifier type );
 
-		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
+		HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
 			arr = DigitalIO::getImplementedInterfaces(arr, maxLen);
 			arr = this->addImplementedInterface(arr, maxLen, HWType_humidity);
 			return this->addImplementedInterface(arr, maxLen, HWType_temprature);
@@ -183,7 +183,7 @@ class DHT11 : public DigitalIO, public Temperature, public Humidity {
 		 *        - uintlist[0] contains the value
 		 * @result success
 		 */
-		virtual boolean readVal( HardwareTypeIdentifier type, HardwareCommandResult* result );
+		boolean readVal( HardwareTypeIdentifier type, HardwareCommandResult* result );
 }; //DHT11
 
 #endif //__DHT11_H__

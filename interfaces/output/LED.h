@@ -29,9 +29,9 @@ class LED : public DigitalIOGeneric {
 		void turnOff();
 		void toggle();
 
-		virtual boolean implementsInterface( HardwareTypeIdentifier type );
+		boolean implementsInterface( HardwareTypeIdentifier type );
 
-		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
+		HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
 			arr = DigitalIOGeneric::getImplementedInterfaces(arr, maxLen);
 			return this->addImplementedInterface(arr, maxLen, HWTYPE_led);
 		}
@@ -41,19 +41,19 @@ class LED : public DigitalIOGeneric {
 		 * @param result:
 		 *        - uintliust[0]: 0=off, 1=on
 		 */
-		virtual boolean readVal( HardwareTypeIdentifier type, HardwareCommandResult* result );
+		boolean readVal( HardwareTypeIdentifier type, HardwareCommandResult* result );
 
 		/**
 		 * @param type
 		 * @result result
 		 *         - uintlist[0]: 0=off, 1=on, 2=toggle
 		 */
-		virtual boolean writeVal( HardwareTypeIdentifier type, HardwareCommandResult* result );
+		boolean writeVal( HardwareTypeIdentifier type, HardwareCommandResult* result );
 
 		/**
 		 * @return false
 		 */
-		virtual boolean read();
+		boolean read();
 };
 
 #endif  //_LED_H

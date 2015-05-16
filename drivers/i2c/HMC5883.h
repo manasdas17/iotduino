@@ -26,7 +26,7 @@ class HMC5883 : public I2C, public MagneticField {
 			this->address = 0x1E;
 		}
 
-		virtual Triple<int16_t> readMagnetic() {
+		Triple<int16_t> readMagnetic() {
 			Triple<int16_t> magneticField;
 
 			Wire.begin();
@@ -52,7 +52,7 @@ class HMC5883 : public I2C, public MagneticField {
 			return magneticField;
 		}
 
-		virtual void readMagnetic( HardwareResult* hwresult ) {
+		void readMagnetic( HardwareResult* hwresult ) {
 			hwresult->setUintListNum(6);
 			uint8_t[] list = hwresult->getUintList();
 
@@ -65,7 +65,7 @@ class HMC5883 : public I2C, public MagneticField {
 			list[5] = result.getC() & 0xff;
 		}
 
-		virtual boolean readVal( HardwareTypeIdentifier type, HardwareResult* result ) {
+		boolean readVal( HardwareTypeIdentifier type, HardwareResult* result ) {
 			if(implementsInterface(type)) {
 				readMagnetic(result);
 				return true;
@@ -73,13 +73,13 @@ class HMC5883 : public I2C, public MagneticField {
 			return false;
 		}
 
-		virtual boolean implementsInterface( HardwareTypeIdentifier type ) {
+		boolean implementsInterface( HardwareTypeIdentifier type ) {
 			if(type == HWType_magneticField)
 				return true;
 			return false;
 		}
 
-		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
+		HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
 			I2C::getImplementedInterfaces(arr, maxLen);
 			return this->addImplementedInterface(arr, maxLen, HWType_magneticField);
 		}

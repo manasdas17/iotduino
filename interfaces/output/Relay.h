@@ -27,37 +27,37 @@ class Relay : public DigitalIOGeneric {
 		}
 
 		boolean highIsOn;
-		virtual void turnOn();
-		virtual void turnOff();
+		void turnOn();
+		void turnOff();
 		virtual boolean outputRead() = 0;
 		virtual void outputRead(HardwareCommandResult* hwresult) = 0;
 
-		virtual boolean implementsInterface( HardwareTypeIdentifier type );
+		boolean implementsInterface( HardwareTypeIdentifier type );
 
 		/**
 		 * @param type
 		 * @param result:
 		 *        - uintliust[0]: 0=off, 1=on
 		 */
-		virtual boolean readVal( HardwareTypeIdentifier type, HardwareCommandResult* result );
+		boolean readVal( HardwareTypeIdentifier type, HardwareCommandResult* result );
 
 		/**
 		 * @param type
 		 * @result result
 		 *         - uintlist[0]: 0=off, 1=on, 2=toggle
 		 */
-		virtual boolean writeVal( HardwareTypeIdentifier type, HardwareCommandResult* result );
+		boolean writeVal( HardwareTypeIdentifier type, HardwareCommandResult* result );
 
 
-		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
+		HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
 			DigitalIOGeneric::getImplementedInterfaces(arr, maxLen);
 			return this->addImplementedInterface(arr, maxLen, HWType_relay);
 		}
 
 	private:
-		virtual boolean read();
-		virtual void write( int boolean );
-		virtual void toggle();
+		boolean read();
+		void write( int boolean );
+		void toggle();
 
 
 };
