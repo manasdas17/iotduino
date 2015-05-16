@@ -3,13 +3,13 @@
  *
  * Created: 02.01.2015 03:32:35
  *  Author: helge
- */ 
+ */
 #include <Arduino.h>
 
 #define SHIFT_RIGHT 1
 #define NUM_ELEMENTS 4
 #define INVERT 1
-#define PIN_A 
+#define PIN_A
 #define PIN_B
 #define PIN_C
 #define PIN_D
@@ -45,7 +45,7 @@ class sevenSegment {
 		uint8_t pinClk;
 		/** DATA PIN */
 		uint8_t pinData;
-	
+
 		/** default construtor, initiales defaults. */
 		sevenSegment(uint8_t clk, uint8_t data, uint8_t numElements) {
 			this->shiftRight = true;
@@ -53,7 +53,7 @@ class sevenSegment {
 			this->invert = true;
 			this->pinClk = clk;
 			this->pinData = data;
-			
+
 			pinMode(pinClk, OUTPUT);
 			pinMode(pinData, OUTPUT);
 		}
@@ -73,12 +73,12 @@ class sevenSegment {
 			return false;
 		}
 
-	private:	
+	private:
 		/** write a char to the display */
 		boolean writeChar(uint8_t id) {
 			if(id >= 17)
 				return false;
-				
+
 			//create val from pin config mapping
 			uint8_t val = 0;
 			uint8_t tmp = 0;
@@ -89,16 +89,16 @@ class sevenSegment {
 				}
 				val |= ((charConfig[id] & _BV(tmp)) >> tmp) << pinConfig[tmp];
 			}
-			
+
 			if(invert) {
 				val = ~val;
 			}
-			
+
 			//shit out
 			shiftOut(pinData, pinClk, LSBFIRST, val);
 			return true;
 		}
-		
+
 		/** output config for chars */
 		byte charConfig[17] = {
 			//xGFEDCBA

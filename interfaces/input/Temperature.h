@@ -20,7 +20,7 @@
 
 class Temperature {
 	public:
-		virtual int readTemperature()=0;
+		virtual int8_t readTemperature()=0;
 		virtual void readTemperature(HardwareCommandResult* hwresult)=0;
 };
 

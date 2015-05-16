@@ -84,10 +84,10 @@ boolean RCSwitchTevionFSI07::implementsInterface( HardwareTypeIdentifier type ) 
 }
 
 boolean RCSwitchTevionFSI07::writeVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) {
-	if(implementsInterface(type) && result != NULL && result->getUintListNum() > 1) {
+	if(implementsInterface(type) && result != NULL && result->getUint8ListNum() > 1) {
 
-		uint8_t switchNumber = result->getUintList()[0];
-		uint8_t action = result->getUintList()[1];
+		uint8_t switchNumber = result->getUint8List()[0];
+		uint8_t action = result->getUint8List()[1];
 
 		switch(switchNumber) {
 			case 1:

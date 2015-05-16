@@ -5,7 +5,7 @@
 //  @ Project : Untitled
 //  @ File Name : Relay.cpp
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
@@ -33,12 +33,12 @@ boolean Relay::implementsInterface( HardwareTypeIdentifier type ) {
 
 boolean Relay::readVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) {
 	if(type == HWType_relay && result != NULL) {
-		result->setUintListNum(1);
-		result->getUintList()[0] = outputRead();
-		
+		result->setUint8ListNum(1);
+		result->getUint8List()[0] = outputRead();
+
 		return true;
 	}
-	
+
 	return false;
 }
 
@@ -54,9 +54,9 @@ void Relay::toggle() {
 
 
 boolean Relay::writeVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) {
-	if(type == HWType_relay && result != NULL) {
-		uint8_t action = result->getUintList()[0];
-		
+	if(type == HWType_relay && result != NULL && result->getUint8ListNum() > 0) {
+		uint8_t action = result->getUint8List()[0];
+
 		switch(action) {
 			case 1:
 				turnOn();
@@ -70,9 +70,9 @@ boolean Relay::writeVal( HardwareTypeIdentifier type, HardwareCommandResult* res
 			default:
 				return false;
 		}
-		
+
 		return true;
 	}
-	
+
 	return false;
 }

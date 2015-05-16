@@ -55,25 +55,25 @@ class DHT11 : public DigitalIO, public Temperature, public Humidity {
 
 	public:
 
-		int readHumidity() {
+		int8_t readHumidity() {
 			read();
 			return this->getHumidity();
 		}
 
 		void readHumidity( HardwareCommandResult* hwresult ) {
-			hwresult->setUintListNum(1);
-			hwresult->getUintList()[0] = readHumidity();
+			hwresult->setInt8ListNum(1);
+			hwresult->getInt8List()[0] = readHumidity();
 		}
 
 
-		int readTemperature() {
+		int8_t readTemperature() {
 			read();
 			return this->getTemperature();
 		}
 
 		void readTemperature( HardwareCommandResult* hwresult ) {
-			hwresult->setUintListNum(1);
-			hwresult->getUintList()[0] = readTemperature();
+			hwresult->setInt8ListNum(1);
+			hwresult->getInt8List()[0] = readTemperature();
 		}
 
 		/*
@@ -131,7 +131,7 @@ class DHT11 : public DigitalIO, public Temperature, public Humidity {
 		 *
 		 * Gets the last read temperature value in degrees Celsius.
 		 */
-		inline int getTemperature() const {
+		inline int8_t getTemperature() const {
 			return this->temperature;
 		}
 

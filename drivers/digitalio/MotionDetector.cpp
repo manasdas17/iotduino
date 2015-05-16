@@ -34,7 +34,7 @@ subscription_event_type_t MotionDetector::eventLoop() {
 		return EVENT_TYPE_DISABLED;
 
 	//detect event
-	subscription_event_type_t eventDetected = EventDetector::checkForEvent(&newReading, last->getUintList()[0], newReading.getUintList()[0]);
+	subscription_event_type_t eventDetected = EventDetector::checkForEvent(&newReading, last->getUint8List()[0], newReading.getUint8List()[0]);
 
 	#ifdef DEBUG_HARDWARE_ENABLE
 		if(eventDetected != EVENT_TYPE_DISABLED) {

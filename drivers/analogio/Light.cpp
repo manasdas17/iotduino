@@ -35,7 +35,7 @@ subscription_event_type_t Light::eventLoop() {
 		return EVENT_TYPE_DISABLED;
 
 	//detect event
-	subscription_event_type_t eventDetected = AnalogIO::checkForEvent(&newReading, last->getFloatList()[0], newReading.getFloatList()[0], (float) EVENT_MIN_DIFF);
+	subscription_event_type_t eventDetected = AnalogIO::checkForEvent(&newReading, last->getInt16List()[0], newReading.getInt16List()[0], (int16_t) EVENT_MIN_DIFF);
 
 	#ifdef DEBUG_HARDWARE_ENABLE
 	if(eventDetected != EVENT_TYPE_DISABLED) {

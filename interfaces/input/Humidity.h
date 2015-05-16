@@ -16,7 +16,7 @@
 
 class Humidity {
 	public:
-		virtual int readHumidity()=0;
+		virtual int8_t readHumidity()=0;
 		virtual void readHumidity(HardwareCommandResult* hwresult)=0;
 };
 

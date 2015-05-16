@@ -38,8 +38,8 @@ int16_t AnalogIOGeneric::readCalibrated() {
 }
 
 void AnalogIOGeneric::readCalibrated(HardwareCommandResult* hwresult) {
-	hwresult->setFloatListNum(1);
-	hwresult->getFloatList()[0] = readCalibrated()*1.0;
+	hwresult->setInt16ListNum(1);
+	hwresult->getUint16List()[0] = readCalibrated();
 }
 
 boolean AnalogIOGeneric::calibrateZero() {
@@ -69,8 +69,8 @@ boolean AnalogIOGeneric::readVal( HardwareTypeIdentifier type, HardwareCommandRe
 }
 
 boolean AnalogIOGeneric::writeVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) {
-	if(type == HWType_ANALOG && result != NULL) {
-		float val = result->getFloatList()[0];
+	if(type == HWType_ANALOG && result != NULL && result->getInt16ListNum() > 0) {
+		int16_t val = result->getInt16List()[0];
 		write(val);
 
 		return true;

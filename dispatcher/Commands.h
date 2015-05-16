@@ -13,18 +13,25 @@
 #include "networking/Packets.h"
 #include <drivers/HardwareID.h>
 
-#define sizeFloatList 1
-#define sizeUInt8List 4
+#define sizeUInt8List 8 //enough size for 4 16bit vars.
 
 
 typedef struct hwCommand {
 	HardwareTypeIdentifier type;
 	uint8_t isRead;
 	uint8_t address;
-	uint8_t uintlistnum;
-	uint8_t floatlistnum;
-	uint8_t uint8list[sizeUInt8List];
-	float floatlist[sizeFloatList];
+
+	uint8_t numUint8 : 4;
+	uint8_t numUint16 : 4;
+	uint8_t numInt8 : 4;
+	uint8_t numInt16 : 4;
+
+	union {
+		uint8_t uint8list[sizeUInt8List];
+		uint16_t uint16list[(sizeUInt8List / 2)];
+		int8_t int8list[sizeUInt8List];
+		int16_t int16list[(sizeUInt8List / 2)];
+	};
 } command_t; //Maximum length CONFIG_L3_PACKET_NUMBERED_MAX_LEN
 
 #if (CONFIG_L3_PACKET_NUMBERED_MAX_LEN < (4 + sizeUInt8List*1 + sizeFloatList*4))
@@ -38,21 +45,23 @@ class HardwareCommandResult {
 	uint8_t isRead;
 
 	uint8_t uint8List[sizeUInt8List];
-	float floatList[sizeFloatList];
 
-	uint8_t floatlistnum;
-	uint8_t uintlistnum;
+	uint8_t numUint8;
+	uint8_t numUint16;
+	uint8_t numInt8;
+	uint8_t numInt16;
 
 	HardwareTypeIdentifier type;
 	uint8_t address;
 
 	public:
 		void reset() {
-			floatlistnum = 0;
-			uintlistnum = 0;
+			numUint16 = 0;
+			numUint8 = 0;
+			numInt16 = 0;
+			numInt8 = 0;
 
 			memset(uint8List, 0, sizeof(uint8List));
-			memset(floatList, 0, sizeof(floatList));
 
 			type = HWType_UNKNOWN;
 			address = 0xff;
@@ -65,28 +74,43 @@ class HardwareCommandResult {
 		virtual ~HardwareCommandResult() {
 		}
 
-		uint8_t getUintListNum() {
-			return uintlistnum;
+		uint8_t getUint8ListNum() {
+			return numUint8;
+		}
+		uint16_t getUint16ListNum() {
+			return numUint16;
+		}
+		int8_t getInt8ListNum() {
+			return numInt8;
+		}
+		int16_t getInt16ListNum() {
+			return numInt16;
 		}
 
-		uint8_t getFloatListNum() {
-			return uintlistnum;
-		}
-
-		uint8_t* getUintList() {
+		uint8_t* getUint8List() {
 			return uint8List;
 		}
-
-		float* getFloatList() {
-			return floatList;
+		uint16_t* getUint16List() {
+			return (uint16_t*) uint8List;
+		}
+		int8_t* getInt8List() {
+			return (int8_t*) uint8List;
+		}
+		int16_t* getInt16List() {
+			return (int16_t*) uint8List;
 		}
 
-		void setUintListNum(uint8_t num) {
-			this->uintlistnum = num;
+		void setUint8ListNum(uint8_t num) {
+			this->numUint8 = num;
 		}
-
-		void setFloatListNum(uint8_t num) {
-			this->floatlistnum = num;
+		void setUint16ListNum(uint8_t num) {
+			this->numUint16 = num;
+		}
+		void setInt8ListNum(uint8_t num) {
+			this->numInt8 = num;
+		}
+		void setInt16ListNum(uint8_t num) {
+			this->numInt16 = num;
 		}
 
 		void setHardwareType(HardwareTypeIdentifier type) {
@@ -118,15 +142,13 @@ class HardwareCommandResult {
 		boolean serialize(command_t* hwresult) {
 			hwresult->address = address;
 			hwresult->type = type;
-			hwresult->uintlistnum = uintlistnum;
-			hwresult->floatlistnum = floatlistnum;
+			hwresult->numUint8 = numUint8;
+			hwresult->numUint16 = numUint16;
+			hwresult->numInt8 = numInt8;
+			hwresult->numInt16 = numInt16;
 			hwresult->isRead = isRead;
 
-			if(uintlistnum > sizeof(hwresult->uint8list) || floatlistnum*4 > sizeof(hwresult->floatlist))
-				return false;
-
 			memcpy(hwresult->uint8list, uint8List, sizeof(uint8List));
-			memcpy(hwresult->floatlist, floatList, sizeof(floatList));
 
 			return true;
 		}
@@ -137,15 +159,14 @@ class HardwareCommandResult {
 			this->address = hwresult->address;
 			this->type = hwresult->type;
 			this->isRead = hwresult->isRead;
-			this->uintlistnum = hwresult->uintlistnum;
-			this->floatlistnum = hwresult->floatlistnum;
+			this->numUint8 = hwresult->numUint8;
+			this->numUint16 = hwresult->numUint16;
+			this->numInt8 = hwresult->numInt8;
+			this->numInt16 = hwresult->numInt16;
 
-			memcpy(this->uint8List, hwresult->uint8list, getUintListNum());
-			memcpy(this->floatList, hwresult->floatlist, getFloatListNum() * sizeof(float));
+			memcpy(this->uint8List, hwresult->uint8list, sizeof(uint8List));
 
-			if(hwresult->uintlistnum <= getUintListNum() && hwresult->floatlistnum <= this->getFloatListNum())
-				return true;
-			return false;
+			return true;
 		}
 };
 

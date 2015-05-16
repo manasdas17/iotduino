@@ -6,16 +6,13 @@ Triple<int16_t> InvenSenseMPU6050::readGyro() {
 }
 
 void InvenSenseMPU6050::readGyro( HardwareCommandResult* hwresult ) {
-	hwresult->setUintListNum(6);
-	uint8_t* list = hwresult->getUintList();
+	hwresult->setInt16ListNum(3);
+	int16_t* list = hwresult->getInt16List();
 
 	Triple<int16_t> result = readAccels();
-	list[0] = result.getA() >> 8;
-	list[1] = result.getA() & 0xff;
-	list[2] = result.getB() >> 8;
-	list[3] = result.getB() & 0xff;
-	list[4] = result.getC() >> 8;
-	list[5] = result.getC() & 0xff;
+	list[0] = result.getA();
+	list[1] = result.getB();
+	list[2] = result.getC();
 }
 
 Triple<int16_t> InvenSenseMPU6050::readAccels() {
@@ -24,16 +21,13 @@ Triple<int16_t> InvenSenseMPU6050::readAccels() {
 }
 
 void InvenSenseMPU6050::readAccels( HardwareCommandResult* hwresult ) {
-	hwresult->setUintListNum(6);
-	uint8_t* list = hwresult->getUintList();
+	hwresult->setInt16ListNum(3);
+	int16_t* list = hwresult->getInt16List();
 
 	Triple<int16_t> result = readAccels();
-	list[0] = result.getA() >> 8;
-	list[1] = result.getA() & 0xff;
-	list[2] = result.getB() >> 8;
-	list[3] = result.getB() & 0xff;
-	list[4] = result.getC() >> 8;
-	list[5] = result.getC() & 0xff;
+	list[0] = result.getA();
+	list[1] = result.getB();
+	list[2] = result.getC();
 }
 
 void InvenSenseMPU6050::checkForTimeStampAndReadIfThresholdPassed() {
@@ -42,14 +36,14 @@ void InvenSenseMPU6050::checkForTimeStampAndReadIfThresholdPassed() {
 	}
 }
 
-int InvenSenseMPU6050::readTemperature() {
+int8_t InvenSenseMPU6050::readTemperature() {
 	checkForTimeStampAndReadIfThresholdPassed();
 	return dT;
 }
 
 void InvenSenseMPU6050::readTemperature( HardwareCommandResult* hwresult ) {
-	hwresult->setUintListNum(1);
-	hwresult->getUintList()[0] = readTemperature();
+	hwresult->setUint8ListNum(1);
+	hwresult->getUint8List()[0] = readTemperature();
 }
 
 void InvenSenseMPU6050::getSensorData() {

@@ -756,7 +756,7 @@ class InvenSenseMPU6050 : public I2C, public Temperature, public Accelerometer, 
 
 		void checkForTimeStampAndReadIfThresholdPassed();
 
-		int readTemperature();
+		int8_t readTemperature();
 
 		virtual void readTemperature( HardwareCommandResult* hwresult );
 

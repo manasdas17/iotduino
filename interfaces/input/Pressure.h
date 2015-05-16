@@ -5,7 +5,7 @@
 //  @ Project : Untitled
 //  @ File Name : Pressure.h
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
@@ -20,9 +20,9 @@
 
 class Pressure {
 	public:
-		virtual float readPressure()=0;
+		virtual uint16_t readPressure()=0;
 		virtual void readPressure(HardwareCommandResult* hwresult)=0;
-		virtual float getAltitude()=0;
+		virtual uint16_t getAltitude()=0;
 		virtual void getAltitude(HardwareCommandResult* hwresult)=0;
 };
 

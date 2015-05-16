@@ -135,37 +135,37 @@ long BMP085::bmp085GetPressure( unsigned long up ) {
 	return p;
 }
 
-float BMP085::getAltitude(float pressure) {
-	return (float)44330 * (1 - pow(((float) pressure/p0), 0.190295));
+uint16_t BMP085::getAltitude(uint16_t pressure) {
+	return (uint16_t) (44330 * (1 - pow(((float) pressure/p0), 0.190295)));
 }
 
-float BMP085::getAltitude() {
+uint16_t BMP085::getAltitude() {
 	return getAltitude(readPressure());
 }
 
 void BMP085::getAltitude( HardwareCommandResult* hwresult ) {
-	hwresult->setFloatListNum(1);
-	hwresult->getFloatList()[0] = getAltitude();
+	hwresult->setUint16ListNum(1);
+	hwresult->getUint16List()[0] = getAltitude();
 }
 
-float BMP085::readPressure() {
+uint16_t BMP085::readPressure() {
 	pressure = bmp085GetPressure(bmp085ReadUP());
 	return pressure;
 }
 
 void BMP085::readPressure( HardwareCommandResult* hwresult ) {
-	hwresult->setUintListNum(1);
-	hwresult->getUintList()[0] = readPressure();
+	hwresult->setUint8ListNum(1);
+	hwresult->getUint8List()[0] = readPressure();
 }
 
-int BMP085::readTemperature() {
+int8_t BMP085::readTemperature() {
 	temperature = bmp085GetTemperature(bmp085ReadUT());
 	return temperature;
 }
 
 void BMP085::readTemperature( HardwareCommandResult* hwresult ) {
-	hwresult->setUintListNum(1);
-	hwresult->getUintList()[0] = readTemperature();
+	hwresult->setInt8ListNum(1);
+	hwresult->getInt8List()[0] = readTemperature();
 }
 
 boolean BMP085::readVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) {

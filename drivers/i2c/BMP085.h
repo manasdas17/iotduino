@@ -88,17 +88,17 @@ class BMP085 : public I2C, public Pressure, public Temperature {
 			bmp085Calibration();
 		}
 
-		virtual float readPressure();
+		virtual uint16_t readPressure();
 
 		virtual void readPressure( HardwareCommandResult* hwresult );
 
-		virtual int readTemperature();
+		virtual int8_t readTemperature();
 
 		virtual void readTemperature( HardwareCommandResult* hwresult );
 
-		static float getAltitude(float pressure);
+		static uint16_t getAltitude(uint16_t pressure);
 
-		virtual float getAltitude();
+		virtual uint16_t getAltitude();
 
 		virtual void getAltitude( HardwareCommandResult* hwresult );
 

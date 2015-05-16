@@ -20,8 +20,8 @@ uint8_t Sonar::read() {
 
 boolean Sonar::readVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) {
 	if(implementsInterface(type)) {
-		result->setUintListNum(1);
-		result->getUintList()[0] = read();
+		result->setUint8ListNum(1);
+		result->getUint8List()[0] = read();
 
 		return true;
 	}
