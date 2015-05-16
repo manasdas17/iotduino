@@ -8,9 +8,9 @@
 
 #include <networking/Layer3.h>
 #include <drivers/HardwareDriver.h>
+#include <drivers/HardwareID.h>
 #include <dispatcher/HardwareInterface.h>
 #include <dispatcher/PacketDispatcher.h>
-#include <drivers/HardwareID.h>
 
 #define address00 0x1000
 #define address01 0x1001
@@ -74,7 +74,7 @@ void getAddress() {
 }
 
 void testHardwareCommandRead() {
-		////create network packet
+	////create network packet
 	//cmd
 	command_t cmdX;
 	memset(&cmdX, 0, sizeof(cmdX));

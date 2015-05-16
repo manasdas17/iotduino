@@ -13,7 +13,6 @@
 #include <drivers/HardwareDriver.h>
 #include <drivers/HardwareID.h>
 #include <dispatcher/Commands.h>
-#include "Commands.h"
 
 #define resultSetSize 10
 #define driverPointerListSize 5
@@ -71,10 +70,7 @@ class HardwareInterface {
 		/**
 		 * constructor
 		 */
-		HardwareInterface() {
-			memset(resultSetInUse, 0, sizeof(resultSetInUse));
-			memset(driver, 0, sizeof(driver));
-		}
+		HardwareInterface();
 
 		/**
 		 * destructor
@@ -108,7 +104,7 @@ class HardwareInterface {
 		/**
 		 * @return list of pointers to driver instances
 		 */
-		HardwareDriver** getHardwareDrivers() {
+		inline HardwareDriver** getHardwareDrivers() {
 			return driver;
 		}
 

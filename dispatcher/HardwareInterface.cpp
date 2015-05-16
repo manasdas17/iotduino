@@ -8,28 +8,6 @@
 
 #include "HardwareInterface.h"
 
-//#include "interfaces/input/Accelerometer.h"
-//#include "interfaces/input/Button.h"
-//#include "interfaces/input/Gyroscope.h"
-//#include "interfaces/input/Humidity.h"
-//#include "interfaces/input/IRreceive.h"
-//#include "interfaces/input/KeyPad.h"
-//#include "interfaces/input/MagneticField.h"
-//#include "interfaces/input/Methane.h"
-//#include "interfaces/input/MotionDetector.h"
-//#include "interfaces/input/Pressure.h"
-////#include "interfaces/input/RTC.h"
-//#include "interfaces/input/Sonar.h"
-//#include "interfaces/input/Switch.h"
-//#include "interfaces/input/Temperature.h"
-//#include "interfaces/input/Tochpad.h"
-//
-//#include "interfaces/output/Relay.h"
-//#include "interfaces/output/LED.h"
-//#include "interfaces/output/RCSwitchTevionFSI07.h"
-
-#include "drivers/digitalio/DHT11.h"
-
 boolean HardwareInterface::registerDriver( HardwareDriver* mydriver ) {
 	if(mydriver == NULL)
 		return false;
@@ -222,4 +200,9 @@ HardwareCommandResult* HardwareInterface::getFreeHardwareCommandResultEntry() {
 
 	resultSetInUse[freeIndex] = true;
 	return &resultset[freeIndex];
+}
+
+ HardwareInterface::HardwareInterface() {
+	memset(resultSetInUse, 0, sizeof(resultSetInUse));
+			memset(driver, 0, sizeof(driver));
 }

@@ -9,8 +9,8 @@
 #ifndef EVENTCALLBACKINTERFACE_H_
 #define EVENTCALLBACKINTERFACE_H_
 
-#include "Commands.h"
-#include "../networking/Packets.h"
+#include <dispatcher/Commands.h>
+#include <networking/Packets.h>
 
 class EventCallbackInterface {
 		public:
