@@ -758,21 +758,21 @@ class InvenSenseMPU6050 : public I2C, public Temperature, public Accelerometer, 
 
 		int8_t readTemperature();
 
-		virtual void readTemperature( HardwareCommandResult* hwresult );
+		void readTemperature( HardwareCommandResult* hwresult );
 
-		virtual Triple<int16_t> readAccels();
+		Triple<int16_t> readAccels();
 
-		virtual void readAccels( HardwareCommandResult* hwresult );
+		void readAccels( HardwareCommandResult* hwresult );
 
-		virtual Triple<int16_t> readGyro();
+		Triple<int16_t> readGyro();
 
-		virtual void readGyro( HardwareCommandResult* hwresult );
+		void readGyro( HardwareCommandResult* hwresult );
 
-		virtual boolean readVal( HardwareTypeIdentifier type, HardwareCommandResult* result );
+		boolean readVal( HardwareTypeIdentifier type, HardwareCommandResult* result );
 
-		virtual boolean implementsInterface( HardwareTypeIdentifier type );
+		boolean implementsInterface( HardwareTypeIdentifier type );
 
-		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
+		HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
 			I2C::getImplementedInterfaces(arr, maxLen);
 			this->addImplementedInterface(arr, maxLen, HWType_gyroscope);
 			this->addImplementedInterface(arr, maxLen, HWType_accelerometer);
