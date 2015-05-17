@@ -154,16 +154,14 @@ HardwareCommandResult* HardwareInterface::readHardware(HardwareDriver* driver, H
 }
 
 HardwareCommandResult* HardwareInterface::writeHardware(HardwareDriver* driver, HardwareCommandResult* cmd) {
-	HardwareCommandResult* res = getFreeHardwareCommandResultEntry();
-
-	if(res == NULL)
+	if(cmd == NULL)
 		return NULL;
 
-	driver->writeVal(cmd->getHardwareType(), res);
-	res->setAddress(cmd->getAddress());
-	res->setHardwareType(cmd->getHardwareType());
+	if(!driver->writeVal(cmd->getHardwareType(), cmd)) {
+		return NULL;
+	}
 
-	return res;
+	return cmd;
 }
 
 HardwareInterface::~HardwareInterface() {

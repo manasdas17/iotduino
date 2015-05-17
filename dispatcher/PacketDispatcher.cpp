@@ -104,6 +104,9 @@ void PacketDispatcher::loop() {
 		}
 	}
 
+	//maintain response listeners
+	responseHandler.loop();
+
 	#ifdef ENABLE_SUBSCRIPTION_SERVICE
 	////subscriptions
 	//actual timed subscriptions

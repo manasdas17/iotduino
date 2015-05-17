@@ -15,7 +15,7 @@
 #include <dispatcher/Commands.h>
 
 #define resultSetSize 10
-#define driverPointerListSize 5
+#define driverPointerListSize 10
 class HardwareInterface {
 	private:
 		//const static resultSetSize = 10;
