@@ -48,7 +48,8 @@ boolean SubscriptionService::handleRequest(EventCallbackInterface* callback, con
 }
 
 void SubscriptionService::executeSubscriptions() {
-	if(millis() - SUBSCRIPTION_CHECK_PERIOD_MILLIS > lastSubscriptionCheckTimestamp) {
+	uint32_t now = millis();
+	if(now - SUBSCRIPTION_CHECK_PERIOD_MILLIS > lastSubscriptionCheckTimestamp && now > SUBSCRIPTION_CHECK_PERIOD_MILLIS) {
 		lastSubscriptionCheckTimestamp = millis();
 
 		#ifdef DEBUG_HANDLER_ENABLE
@@ -216,7 +217,7 @@ boolean SubscriptionService::handleSubscriptionRequest(EventCallbackInterface* c
 #ifdef ENABLE_EVENTS
 void SubscriptionService::doPollingForSubscriptions() {
 	uint32_t now = millis();
-	if(now - SUBSCRIPTION_POLLING_CHECK_PERIOD_MILLIS > lastSubscriptionPollingCheckTimestamp) {
+	if(now - SUBSCRIPTION_POLLING_CHECK_PERIOD_MILLIS > lastSubscriptionPollingCheckTimestamp && now > SUBSCRIPTION_POLLING_CHECK_PERIOD_MILLIS) {
 		lastSubscriptionPollingCheckTimestamp = now;
 
 		#ifdef DEBUG_HANDLER_ENABLE

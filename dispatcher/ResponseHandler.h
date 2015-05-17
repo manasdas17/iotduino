@@ -32,6 +32,8 @@ class ResponseHandler {
 		/** listener storage */
 		responseListener_t listeners[LISTENER_NUM];
 
+		uint8_t activeListenersNum;
+
 		/** timestamp for maintenance loop */
 		uint16_t lastCheckedTimestampMillis;
 	//functions
@@ -60,7 +62,9 @@ class ResponseHandler {
 		 */
 		void loop();
 
-		ResponseHandler() {}
+		ResponseHandler() {
+			activeListenersNum = 0;
+		}
 
 		~ResponseHandler() {}
 
@@ -81,6 +85,13 @@ class ResponseHandler {
 		 * @return free slot index, 255 otherwise
 		 */
 		uint8_t getListenerSlot() const;
+
+		/**
+		 * remove a listener
+		 * @param index
+		 * @param success
+		 */
+		boolean removeListener(uint8_t index);
 
 	private:
 }; //ResponseHandler

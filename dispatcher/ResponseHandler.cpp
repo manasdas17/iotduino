@@ -52,6 +52,8 @@ boolean ResponseHandler::registerListener(const seq_t seqNumber, const l3_addres
 	listeners[index].remote = remoteAddress;
 	listeners[index].seqNumber = seqNumber;
 
+	activeListenersNum++;
+
 	return true;
 }
 
@@ -68,13 +70,18 @@ uint8_t ResponseHandler::getListenerSlot() const {
 }
 
 void ResponseHandler::maintainListeners() {
-	#ifdef DEBUG_HANDLER_ENABLE
-		Serial.print(millis());
-		Serial.println(F("ResponseHandler::maintainListeners()"));
-		Serial.flush();
-	#endif
+	if(activeListenersNum == 0)
+		return;
+
 	if(millis() - lastCheckedTimestampMillis > MAINTENANCE_PERIOD_MILLIS) {
 		lastCheckedTimestampMillis = millis();
+
+
+		#ifdef DEBUG_HANDLER_ENABLE
+		Serial.print(millis());
+		Serial.println(F(": ResponseHandler::maintainListeners()"));
+		Serial.flush();
+		#endif
 
 		for(uint8_t i = 0; i < LISTENER_NUM; i++) {
 			if(listeners[i].timestamp > 0 && listeners[i].timestamp < millis()) {
@@ -87,7 +94,7 @@ void ResponseHandler::maintainListeners() {
 					Serial.flush();
 				#endif
 				listeners[i].callbackObj->fail(listeners[i].seqNumber, listeners[i].remote);
-				memset(&listeners[i], 0, sizeof(responseListener_t));
+				this->removeListener(i);
 			}
 		}
 	}
@@ -123,4 +130,13 @@ ResponseHandler::responseListener_t* ResponseHandler::getListener(const seq_t se
 
 void ResponseHandler::loop() {
 	maintainListeners();
+}
+
+boolean ResponseHandler::removeListener(uint8_t i) {
+	if(i >= LISTENER_NUM)
+		return false;
+
+	memset(&listeners[i], 0, sizeof(responseListener_t));
+	activeListenersNum--;
+	return true;
 }

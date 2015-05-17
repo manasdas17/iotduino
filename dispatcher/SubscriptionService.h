@@ -17,9 +17,9 @@
 
 #define numSubscriptionList 10
 /** period for subscription execution */
-#define SUBSCRIPTION_CHECK_PERIOD_MILLIS (1*1000)
+#define SUBSCRIPTION_CHECK_PERIOD_MILLIS (10*1000)
 /** period for subscription polling check */
-#define SUBSCRIPTION_POLLING_CHECK_PERIOD_MILLIS (250)
+#define SUBSCRIPTION_POLLING_CHECK_PERIOD_MILLIS (10*1000) //250
 
 class SubscriptionService {
 	//variables
