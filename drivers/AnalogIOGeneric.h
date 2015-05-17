@@ -38,8 +38,7 @@ class AnalogIOGeneric : public AnalogIO {
 		virtual int16_t read();
 		virtual int16_t readCalibrated();
 		virtual void readCalibrated(HardwareCommandResult* hwresult);
-		virtual void write(int16_t val);
-		virtual void write(float val);
+		virtual void write(int8_t val);
 
 		virtual boolean implementsInterface( HardwareTypeIdentifier type );;
 		virtual boolean readVal( HardwareTypeIdentifier type, HardwareCommandResult* result );

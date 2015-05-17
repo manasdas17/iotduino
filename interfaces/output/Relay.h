@@ -19,10 +19,10 @@
 
 class Relay : public DigitalIOGeneric {
 	public:
-		Relay(uint8_t pin) : DigitalIOGeneric(pin, false) {
+		Relay(uint8_t pin, uint8_t hwaddress) : DigitalIOGeneric(pin, false, hwaddress) {
 		}
 
-		Relay(uint8_t pin, boolean highIsOn) : DigitalIOGeneric(pin, false) {
+		Relay(uint8_t pin, boolean highIsOn, uint8_t hwaddress) : DigitalIOGeneric(pin, false, hwaddress) {
 			this->highIsOn = highIsOn;
 		}
 

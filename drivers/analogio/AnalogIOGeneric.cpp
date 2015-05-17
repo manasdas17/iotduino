@@ -19,17 +19,10 @@ int16_t AnalogIOGeneric::read() {
 	return analogRead(pin);
 }
 
-void AnalogIOGeneric::write(int16_t val) {
-	this->write((float) val);
-}
-
-void AnalogIOGeneric::write(float val) {
-	int16_t tmp = val;
-	if(tmp > 0xff) tmp = 0xff;
-
+void AnalogIOGeneric::write(int8_t val) {
 	uint8_t pin = getPIN();
 	pinMode(pin, OUTPUT);
-	analogWrite(pin, tmp);
+	analogWrite(pin, val);
 }
 
 int16_t AnalogIOGeneric::readCalibrated() {
