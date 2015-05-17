@@ -11,6 +11,7 @@
 #include <drivers/HardwareID.h>
 #include <dispatcher/HardwareInterface.h>
 #include <dispatcher/PacketDispatcher.h>
+#include <utils/SimpleTimer.h>
 
 #define address00 0x1000
 #define address01 0x1001
@@ -32,6 +33,7 @@ HardwareInterface* hwInterface;
 #include <drivers/digitalio/DHT11.h>
 #include <interfaces/output/RCSwitchTevionFSI07.h>
 #include <interfaces/output/LED.h>
+#include <interfaces/output/MyTone.h>
 #include <interfaces/input/MotionDetector.h>
 #include <interfaces/input/Light.h>
 
@@ -40,7 +42,7 @@ RCSwitchTevionFSI07* rcsw;
 LED* led;
 MotionDetector* motion;
 Light* light;
-
+MyTone* mytone;
 
 /**
  * read pin 4..9 inverted
@@ -118,6 +120,25 @@ void testHardwareCommand(uint8_t address, HardwareTypeIdentifier type, uint8_t i
 	HardwareCommandResult cmd = HardwareCommandResult();
 	cmd.deSerialize(&cmd_packet);
 	hwInterface->executeCommand(&cmd);
+}
+
+void testHardwareCommandTone() {
+	SimpleTimer::instance()->run();
+
+	command_t cmd_packet;
+	memset(&cmd_packet, 0, sizeof(cmd_packet));
+	cmd_packet.address = mytone->getAddress();
+	cmd_packet.isRead = false;
+	cmd_packet.type = HWType_tone;
+	cmd_packet.numUint16 = 1;
+	cmd_packet.uint16list[0] = 2000;
+	HardwareCommandResult cmd = HardwareCommandResult();
+	cmd.deSerialize(&cmd_packet);
+	hwInterface->executeCommand(&cmd);
+
+	SimpleTimer::instance()->run();
+	delay(2500);
+	SimpleTimer::instance()->run();
 }
 
 void testSubscriptionSet() {
@@ -320,6 +341,7 @@ void setup() {
 	led = new LED(30, 22);
 	motion = new MotionDetector(12, 50);
 	light = new Light(A10, 60);
+	mytone = new MyTone(3, 70);
 
 	hwInterface = new HardwareInterface();
 	hwInterface->registerDriver((HardwareDriver*) dht11);
@@ -327,9 +349,15 @@ void setup() {
 	hwInterface->registerDriver((HardwareDriver*) led);
 	hwInterface->registerDriver((HardwareDriver*) motion);
 	hwInterface->registerDriver((HardwareDriver*) light);
+	hwInterface->registerDriver((HardwareDriver*) mytone);
 
 
 	dispatcher = new PacketDispatcher(l3, hwInterface);
+
+	Serial.println("### testHardwareCommand: Tone ###");
+	Serial.flush();
+	testHardwareCommandTone();
+
 
 	Serial.println("### testHardwareCommand: Light ###");
 	Serial.flush();
@@ -381,6 +409,7 @@ void loop() {
 	//do networking.
 	l3->Loop();
 	dispatcher->loop();
+	SimpleTimer::instance()->run();
 	//l2->radio->printDetails();
 
 /***

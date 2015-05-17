@@ -39,7 +39,8 @@ enum HardwareTypeIdentifier {
 	HWTYPE_led,
 	HWType_rcswitch,
 	HWType_relay,
-	HWType_light
+	HWType_light,
+	HWType_tone
 };
 
 #endif  //_HARDWAREID_H
