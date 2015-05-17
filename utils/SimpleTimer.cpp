@@ -94,16 +94,16 @@ void SimpleTimer::run() {
     for (i = 0; i < MAX_TIMERS; i++) {
         switch(toBeCalled[i]) {
             case DEFCALL_DONTRUN:
-                break;
+                continue;
 
             case DEFCALL_RUNONLY:
                 (*callbacks[i])(i); //added timer num to callback
-                break;
+                continue;
 
             case DEFCALL_RUNANDDEL:
                 (*callbacks[i])(i); //added timer num to callback
                 deleteTimer(i);
-                break;
+                continue;
         }
     }
 }
