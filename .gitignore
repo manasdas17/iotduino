@@ -9,3 +9,21 @@ networking/rf24/printf.h__
 printf.h__
 MirfLib.cppproj
 iotduino.cppproj
+networking/rf24 _old/RF24.cpp_
+networking/rf24 _old/RF24.h_
+networking/rf24 _old/RF24_config.h_
+networking/rf24 _old/nRF24L01.h_
+networking/rf24 other/RF24.cpp
+networking/rf24 other/RF24.h
+networking/rf24 other/RF24_config.h
+networking/rf24 other/nRF24L01.h
+networking/rf24_alt/RF24.cpp
+networking/rf24_alt/RF24.h
+networking/rf24_alt/RF24_config.h
+networking/rf24_alt/nRF24L01.h
+networking/rf24_alt/printf.h
+networking/rf24test/RF24.cpp
+networking/rf24test/RF24.h
+networking/rf24test/RF24_config.h
+networking/rf24test/nRF24L01.h
+networking/rf24test/printf.h
