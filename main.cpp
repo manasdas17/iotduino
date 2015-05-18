@@ -24,7 +24,7 @@ uint16_t address_remote;
 boolean isServer;
 
 #define PIN_CE A0
-#define PIN_CSN 10
+#define PIN_CSN SS
 Layer2rf24* l2;
 Layer3* l3;
 PacketDispatcher* dispatcher;
@@ -334,75 +334,79 @@ void setup() {
 	l2 = new Layer2rf24(l3, PIN_CE, PIN_CSN, address_local);
 	l3->setLayer2(l2);
 
-	////setupEventBus();
-	//pin, virtual hw-address
-	dht11 = new DHT11(17, 20);
-	rcsw = new RCSwitchTevionFSI07(14, 21);
-	led = new LED(30, 22);
-	motion = new MotionDetector(12, 50);
-	light = new Light(A10, 60);
-	mytone = new MyTone(3, 70);
 
-	hwInterface = new HardwareInterface();
-	hwInterface->registerDriver((HardwareDriver*) dht11);
-	hwInterface->registerDriver((HardwareDriver*) rcsw);
-	hwInterface->registerDriver((HardwareDriver*) led);
-	hwInterface->registerDriver((HardwareDriver*) motion);
-	hwInterface->registerDriver((HardwareDriver*) light);
-	hwInterface->registerDriver((HardwareDriver*) mytone);
+	if(address_local == 16) {
+		//pin, virtual hw-address
+		dht11 = new DHT11(17, 20);
+		rcsw = new RCSwitchTevionFSI07(14, 21);
+		led = new LED(30, 22);
+		motion = new MotionDetector(12, 50);
+		light = new Light(A10, 60);
+		mytone = new MyTone(3, 70);
 
+		hwInterface = new HardwareInterface();
+		hwInterface->registerDriver((HardwareDriver*) dht11);
+		hwInterface->registerDriver((HardwareDriver*) rcsw);
+		hwInterface->registerDriver((HardwareDriver*) led);
+		hwInterface->registerDriver((HardwareDriver*) motion);
+		hwInterface->registerDriver((HardwareDriver*) light);
+		hwInterface->registerDriver((HardwareDriver*) mytone);
 
+		address_remote = 32;
+	} else if(address_local == 32) {
+		address_remote = 16;
+	}
 	dispatcher = new PacketDispatcher(l3, hwInterface);
 
-	Serial.println("### testHardwareCommand: Tone ###");
-	Serial.flush();
-	testHardwareCommandTone();
-
-
-	Serial.println("### testHardwareCommand: Light ###");
-	Serial.flush();
-	testHardwareCommand(0, HWType_light, true);
-	testHardwareCommand(0, HWType_light, true);
-	testHardwareCommand(0, HWType_light, true);
-
-	Serial.println("### testHardwareCommand: Temperature ###");
-	Serial.flush();
-	testHardwareCommand(0, HWType_temprature, true);
-
-	Serial.println("### testHardwareCommand: Motion ###");
-	Serial.flush();
-	testHardwareCommand(0, HWType_motion, true);
-
-	Serial.println("### testHardwareCommandRead ###");
-	Serial.flush();
-	testHardwareCommandRead();
-
-	Serial.println("### testDiscovery ###");
-	Serial.flush();
-	testDiscovery();
-
-	Serial.println("### testSubscriptionSet ###");
-	Serial.flush();
-	testSubscriptionSet();
-
-	Serial.println("### testSubscriptionInfo ###");
-	Serial.flush();
-	testSubscriptionInfo();
-
-	Serial.println("### testSubscriptionExecution ###");
-	Serial.flush();
-	testSubscriptionExecution();
-
-	Serial.println("### testSubscriptionPolling ###");
-	Serial.flush();
-	testSubscriptionPolling();
-
-	Serial.println("### testSubscriptionPolling Light ###");
-	Serial.flush();
-	testSubscriptionPollingLight();
-
-	//turn off LED
-	pinMode(LED_BUILTIN, LOW);
+	//Serial.println("### testHardwareCommand: Tone ###");
+	//Serial.flush();
+	//testHardwareCommandTone();
+//
+//
+	//Serial.println("### testHardwareCommand: Light ###");
+	//Serial.flush();
+	//testHardwareCommand(0, HWType_light, true);
+	//testHardwareCommand(0, HWType_light, true);
+	//testHardwareCommand(0, HWType_light, true);
+//
+	//Serial.println("### testHardwareCommand: Temperature ###");
+	//Serial.flush();
+	//testHardwareCommand(0, HWType_temprature, true);
+//
+	//Serial.println("### testHardwareCommand: Motion ###");
+	//Serial.flush();
+	//testHardwareCommand(0, HWType_motion, true);
+//
+	//Serial.println("### testHardwareCommandRead ###");
+	//Serial.flush();
+	//testHardwareCommandRead();
+//
+	//Serial.println("### testDiscovery ###");
+	//Serial.flush();
+	//testDiscovery();
+//
+	//Serial.println("### testSubscriptionSet ###");
+	//Serial.flush();
+	//testSubscriptionSet();
+//
+	//Serial.println("### testSubscriptionInfo ###");
+	//Serial.flush();
+	//testSubscriptionInfo();
+//
+	//Serial.println("### testSubscriptionExecution ###");
+	//Serial.flush();
+	//testSubscriptionExecution();
+//
+	//Serial.println("### testSubscriptionPolling ###");
+	//Serial.flush();
+	//testSubscriptionPolling();
+//
+	//Serial.println("### testSubscriptionPolling Light ###");
+	//Serial.flush();
+	//testSubscriptionPollingLight();
+//
+	////turn off LED
+	//pinMode(LED_BUILTIN, LOW);
 }
 
 void loop() {
