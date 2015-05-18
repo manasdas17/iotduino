@@ -103,16 +103,15 @@ boolean Layer2rf24::sendFrame( frame_t* frame )
 
 
 	boolean result = true;
-	if(frame->data.destination == CONFIG_L2_ADDR_BROADCAST) {
-		//broadcast
-		////radio->writeX(frame, sizeof(frame_t), false);
-		radio->write(frame->bytes, sizeof(frame_t), true);
-	} else {
-		//others
-		////result = radio->writeX(frame, sizeof(frame_t), true);
-		//result = radio->write(frame->bytes, sizeof(frame_t));
-		result = radio->write(frame->bytes, sizeof(frame_t), false);
-	}
+	//if(frame->data.destination == CONFIG_L2_ADDR_BROADCAST) {
+		////broadcast
+		//radio->write(frame->bytes, sizeof(frame_t), false); //do not request aclk
+	//} else {
+		////others
+		//result = radio->write(frame->bytes, sizeof(frame_t), true); //request ack
+	//}
+	radio->write(frame->bytes, sizeof(frame_t));
+	radio->txStandBy();
 
 	//reenable listening
 	radio->startListening();
@@ -138,9 +137,9 @@ void Layer2rf24::setupRadio()
 	//open reading pipe for this device.
 	radio->openReadingPipe(CONFIG_RF_PIPE_DEVICE, deviceAddress);
 	radio->openReadingPipe(CONFIG_RF_PIPE_BROADCAST, CONFIG_L2_ADDR_BROADCAST);
-	//radio->setAutoAck(CONFIG_RF_PIPE_DEVICE, true);
-	//radio->setAutoAck(CONFIG_RF_PIPE_BROADCAST, false);
-	radio->setAutoAck(true);
+	radio->setAutoAck(CONFIG_RF_PIPE_DEVICE, true);
+	radio->setAutoAck(CONFIG_RF_PIPE_BROADCAST, false);
+	//radio->setAutoAck(true);
 
 	//start listening
 	radio->startListening();
