@@ -15,18 +15,6 @@
 *       | seq | len | type in {HW_READ, HW_WRITE} | isRead | hwId | hwAddress | payload |
 *       +-----+-----+-----------------------------+--------+------+-----------+---------+
 * bytes: 2     1     1                             1        1      1           0
-*
-* Hardware Result:
-*       +--------------------------------------------------------------------------------------------+
-*       | packet_numbered_t                                                                          |
-*       +-----+-----+--------------------------------------------------------------------------------+
-*       |     |     | packet_application_t                                                           |
-*       |     |     +-----------------+--------------------------------------------------------------+
-*       |     |     |                 | hwresult_t                                                   |
-*       |     |     |                 +------+-----------+---------+----------+----------+-----------+
-*       | seq | len | type in { ACK } | hwId | hwAddress | uintNum | floatNum | uintList | floatList |
-*       +-----+-----+-----------------+------+-----------+---------+----------+----------+-----------+
-* bytes: 2     1     1                 1       1          1         1          0..4       0..1
 */
 
 
@@ -94,23 +82,26 @@ typedef enum packet_type_application_enum {
 
 #define CONFIG_APP_LAYER_PAYLOAD_SIZE (CONFIG_L3_PACKET_NUMBERED_MAX_LEN - 1)
 
+/** generic struct for numbered application packet */
 typedef struct packet_application_numbered_cmd_struct {
 	int8_t packetType; //1b
 	uint8_t payload[CONFIG_L3_PACKET_NUMBERED_MAX_LEN - 1];
 } packet_application_numbered_cmd_t;
 
+/** generic struct for unnumbered application packet, unused by now. */
 typedef struct packet_application_unnumbered_cmd_struct {
 	int8_t packetType; //1b
 	uint8_t payload[CONFIG_L3_PACKET_UNNUMBERED_MAX_LEN - 1];
 } packet_application_unnumbered_cmd_t;
 
-//discovery
+/** strcut for hardware discovery - keeps information of an interface */
 typedef struct discoveryInfo_helper_struct {
 	uint8_t hardwareAddress;
 	int8_t hardwareType;
 	uint8_t canDetectEvents;
 } packet_application_numbered_discovery_info_helper_t;
 
+/** struct for hardware discovery information */
 typedef struct discoveryInfo_struct {
 	uint8_t numSensors;
 	packet_application_numbered_discovery_info_helper_t infos[(CONFIG_L3_PACKET_UNNUMBERED_MAX_LEN - 1) / sizeof(packet_application_numbered_discovery_info_helper_t)];
@@ -129,12 +120,14 @@ typedef struct subscription_helper_struct {
 	seq_t sequence;							//2b
 } subscription_helper_t;					//sum=13
 
+/** subscription information */
 typedef struct substcripton_info_struct {
 	l3_address_t forAddress;
 	uint8_t numInfosFollowing;
 	subscription_helper_t info;
 } subscription_info_t;
 
+/** set subscription - just keeps subscription information */
 typedef struct subscription_set_struct {
 	subscription_helper_t info;
 } subscription_set_t;

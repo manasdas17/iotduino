@@ -178,6 +178,23 @@ class Layer3 {
 		* @return succes
 		*/
 		boolean sendBroadcast(uint8_t* payload, uint8_t payloadLen);
+
+		/**
+		* send a packet to destination
+		* @param packet
+		*/
+		boolean sendPacket(packet_t &packet);
+
+		/**
+		* @param packet
+		* @param l3 destination
+		* @param l3 frame type
+		* @param payload
+		* @param payload length
+		* @return success
+		*/
+		boolean createPacketGeneric(packet_t* packet, l3_address_t destination, l3_packetType type, uint8_t* payload, uint8_t payloadLen);
+
 		protected:
 		private:
 
@@ -217,22 +234,6 @@ class Layer3 {
 		* @param neighbour
 		*/
 		neighbourData* getNeighbour(l3_address_t detination);
-
-		/**
-		* send a packet to destination
-		* @param packet
-		*/
-		boolean sendPacket(packet_t &packet);
-
-		/**
-		* @param packet
-		* @param l3 destination
-		* @param l3 frame type
-		* @param payload
-		* @param payload length
-		* @return success
-		*/
-		boolean createPacketGeneric(packet_t* packet, l3_address_t destination, l3_packetType type, uint8_t* payload, uint8_t payloadLen);
 
 		/**
 		* push into receive queue

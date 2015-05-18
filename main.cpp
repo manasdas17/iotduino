@@ -11,6 +11,7 @@
 #include <drivers/HardwareID.h>
 #include <dispatcher/HardwareInterface.h>
 #include <dispatcher/PacketDispatcher.h>
+#include <dispatcher/PacketFactory.h>
 #include <utils/SimpleTimer.h>
 
 #define address00 0x1000
@@ -29,6 +30,7 @@ Layer2rf24* l2;
 Layer3* l3;
 PacketDispatcher* dispatcher;
 HardwareInterface* hwInterface;
+PacketFactory* pf;
 
 #include <drivers/digitalio/DHT11.h>
 #include <interfaces/output/RCSwitchTevionFSI07.h>
@@ -334,6 +336,10 @@ void setup() {
 	l2 = new Layer2rf24(l3, PIN_CE, PIN_CSN, address_local);
 	l3->setLayer2(l2);
 
+	pf = PacketFactory::instance();
+	pf->setLayer3(l3);
+
+
 
 	if(address_local == 16) {
 		//pin, virtual hw-address
@@ -409,12 +415,43 @@ void setup() {
 	//pinMode(LED_BUILTIN, LOW);
 }
 
+enum internalState {state_START, state_NEIGHBOUR_FOUND, state_INFO_REQUEST_SENT};
+
+internalState state = state_START;
+
 void loop() {
 	//do networking.
 	l3->Loop();
 	dispatcher->loop();
 	SimpleTimer::instance()->run();
-	//l2->radio->printDetails();
+
+	if(address_local == 32) {
+		switch(state) {
+			case state_START: {
+				neighbourData* neighbours = l3->getNeighbours();
+
+				for(uint8_t i = 0; i < CONFIG_L3_NUM_NEIGHBOURS; i++) {
+					if(neighbours[i].nodeId == 16) {
+						//neighbour found
+						state = state_NEIGHBOUR_FOUND;
+						break;
+					}
+				}
+				break;
+			}
+			case state_NEIGHBOUR_FOUND: {
+
+				break;
+			}
+			case state_INFO_REQUEST_SENT: {
+				break;
+			}
+			default: {
+				break;
+			}
+		}
+	}
+
 
 /***
 	if(millis() - lastBeaconT > 60*1000UL) {

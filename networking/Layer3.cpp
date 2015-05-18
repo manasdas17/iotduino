@@ -173,7 +173,7 @@ boolean Layer3::sendAck(packet_t* packet) {
 
 boolean Layer3::createPacketGeneric( packet_t* packet, l3_address_t destination, l3_packetType type, uint8_t* payload, uint8_t payloadLen )
 {
-	if(payloadLen > CONFIG_APP_PAYLOAD_SIZE) {
+	if(packet == NULL || payloadLen > CONFIG_APP_PAYLOAD_SIZE) {
 		return false;
 	}
 
