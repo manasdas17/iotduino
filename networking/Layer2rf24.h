@@ -1,4 +1,4 @@
-/* 
+/*
 * nrf24Mesh.h
 *
 * Created: 04.01.2015 01:44:26
@@ -10,10 +10,10 @@
 #define __NRF24MESH_H__
 
 #include <Arduino.h>
-#include <SPI/SPI.h>
-#include "LayerConfig.h"
-#include "nRF24L01.h"
-#include "RF24.h"
+#include <SPI.h>
+#include <networking/LayerConfig.h>
+#include <networking/rf24/nRF24L01.h>
+#include <networking/rf24/RF24.h>
 
 class Layer3;
 
@@ -36,7 +36,7 @@ class Layer2rf24 {
 			} data;
 			uint8_t bytes[CONFIG_L2_PAYLOAD_SIZE];
 		} frame_t;
-	
+
 	private:
 		uint8_t pin_ce;
 		uint8_t pin_csn;
@@ -46,9 +46,9 @@ class Layer2rf24 {
 		frame_t receiveQueue[CONFIG_L2_RECEIVE_BUFFER_LEN];
 		uint8_t receiveQueueFirst;
 		uint8_t receiveQueueNum;
-		
+
 		Layer3* l3;
-		
+
 	//functions
 	public:
 		void setLayer3(Layer3* l3) {
@@ -63,26 +63,26 @@ class Layer2rf24 {
 		 * @return success
 		 */
 		boolean createFrame(frame_t* f, address_t destination, uint8_t payloadLen, uint8_t* payload );
-		
+
 		/**
 		 * get receive queue size
 		 * @return size
 		 */
 		uint8_t receiveQueueSize();
-		
+
 		/**
 		 * push item to receive queu
 		 * @param frame
 		 * @return success
 		 */
 		boolean receiveQueuePush(frame_t* f);
-		
+
 		/**
 		 * pop an item from the receive queue
 		 * @param frame to fill
 		 */
 		boolean receiveQueuePop(frame_t* f);
-		
+
 		/**
 		 * constructor.
 		 * @param ce pin
@@ -90,26 +90,26 @@ class Layer2rf24 {
 		 * @param local device address
 		 */
 		Layer2rf24(Layer3* l3, uint8_t pin_ce, uint8_t pin_csn, uint16_t deviceAddress);
-		
+
 		/**
 		 * receive all available data and push it to the queue.
 		 * @return num frames received (max will typically be 3 due to buffer size.)
 		 */
 		uint8_t receive();
-		
+
 		/**
 		 * blocking write call
 		 * automatically distinguishes between broadcast (non-acked, multicast) and device addresses (auto acked)
 		 * @return success
 		 */
 		boolean sendFrame(frame_t* frame);
-		
+
 	private:
 		/**
 		 * init the radio with all settings
 		 */
 		void setupRadio();
-		
+
 		/**
 		 * desctructor.
 		 */

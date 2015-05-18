@@ -16,8 +16,15 @@
 #define __RF24_H__
 
 #include "RF24_config.h"
-#if (defined (__linux) || defined (LINUX)) && !defined (__ARDUINO_X86__)
-  #include "RPi/bcm2835.h"
+
+#ifndef strlen_P
+	#define strlen_P strlen
+#endif
+
+#if defined (RF24_LINUX)
+  #include "arch/includes.h"
+#elif LITTLEWIRE
+  #include <LittleWireSPI/LittleWireSPI.h>
 #elif defined SOFTSPI
   #include <DigitalIO.h>
 #endif
@@ -56,9 +63,16 @@ private:
   SPIUARTClass uspi;
 #endif
 
+#if defined (RF24_LINUX)
+  SPI spi;
+#endif
+#if defined (MRAA)
+  GPIO gpio;
+#endif
+
   uint8_t ce_pin; /**< "Chip Enable" pin, activates the RX or TX role */
   uint8_t csn_pin; /**< SPI Chip select */
-#if defined (__linux)
+#if defined (RF24_LINUX)
   uint16_t spi_speed; /**< SPI Bus Speed */
   uint8_t spi_rxbuff[32+1] ; //SPI receive buffer (payload max 32 bytes)
   uint8_t spi_txbuff[32+1] ; //SPI transmit buffer (payload max 32 bytes + 1 byte for the command)
@@ -69,6 +83,18 @@ private:
   uint8_t pipe0_reading_address[5]; /**< Last address set on pipe 0 for reading. */
   uint8_t addr_width; /**< The address width to use - 3,4 or 5 bytes. */
   uint32_t txRxDelay; /**< Var for adjusting delays depending on datarate */
+
+
+protected:
+  /**
+   * SPI transactions
+   *
+   * Common code for SPI transactions including CSN toggle
+   *
+   */
+  inline void beginTransaction();
+
+  inline void endTransaction();
 
 public:
 
@@ -92,7 +118,7 @@ public:
   //#if defined (RF24_LINUX)
 
     /**
-  * Raspberry Pi Constructor
+  * Optional Raspberry Pi Constructor
   *
   * Creates a new instance of this driver.  Before using, you create an instance
   * and send in the unique pins that this chip is connected to.
@@ -104,13 +130,18 @@ public:
 
   RF24(uint8_t _cepin, uint8_t _cspin, uint32_t spispeed );
   //#endif
+
+  #if defined (RF24_LINUX)
+  virtual ~RF24() {};
+  #endif
+
   /**
    * Begin operation of the chip
    *
    * Call this in setup(), before calling any other methods.
    * @code radio.begin() @endcode
    */
-  void begin(void);
+  bool begin(void);
 
   /**
    * Start listening on the pipes opened for reading.
@@ -463,7 +494,7 @@ s   *
    * @return True if transmission is successful
    *
    */
-   bool txStandBy(uint32_t timeout);
+   bool txStandBy(uint32_t timeout, bool startTx = 0);
 
   /**
    * Write an ack payload for the specified pipe
@@ -482,20 +513,6 @@ s   *
    * by the static payload set by setPayloadSize().
    */
   void writeAckPayload(uint8_t pipe, const void* buf, uint8_t len);
-
-  /**
-   * Enable dynamic ACKs (single write multicast or unicast) for chosen messages
-   *
-   * @note To enable full multicast or per-pipe multicast, use setAutoAck()
-   *
-   * @warning This MUST be called prior to attempting single write NOACK calls
-   * @code
-   * radio.enableDynamicAck();
-   * radio.write(&data,32,1);  // Sends a payload with no acknowledgement requested
-   * radio.write(&data,32,0);  // Sends a payload using auto-retry/autoACK
-   * @endcode
-   */
-  void enableDynamicAck();
 
   /**
    * Determine if an ack payload was received in the most recent call to
@@ -543,7 +560,7 @@ s   *
    * @param multicast Request ACK (0) or NOACK (1)
    * @return True if the payload was delivered successfully false if not
    */
-  void startFastWrite( const void* buf, uint8_t len, const bool multicast );
+  void startFastWrite( const void* buf, uint8_t len, const bool multicast, bool startTx = 1 );
 
   /**
    * Non-blocking write to the open writing pipe
@@ -630,39 +647,36 @@ s   *
    */
   bool isValid() { return ce_pin != 0xff && csn_pin != 0xff; }
 
-  /**
-  * The radio will generate interrupt signals when a transmission is complete,
-  * a transmission fails, or a payload is received. This allows users to mask
-  * those interrupts to prevent them from generating a signal on the interrupt
-  * pin. Interrupts are enabled on the radio chip by default.
-  *
-  * @code
-  * 	Mask all interrupts except the receive interrupt:
-  *
-  *		radio.maskIRQ(1,1,0);
-  * @endcode
-  *
-  * @param tx_ok  Mask transmission complete interrupts
-  * @param tx_fail  Mask transmit failure interrupts
-  * @param rx_ready Mask payload received interrupts
-  */
-  void maskIRQ(bool tx_ok,bool tx_fail,bool rx_ready);
-
-  /**
-  * Set the address width from 3 to 5 bytes (24, 32 or 40 bit)
-  *
-  * @param a_width The address width to use: 3,4 or 5
-  */
-
-  void setAddressWidth(uint8_t a_width);
-
-
    /**
    * Close a pipe after it has been previously opened.
    * Can be safely called without having previously opened a pipe.
    * @param pipe Which pipe # to close, 0-5.
    */
   void closeReadingPipe( uint8_t pipe ) ;
+
+   /**
+   * Enable error detection by un-commenting #define FAILURE_HANDLING in RF24_config.h
+   * If a failure has been detected, it usually indicates a hardware issue. By default the library
+   * will cease operation when a failure is detected.
+   * This should allow advanced users to detect and resolve intermittent hardware issues.
+   *
+   * In most cases, the radio must be re-enabled via radio.begin(); and the appropriate settings
+   * applied after a failure occurs, if wanting to re-enable the device immediately.
+   *
+   * Usage: (Failure handling must be enabled per above)
+   *  @code
+   *  if(radio.failureDetected){
+   *    radio.begin();                       // Attempt to re-configure the radio with defaults
+   *    radio.failureDetected = 0;           // Reset the detection value
+   *	radio.openWritingPipe(addresses[1]); // Re-configure pipe addresses
+   *    radio.openReadingPipe(1,addresses[0]);
+   *    report_failure();                    // Blink leds, send a message, etc. to indicate failure
+   *  }
+   * @endcode
+  */
+  //#if defined (FAILURE_HANDLING)
+    bool failureDetected;
+  //#endif
 
   /**@}*/
 
@@ -675,6 +689,14 @@ s   *
    *  defaults.
    */
   /**@{*/
+
+  /**
+  * Set the address width from 3 to 5 bytes (24, 32 or 40 bit)
+  *
+  * @param a_width The address width to use: 3,4 or 5
+  */
+
+  void setAddressWidth(uint8_t a_width);
 
   /**
    * Set the number and delay of retries upon failed submit
@@ -754,6 +776,20 @@ s   *
    *
    */
   void enableDynamicPayloads(void);
+
+  /**
+   * Enable dynamic ACKs (single write multicast or unicast) for chosen messages
+   *
+   * @note To enable full multicast or per-pipe multicast, use setAutoAck()
+   *
+   * @warning This MUST be called prior to attempting single write NOACK calls
+   * @code
+   * radio.enableDynamicAck();
+   * radio.write(&data,32,1);  // Sends a payload with no acknowledgement requested
+   * radio.write(&data,32,0);  // Sends a payload using auto-retry/autoACK
+   * @endcode
+   */
+  void enableDynamicAck();
 
   /**
    * Determine whether the hardware is an nRF24L01+ or not.
@@ -847,30 +883,23 @@ s   *
    */
   void disableCRC( void ) ;
 
-   /**
-   * Enable error detection by un-commenting #define FAILURE_HANDLING in RF24_config.h
-   * If a failure has been detected, it usually indicates a hardware issue. By default the library
-   * will cease operation when a failure is detected.
-   * This should allow advanced users to detect and resolve intermittent hardware issues.
-   *
-   * In most cases, the radio must be re-enabled via radio.begin(); and the appropriate settings
-   * applied after a failure occurs, if wanting to re-enable the device immediately.
-   *
-   * Usage: (Failure handling must be enabled per above)
-   *  @code
-   *  if(radio.failureDetected){
-   *    radio.begin();                       // Attempt to re-configure the radio with defaults
-   *    radio.failureDetected = 0;           // Reset the detection value
-   *	radio.openWritingPipe(addresses[1]); // Re-configure pipe addresses
-   *    radio.openReadingPipe(1,addresses[0]);
-   *    report_failure();                    // Blink leds, send a message, etc. to indicate failure
-   *  }
-   * @endcode
+  /**
+  * The radio will generate interrupt signals when a transmission is complete,
+  * a transmission fails, or a payload is received. This allows users to mask
+  * those interrupts to prevent them from generating a signal on the interrupt
+  * pin. Interrupts are enabled on the radio chip by default.
+  *
+  * @code
+  * 	Mask all interrupts except the receive interrupt:
+  *
+  *		radio.maskIRQ(1,1,0);
+  * @endcode
+  *
+  * @param tx_ok  Mask transmission complete interrupts
+  * @param tx_fail  Mask transmit failure interrupts
+  * @param rx_ready Mask payload received interrupts
   */
-  //#if defined (FAILURE_HANDLING)
-    bool failureDetected;
-  //#endif
-
+  void maskIRQ(bool tx_ok,bool tx_fail,bool rx_ready);
 
   /**@}*/
   /**
@@ -1085,6 +1114,7 @@ private:
   /**@}*/
 
 };
+
 #endif // __RF24_H__
 
 
