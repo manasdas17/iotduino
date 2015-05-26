@@ -184,7 +184,7 @@ boolean SubscriptionService::handleSubscriptionInfoRequest(EventCallbackInterfac
 	//return answer
 	packet_application_numbered_cmd_t newPkt;
 	memset(&newPkt, 0, sizeof(newPkt));
-	newPkt.packetType = HARDWARE_SUBSCRIPTION_INFO;
+	newPkt.packetType = HARDWARE_SUBSCRIPTION_INFO_RES;
 	subscription_info_t* info = (subscription_info_t*) newPkt.payload;
 	info->forAddress = subscriptionInfo->forAddress; //not yet changed, everything is fine.
 
@@ -194,6 +194,8 @@ boolean SubscriptionService::handleSubscriptionInfoRequest(EventCallbackInterfac
 		memcpy(&info->info, &buffer[num - 1], sizeof(subscription_helper_t));
 
 		callback->doCallback(&newPkt, remote, seq);
+		//increase sequence
+		seq++;
 	}
 	return true;
 }

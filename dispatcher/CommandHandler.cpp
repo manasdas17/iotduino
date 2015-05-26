@@ -48,7 +48,7 @@ boolean CommandHandler::handleHardwareCommand(packet_application_numbered_cmd_t*
 	}
 
 	//create response
-	appLayerPacket.packetType = ACK;
+	appLayerPacket.packetType = HARDWARE_COMMAND_RES;
 	cmd.serialize((command_t*) appLayerPacket.payload);
 
 	if(callback == NULL)
