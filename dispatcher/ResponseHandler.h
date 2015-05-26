@@ -24,6 +24,7 @@ class ResponseHandler {
 	private:
 		typedef struct responseListener_struct {
 			uint16_t timestamp;
+			packet_type_application_t packetType;
 			seq_t seqNumber;
 			l3_address_t remote;
 			EventCallbackInterface* callbackObj;
@@ -58,6 +59,15 @@ class ResponseHandler {
 		boolean registerListener(const seq_t seqNumber, const l3_address_t remoteAddress, EventCallbackInterface* callbackObject);
 
 		/**
+		 * register a new listener for a specific remote address and sequence number with callback
+		 * @param sequence
+		 * @param type of packet
+		 * @param callback object
+		 * @return true on success, false otherwise
+		 */
+		boolean registerListener(packet_type_application_t type, const l3_address_t remoteAddress, EventCallbackInterface* callbackObject);
+
+		/**
 		 * maintenance.
 		 */
 		void loop();
@@ -70,11 +80,28 @@ class ResponseHandler {
 
 	protected:
 		/**
+		 * register a new listener for a specific remote address and sequence number with callback
+		 * @param sequence
+		 * @param type
+		 * @param l3 remote address
+		 * @param callback object
+		 * @return true on success, false otherwise
+		 */
+		boolean registerListener(const seq_t seqNumber, const packet_type_application_t type, const l3_address_t remoteAddress, EventCallbackInterface* callbackObject);
+
+		/**
 		 * return a listener if available
 		 * @param desired sequence number
 		 * @param desired l3 remote address
 		 */
 		 responseListener_t* getListener(const seq_t seq, const l3_address_t remote);
+
+		/**
+		 * return a listener if available
+		 * @param desired type
+		 * @param desired l3 remote address
+		 */
+		 responseListener_t* getListener(const packet_type_application_t type, const l3_address_t remote);
 
 		/**
 		 * check callbacks for timeouts; in case of timeout, triggers FAIL() on callback
