@@ -64,7 +64,10 @@ boolean Layer3::sendPacket( packet_t &packet )
 	//numbered? - handle via queue ONLY IF the packet is not routed.
 	if(packet.data.type == PACKET_NUMBERED && packet.data.source == localAddress) {
 		#ifdef DEBUG_NETWORK_ENABLE
-			Serial.println(F("\tnumbered - try to queue it"));
+			Serial.print(F("\tnumbered - enqueue: remote="));
+			Serial.print(packet.data.destination);
+			Serial.print(F(" seq="));
+			Serial.println(((packet_numbered_t*) packet.data.payload)->seqNumber);
 		#endif
 		result &= addToSendingQueue(&packet);
 	}
@@ -581,7 +584,7 @@ boolean Layer3::addToSendingQueue( packet_t* packet ) {
 	}
 
 	//create copy.
-	sendingNumberedBuffer[freeIndex].lasttimestamp = 0;//millis();
+	sendingNumberedBuffer[freeIndex].lasttimestamp = 0; //millis();
 	sendingNumberedBuffer[freeIndex].retransmissions = 0;
 	memcpy(&sendingNumberedBuffer[freeIndex].packet, packet, sizeof(packet_t));
 
@@ -598,47 +601,52 @@ void Layer3::updateSendingBuffer() {
 	for(uint8_t i = 0; i < CONFIG_L3_SEND_BUFFER_LEN; i++) {
 		//is this a packet to be retransmitted?
 		if(sendingNumberedBuffer[i].packet.data.destination != 0) {
-			#ifdef DEBUG_NETWORK_ENABLE
-				Serial.print(F("\tresend index="));
-				Serial.print(i);
-				Serial.print(F(": "));
-				Serial.flush();
-			#endif
-
 			//do we exceed max retransmissions?
 			if(sendingNumberedBuffer[i].retransmissions > CONFIG_L3_NUMBERED_RETRANSMISSIONS) {
 				#ifdef DEBUG_NETWORK_ENABLE
-					Serial.println(F("retransmissions exceeded - discarding."));
+					Serial.print(millis());
+					Serial.print(F(": resend index="));
+					Serial.print(i);
+					Serial.println(F(" retransmissions exceeded - discarding."));
 					Serial.flush();
 				#endif
 
 				//clear.
 				memset(&sendingNumberedBuffer[i], 0, sizeof(packet_sending_queue_item_t));
+
+				//next packet.
+				continue;
 			}
 
-			//has it timed out?
+			//has it timed out? - or it may also be new (timestamp 0)
 			uint32_t now = millis();
-			if(now - sendingNumberedBuffer[i].lasttimestamp > CONFIG_L3_NUMBERED_TIMEOUT_MS || now < CONFIG_L3_NUMBERED_TIMEOUT_MS) {
+			if(sendingNumberedBuffer[i].lasttimestamp == 0
+				|| (now - sendingNumberedBuffer[i].lasttimestamp > CONFIG_L3_NUMBERED_TIMEOUT_MS
+					&& now > CONFIG_L3_NUMBERED_TIMEOUT_MS))
+			{
 				#ifdef DEBUG_NETWORK_ENABLE
-					Serial.print(F("resending #"));
+					Serial.print(millis());
+					Serial.print(F(": resend index="));
+					Serial.print(i);
+					Serial.print(F(": (re)sending #"));
 					Serial.println(sendingNumberedBuffer[i].retransmissions);
 					Serial.flush();
 				#endif
+
+				sendingNumberedBuffer[i].lasttimestamp = millis();
+				sendingNumberedBuffer[i].retransmissions++;
 
 				//yep, resend it.
 				//boolean result =
 				sendPacket(sendingNumberedBuffer[i].packet);
 
-				sendingNumberedBuffer[i].lasttimestamp = millis();
-				sendingNumberedBuffer[i].retransmissions++;
-
 				//optionally delay.
-				delay(50);
+				//delay(50);
 			}
-			#ifdef DEBUG_NETWORK_ENABLE
-				else
-					Serial.println(F("not timed out yet"));
-			#endif
+			//#ifdef DEBUG_NETWORK_ENABLE
+				//else
+					//Serial.println(F("not timed out yet"));
+			//#endif
 
 		}
 	}
@@ -670,7 +678,7 @@ boolean Layer3::handleAck( packet_t* packet ) {
 				uint16_t rtt = millis() - sendingNumberedBuffer[i].lasttimestamp;
 				Serial.print(F(" probable RTT="));
 				Serial.print(rtt);
-				Serial.println(F(" - found & cleared. CALLBACK TBD!"));
+				Serial.println(F(" - found & cleared."));
 				Serial.flush();
 			#endif
 
