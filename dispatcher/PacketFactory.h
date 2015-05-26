@@ -35,16 +35,22 @@ class PacketFactory {
 		 * @param destination l3 address
 		 * @return success
 		 */
-		boolean generateDiscoveryInfoRequest(Layer3::packet_t* p, l3_address_t destination) {
+		seq_t generateDiscoveryInfoRequest(Layer3::packet_t* p, l3_address_t destination) {
 			if(l3 == NULL)
 				return false;
 
-			packet_application_numbered_cmd_t appCmd;
-			memset(&appCmd, 0, sizeof(appCmd));
+			//numbered
+			packet_numbered_t* numbered = (packet_numbered_t*) p->data.payload;
+			memset(&numbered, 0, sizeof(numbered));
+			numbered->seqNumber = random(1, 0xffffffff);
+			numbered->payloadLen = sizeof(packet_application_numbered_cmd_t);
 
-			appCmd.packetType = HARDWARE_DISCOVERY_REQ;
+			//applayer
+			packet_application_numbered_cmd_t* appCmd = (packet_application_numbered_cmd_t*) numbered->payload;
+			appCmd->packetType = HARDWARE_DISCOVERY_REQ;
 
-			return l3->createPacketGeneric(p, destination, PACKET_NUMBERED, (uint8_t*) &appCmd, sizeof(appCmd));
+			l3->createPacketGeneric(p, destination, PACKET_NUMBERED, (void*) numbered, sizeof(packet_numbered_t));
+			return numbered->seqNumber;
 		}
 
 		/**
@@ -52,19 +58,25 @@ class PacketFactory {
 		 * @param destination l3 address
 		 * @return success
 		 */
-		boolean generateSubscriptionInfoRquest(Layer3::packet_t* p, l3_address_t destination) {
+		seq_t generateSubscriptionInfoRquest(Layer3::packet_t* p, l3_address_t destination) {
 			if(l3 == NULL)
 				return false;
 
-			packet_application_numbered_cmd_t appCmd;
-			memset(&appCmd, 0, sizeof(appCmd));
+			//numbered
+			packet_numbered_t* numbered = (packet_numbered_t*) p->data.payload;
+			memset(&numbered, 0, sizeof(numbered));
+			numbered->seqNumber = random(1, 0xffffffff);
+			numbered->payloadLen = sizeof(packet_application_numbered_cmd_t);
 
-			appCmd.packetType = HARDWARE_SUBSCRIPTION_INFO;
+			//app layer
+			packet_application_numbered_cmd_t* appCmd = (packet_application_numbered_cmd_t*) numbered->payload;
 
-			subscription_info_t* subscriptionInfo = (subscription_info_t*) appCmd.payload;
+			appCmd->packetType = HARDWARE_SUBSCRIPTION_INFO;
+			subscription_info_t* subscriptionInfo = (subscription_info_t*) appCmd->payload;
 			subscriptionInfo->forAddress = l3->localAddress;
 
-			return l3->createPacketGeneric(p, destination, PACKET_NUMBERED, (uint8_t*) &appCmd, sizeof(appCmd));
+			l3->createPacketGeneric(p, destination, PACKET_NUMBERED, (void*) numbered, sizeof(packet_numbered_t));
+			return numbered->seqNumber;
 		}
 
 		/**
@@ -73,7 +85,7 @@ class PacketFactory {
 		 * @param hwCmd
 		 * @return success
 		 */
-		boolean generateHardwareCommandWrite(Layer3::packet_t* p, l3_address_t destination, HardwareCommandResult* hwCmd) {
+		seq_t generateHardwareCommandWrite(Layer3::packet_t* p, l3_address_t destination, HardwareCommandResult* hwCmd) {
 			hwCmd->setReadRequest(0);
 			return generateHardwareCommand(p, destination, hwCmd);
 		}
@@ -84,7 +96,7 @@ class PacketFactory {
 		 * @param info from discovery service
 		 * @return success
 		 */
-		boolean generateHardwareCommandReadForDiscoveryInfo(Layer3::packet_t* p, l3_address_t destination, packet_application_numbered_discovery_info_helper_t* info) {
+		seq_t generateHardwareCommandReadForDiscoveryInfo(Layer3::packet_t* p, l3_address_t destination, packet_application_numbered_discovery_info_helper_t* info) {
 			return generateHardwareCommandRead(p, destination, info->hardwareAddress, (HardwareTypeIdentifier) info->hardwareType);
 		}
 
@@ -95,7 +107,7 @@ class PacketFactory {
 		 * @param hwType
 		 * @return success
 		 */
-		boolean generateHardwareCommandRead(Layer3::packet_t* p, l3_address_t destination, uint8_t hwAddress, HardwareTypeIdentifier hwType) {
+		seq_t generateHardwareCommandRead(Layer3::packet_t* p, l3_address_t destination, uint8_t hwAddress, HardwareTypeIdentifier hwType) {
 			HardwareCommandResult hwCmd = HardwareCommandResult();
 			hwCmd.setAddress(hwAddress);
 			hwCmd.setHardwareType(hwType);
@@ -112,7 +124,7 @@ class PacketFactory {
 		 * @param callbackSeq for subscription executions
 		 * @return success
 		 */
-		boolean generateSubscriptionSetPeriodicForDiscoveryInfo(Layer3::packet_t* p, l3_address_t destination, packet_application_numbered_discovery_info_helper_t* info, uint16_t delay, seq_t callbackSeq) {
+		seq_t generateSubscriptionSetPeriodicForDiscoveryInfo(Layer3::packet_t* p, l3_address_t destination, packet_application_numbered_discovery_info_helper_t* info, uint16_t delay, seq_t callbackSeq) {
 			return generateSubscriptionSetPeriodic(p, destination, l3->localAddress, info->hardwareAddress, (HardwareTypeIdentifier) info->hardwareType, delay, callbackSeq);
 		}
 
@@ -125,7 +137,7 @@ class PacketFactory {
 		 * @return success
 		 * @see subscription_event_type_t
 		 */
-		boolean generateSubscriptionSetEventForDiscoveryInfo(Layer3::packet_t* p, l3_address_t destination, packet_application_numbered_discovery_info_helper_t* info, subscription_event_type_t eventType, seq_t callbackSeq) {
+		seq_t generateSubscriptionSetEventForDiscoveryInfo(Layer3::packet_t* p, l3_address_t destination, packet_application_numbered_discovery_info_helper_t* info, subscription_event_type_t eventType, seq_t callbackSeq) {
 			if(info->canDetectEvents)
 				return generateSubscriptionSetEvent(p, destination, l3->localAddress, info->hardwareAddress, (HardwareTypeIdentifier) info->hardwareType, eventType, callbackSeq);
 			return false;
@@ -137,7 +149,7 @@ class PacketFactory {
 		 * @param subscription info to delete
 		 * @return success
 		 */
-		boolean generateSubscriptionDeletion(Layer3::packet_t* p, l3_address_t destination, subscription_info_t* subscription) {
+		seq_t generateSubscriptionDeletion(Layer3::packet_t* p, l3_address_t destination, subscription_info_t* subscription) {
 			return generateSubscriptionSetGeneric(p, destination, subscription->forAddress, subscription->info.hardwareAddress, (HardwareTypeIdentifier) subscription->info.hardwareType, 0, EVENT_TYPE_DISABLED, 0);
 		}
 
@@ -151,7 +163,7 @@ class PacketFactory {
 		 * @param callbackSeq
 		 * @return success
 		 */
-		boolean generateSubscriptionSetEvent(Layer3::packet_t* p, l3_address_t destination, l3_address_t localAddress, uint8_t hwAddress, HardwareTypeIdentifier hwType, subscription_event_type_t eventType, seq_t callbackSequence) {
+		seq_t generateSubscriptionSetEvent(Layer3::packet_t* p, l3_address_t destination, l3_address_t localAddress, uint8_t hwAddress, HardwareTypeIdentifier hwType, subscription_event_type_t eventType, seq_t callbackSequence) {
 			return generateSubscriptionSetGeneric(p, destination, localAddress, hwAddress, hwType, 0, eventType, callbackSequence);
 		}
 
@@ -165,7 +177,7 @@ class PacketFactory {
 		 * @param callbackSeq
 		 * @return success
 		 */
-		boolean generateSubscriptionSetPeriodic(Layer3::packet_t* p, l3_address_t destination, l3_address_t localAddress, uint8_t hwAddress, HardwareTypeIdentifier hwType, uint16_t period, seq_t callbackSequence) {
+		seq_t generateSubscriptionSetPeriodic(Layer3::packet_t* p, l3_address_t destination, l3_address_t localAddress, uint8_t hwAddress, HardwareTypeIdentifier hwType, uint16_t period, seq_t callbackSequence) {
 			return generateSubscriptionSetGeneric(p, destination, localAddress, hwAddress, hwType, period, EVENT_TYPE_DISABLED, callbackSequence);
 		}
 
@@ -181,16 +193,21 @@ class PacketFactory {
 		 * @param callbackSeq
 		 * @return success
 		 */
-		boolean generateSubscriptionSetGeneric(Layer3::packet_t* p, l3_address_t destination, l3_address_t localAddress, uint8_t hwAddress, HardwareTypeIdentifier hwType, uint16_t period, subscription_event_type_t eventType, seq_t callbackSequence) {
+		seq_t generateSubscriptionSetGeneric(Layer3::packet_t* p, l3_address_t destination, l3_address_t localAddress, uint8_t hwAddress, HardwareTypeIdentifier hwType, uint16_t period, subscription_event_type_t eventType, seq_t callbackSequence) {
 			if(l3 == NULL)
 				return false;
 
-			packet_application_numbered_cmd_t appCmd;
-			memset(&appCmd, 0, sizeof(appCmd));
+			//numbered
+			packet_numbered_t* numbered = (packet_numbered_t*) p->data.payload;
+			memset(&numbered, 0, sizeof(numbered));
+			numbered->seqNumber = random(1, 0xffffffff);
+			numbered->payloadLen = sizeof(packet_application_numbered_cmd_t);
 
-			appCmd.packetType = HARDWARE_SUBSCRIPTION_SET;
+			//app layer
+			packet_application_numbered_cmd_t* appCmd = (packet_application_numbered_cmd_t*) numbered->payload;
+			appCmd->packetType = HARDWARE_SUBSCRIPTION_SET;
 
-			subscription_set_t* subscriptionSet = (subscription_set_t*) appCmd.payload;
+			subscription_set_t* subscriptionSet = (subscription_set_t*) appCmd->payload;
 			subscriptionSet->info.address = l3->localAddress;
 			subscriptionSet->info.hardwareAddress = hwAddress;
 			subscriptionSet->info.hardwareType = hwType;
@@ -198,7 +215,8 @@ class PacketFactory {
 			subscriptionSet->info.onEventType = eventType;
 			subscriptionSet->info.sequence = callbackSequence;
 
-			return l3->createPacketGeneric(p, destination, PACKET_NUMBERED, (uint8_t*) &appCmd, sizeof(appCmd));
+			l3->createPacketGeneric(p, destination, PACKET_NUMBERED, (void*) numbered, sizeof(packet_numbered_t));
+			return numbered->seqNumber;
 		}
 
 		/**
@@ -207,19 +225,26 @@ class PacketFactory {
 		 * @param command
 		 * @return success
 		 */
-		boolean generateHardwareCommand(Layer3::packet_t* p, l3_address_t destination, HardwareCommandResult* command) {
+		seq_t generateHardwareCommand(Layer3::packet_t* p, l3_address_t destination, HardwareCommandResult* command) {
 			if(l3 == NULL)
 			return false;
 
-			packet_application_numbered_cmd_t appCmd;
+			//numbered
+			packet_numbered_t* numbered;
+			memset(&numbered, 0, sizeof(packet_numbered_t));
+			numbered->seqNumber = random(1, 0xffffffff);
+			numbered->payloadLen = sizeof(packet_application_numbered_cmd_t);
+
+			packet_application_numbered_cmd_t* appCmd = (packet_application_numbered_cmd_t*) numbered->payload;
 			memset(&appCmd, 0, sizeof(appCmd));
 
 			//write data into app packet.
-			command->serialize((command_t*) appCmd.payload);
+			command->serialize((command_t*) appCmd->payload);
 
-			appCmd.packetType = (!command->isReadRequest()) ? HARDWARE_COMMAND_WRITE : HARDWARE_COMMAND_READ;
+			appCmd->packetType = (!command->isReadRequest()) ? HARDWARE_COMMAND_WRITE : HARDWARE_COMMAND_READ;
 
-			l3->createPacketGeneric(p, destination, PACKET_NUMBERED, (uint8_t*) &appCmd, sizeof(appCmd));
+			l3->createPacketGeneric(p, destination, PACKET_NUMBERED, (void*) numbered, sizeof(packet_numbered_t));
+			return numbered->seqNumber;
 		}
 };
 
