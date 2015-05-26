@@ -27,12 +27,11 @@ boolean CommandHandler::handleHardwareCommand(packet_application_numbered_cmd_t*
 		Serial.flush();
 	#endif
 
-	HardwareCommandResult* result = NULL;
-	result = hardwareInterface->executeCommand(&cmd);
+	boolean result = hardwareInterface->executeCommand(&cmd);
 	#ifdef DEBUG_HANDLER_ENABLE
 		Serial.print(millis());
 		Serial.print(F(": &result="));
-		Serial.print((uint16_t) result, HEX);
+		Serial.print((uint16_t) &cmd, HEX);
 		Serial.println();
 		Serial.flush();
 	#endif
@@ -40,7 +39,7 @@ boolean CommandHandler::handleHardwareCommand(packet_application_numbered_cmd_t*
 	packet_application_numbered_cmd_t appLayerPacket;
 	memset(&appLayerPacket, 0, sizeof(appLayerPacket));
 
-	if(result == NULL) {
+	if(result == false) {
 		appLayerPacket.packetType = NACK;
 
 		if(callback != NULL)
@@ -50,7 +49,7 @@ boolean CommandHandler::handleHardwareCommand(packet_application_numbered_cmd_t*
 
 	//create response
 	appLayerPacket.packetType = ACK;
-	result->serialize((command_t*) appLayerPacket.payload);
+	cmd.serialize((command_t*) appLayerPacket.payload);
 
 	if(callback == NULL)
 		return false;

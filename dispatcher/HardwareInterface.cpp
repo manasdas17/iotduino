@@ -82,9 +82,9 @@ HardwareDriver* HardwareInterface::getHardwareDriver( const HardwareTypeIdentifi
 	return NULL;
 }
 
-HardwareCommandResult* HardwareInterface::executeCommand(HardwareCommandResult* cmd) {
+boolean HardwareInterface::executeCommand(HardwareCommandResult* cmd) {
 	if(cmd == NULL)
-		return NULL;
+		return false;
 
 	#ifdef DEBUG_HARDWARE_ENABLE
 		Serial.print(millis());
@@ -104,7 +104,7 @@ HardwareCommandResult* HardwareInterface::executeCommand(HardwareCommandResult* 
 		driver = getHardwareDriver(cmd->getHardwareType());
 
 	if(driver == NULL)
-		return NULL;
+		return false;
 
 	if(cmd->isReadRequest()) {
 		#ifdef DEBUG_HARDWARE_ENABLE
@@ -121,31 +121,23 @@ HardwareCommandResult* HardwareInterface::executeCommand(HardwareCommandResult* 
 	}
 }
 
-HardwareCommandResult* HardwareInterface::readHardware(HardwareDriver* driver, HardwareCommandResult* cmd) {
+boolean HardwareInterface::readHardware(HardwareDriver* driver, HardwareCommandResult* cmd) {
 	#ifdef DEBUG_HARDWARE_ENABLE
 		Serial.print(millis());
 		Serial.println(F(": HardwareInterface::readHardware()"));
 	#endif
 
 	if(cmd == NULL)
-		return NULL;
+		return false;
 
-	if(!driver->readVal(cmd->getHardwareType(), cmd)) {
-		return NULL;
-	}
-
-	return cmd;
+	return driver->readVal(cmd->getHardwareType(), cmd);
 }
 
-HardwareCommandResult* HardwareInterface::writeHardware(HardwareDriver* driver, HardwareCommandResult* cmd) {
+boolean HardwareInterface::writeHardware(HardwareDriver* driver, HardwareCommandResult* cmd) {
 	if(cmd == NULL)
-		return NULL;
+		return false;
 
-	if(!driver->writeVal(cmd->getHardwareType(), cmd)) {
-		return NULL;
-	}
-
-	return cmd;
+	return driver->writeVal(cmd->getHardwareType(), cmd);
 }
 
 HardwareInterface::~HardwareInterface() {

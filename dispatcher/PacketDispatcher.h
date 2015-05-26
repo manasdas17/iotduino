@@ -51,6 +51,10 @@ class PacketDispatcher {
 
 		}
 
+		ResponseHandler* getResponseHandler() {
+			return &responseHandler;
+		}
+
 		/**
 		 * this loop periodically queries the network for new packets
 		 * by now, we only handle numbered packets.

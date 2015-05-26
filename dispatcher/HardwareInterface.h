@@ -41,14 +41,14 @@ class HardwareInterface {
 		 * @param driver
 		 * @param command
 		 */
-		HardwareCommandResult* readHardware( HardwareDriver* driver, HardwareCommandResult* cmd );
+		boolean readHardware( HardwareDriver* driver, HardwareCommandResult* cmd );
 
 		/**
 		 * write hardware
 		 * @param driver
 		 * @param command
 		 */
-		HardwareCommandResult* writeHardware( HardwareDriver* driver, HardwareCommandResult* cmd );
+		boolean writeHardware( HardwareDriver* driver, HardwareCommandResult* cmd );
 
 	public:
 		/**
@@ -78,7 +78,7 @@ class HardwareInterface {
 		 * execute a command according to internal information
 		 * @param command
 		 */
-		HardwareCommandResult* executeCommand(HardwareCommandResult* cmd);
+		boolean executeCommand(HardwareCommandResult* cmd);
 
 		/**
 		 * @return list of pointers to driver instances
