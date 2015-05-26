@@ -113,7 +113,7 @@ void Layer3::printPacketInformation(packet_t* packet) {
 /**
  * add received packet to receive queue
  */
-boolean Layer3::receive( uint8_t* payload )
+boolean Layer3::receive( void* payload )
 {
 	packet_t* packet = (packet_t*) payload;
 
@@ -176,7 +176,7 @@ boolean Layer3::sendAck(packet_t* packet) {
 	return sendPacket(answer);
 }
 
-boolean Layer3::createPacketGeneric( packet_t* packet, l3_address_t destination, l3_packetType type, uint8_t* payload, uint8_t payloadLen )
+boolean Layer3::createPacketGeneric( packet_t* packet, l3_address_t destination, l3_packetType type, void* payload, uint8_t payloadLen )
 {
 	if(packet == NULL || payloadLen > CONFIG_APP_PAYLOAD_SIZE) {
 		return false;
@@ -581,7 +581,7 @@ boolean Layer3::addToSendingQueue( packet_t* packet ) {
 	}
 
 	//create copy.
-	sendingNumberedBuffer[freeIndex].lasttimestamp = millis(); //sendPacket should send it first; no need to put this value into the past
+	sendingNumberedBuffer[freeIndex].lasttimestamp = 0;//millis();
 	sendingNumberedBuffer[freeIndex].retransmissions = 0;
 	memcpy(&sendingNumberedBuffer[freeIndex].packet, packet, sizeof(packet_t));
 
@@ -617,7 +617,8 @@ void Layer3::updateSendingBuffer() {
 			}
 
 			//has it timed out?
-			if(millis() - sendingNumberedBuffer[i].lasttimestamp > CONFIG_L3_NUMBERED_TIMEOUT_MS) {
+			uint32_t now = millis();
+			if(now - sendingNumberedBuffer[i].lasttimestamp > CONFIG_L3_NUMBERED_TIMEOUT_MS || now < CONFIG_L3_NUMBERED_TIMEOUT_MS) {
 				#ifdef DEBUG_NETWORK_ENABLE
 					Serial.print(F("resending #"));
 					Serial.println(sendingNumberedBuffer[i].retransmissions);
@@ -710,7 +711,7 @@ neighbourData* Layer3::getNeighbours() {
 	return neighbours;
 }
 
-seq_t Layer3::sendNumbered( l3_address_t destination, seq_t seq, uint8_t* payload, uint8_t payloadLen ) {
+seq_t Layer3::sendNumbered( l3_address_t destination, seq_t seq, void* payload, uint8_t payloadLen ) {
 	if(payloadLen > CONFIG_L3_PACKET_NUMBERED_MAX_LEN)
 		return 0;
 
@@ -736,11 +737,11 @@ seq_t Layer3::sendNumbered( l3_address_t destination, seq_t seq, uint8_t* payloa
 	return 0;
 }
 
-seq_t Layer3::sendNumbered(l3_address_t destination, uint8_t* payload, uint8_t payloadLen) {
+seq_t Layer3::sendNumbered(l3_address_t destination, void* payload, uint8_t payloadLen) {
 	return sendNumbered(destination, 0, payload, payloadLen);
 };
 
-boolean Layer3::sendUnnumbered(l3_address_t destination, uint8_t* payload, uint8_t payloadLen) {
+boolean Layer3::sendUnnumbered(l3_address_t destination, void* payload, uint8_t payloadLen) {
 	if(payloadLen > CONFIG_L3_PACKET_UNNUMBERED_MAX_LEN)
 		return 0;
 
@@ -756,7 +757,7 @@ boolean Layer3::sendUnnumbered(l3_address_t destination, uint8_t* payload, uint8
 	return sendPacket(p);
 }
 
-boolean Layer3::sendBroadcast(uint8_t* payload, uint8_t payloadLen) {
+boolean Layer3::sendBroadcast(void* payload, uint8_t payloadLen) {
 	return sendUnnumbered(CONFIG_L3_ADDRESS_BROADCAST, payload, payloadLen);
 }
 

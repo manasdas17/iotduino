@@ -111,7 +111,7 @@ class Layer3 {
 		* @param payload from l2
 		* @return success
 		*/
-		boolean receive(uint8_t* payload);
+		boolean receive(void* payload);
 
 		/**
 		* queue size.
@@ -156,7 +156,7 @@ class Layer3 {
 		* @param payload length
 		* @return sequence number
 		*/
-		seq_t sendNumbered(l3_address_t destination, seq_t seq, uint8_t* payload, uint8_t payloadLen);
+		seq_t sendNumbered(l3_address_t destination, seq_t seq, void* payload, uint8_t payloadLen);
 
 		/**
 		* send numbered packet (random seq)
@@ -165,7 +165,7 @@ class Layer3 {
 		* @param payload length
 		* @return sequence number
 		*/
-		seq_t sendNumbered(l3_address_t destination, uint8_t* payload, uint8_t payloadLen);
+		seq_t sendNumbered(l3_address_t destination, void* payload, uint8_t payloadLen);
 
 		/**
 		* send unnumbered packet
@@ -174,7 +174,7 @@ class Layer3 {
 		* @param payload length
 		* @return success
 		*/
-		boolean sendUnnumbered(l3_address_t destination, uint8_t* payload, uint8_t payloadLen);
+		boolean sendUnnumbered(l3_address_t destination, void* payload, uint8_t payloadLen);
 
 		/**
 		* send unnumbered packet
@@ -183,7 +183,7 @@ class Layer3 {
 		* @param payload length
 		* @return succes
 		*/
-		boolean sendBroadcast(uint8_t* payload, uint8_t payloadLen);
+		boolean sendBroadcast(void* payload, uint8_t payloadLen);
 
 		/**
 		* send a packet to destination
@@ -199,7 +199,7 @@ class Layer3 {
 		* @param payload length
 		* @return success
 		*/
-		boolean createPacketGeneric(packet_t* packet, l3_address_t destination, l3_packetType type, uint8_t* payload, uint8_t payloadLen);
+		boolean createPacketGeneric(packet_t* packet, l3_address_t destination, l3_packetType type, void* payload, uint8_t payloadLen);
 
 
 		/**
