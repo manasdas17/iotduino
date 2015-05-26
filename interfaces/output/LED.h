@@ -23,7 +23,8 @@ class LED : public DigitalIOGeneric {
 		 * @param pin
 		 * @param address
 		 */
-		LED(uint8_t pin, uint8_t hwaddress) : DigitalIOGeneric(pin, hwaddress) {
+		void init(uint8_t pin, uint8_t hwaddress) {
+			DigitalIOGeneric::init(pin, hwaddress);
 		}
 		void turnOn();
 		void turnOff();

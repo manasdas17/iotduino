@@ -19,10 +19,12 @@
 
 class Relay : public DigitalIOGeneric {
 	public:
-		Relay(uint8_t pin, uint8_t hwaddress) : DigitalIOGeneric(pin, false, hwaddress) {
+		void init(uint8_t pin, uint8_t hwaddress) {
+			DigitalIOGeneric::init(pin, false, hwaddress);
 		}
 
-		Relay(uint8_t pin, boolean highIsOn, uint8_t hwaddress) : DigitalIOGeneric(pin, false, hwaddress) {
+		void init(uint8_t pin, boolean highIsOn, uint8_t hwaddress) {
+			DigitalIOGeneric::init(pin, false, hwaddress);
 			this->highIsOn = highIsOn;
 		}
 

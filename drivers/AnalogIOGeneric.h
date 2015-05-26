@@ -25,11 +25,13 @@ class AnalogIOGeneric : public AnalogIO {
 		uint16_t zeroVal;
 
 	public:
-		AnalogIOGeneric(Multiplexible* pin, uint8_t hwaddress) : AnalogIO(pin, hwaddress) {
+		void init(Multiplexible* pin, uint8_t hwaddress) {
+			AnalogIO::init(pin, hwaddress);
 			zeroVal = 0;
 		}
 
-		AnalogIOGeneric(uint8_t pin, uint8_t hwaddress) : AnalogIO(pin, hwaddress) {
+		void init(uint8_t pin, uint8_t hwaddress) {
+			AnalogIO::init(pin, hwaddress);
 			zeroVal = 0;
 		}
 

@@ -1,6 +1,9 @@
 #include "Layer3.h"
 
- Layer3::Layer3( l3_address_t localAddress ) {
+Layer3::Layer3() {
+}
+
+void Layer3::init(l3_address_t localAddress) {
 	randomSeed(analogRead(0));
 
 	this->eventCallbackClass = new callbackClass(this);
@@ -14,6 +17,8 @@
 
 	this->localAddress = localAddress;
 }
+
+
 
 neighbourData* Layer3::getNeighbour( l3_address_t destination )
 {

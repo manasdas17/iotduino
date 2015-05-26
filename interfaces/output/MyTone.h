@@ -5,6 +5,10 @@
  *  Author: helge
  */
 
+#ifndef TONE_H_
+#define TONE_H_
+
+
 #define NOTE_B0  31
 #define NOTE_C1  33
 #define NOTE_CS1 35
@@ -95,8 +99,6 @@
 #define NOTE_D8  4699
 #define NOTE_DS8 4978
 
-#ifndef TONE_H_
-#define TONE_H_
 
 #include <utils/SimpleTimer.h>
 #include <Arduino.h>
@@ -107,7 +109,8 @@ class MyTone : public AnalogIOGeneric {
 	public:
 		uint16_t myTone;
 
-		MyTone(uint8_t pin, uint8_t hwaddress) : AnalogIOGeneric(pin, hwaddress) {
+		void init(uint8_t pin, uint8_t hwaddress) {
+			AnalogIOGeneric::init(pin, hwaddress);
 			myTone = NOTE_C1;
 		}
 

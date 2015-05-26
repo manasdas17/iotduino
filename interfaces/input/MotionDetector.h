@@ -21,7 +21,8 @@
 
 class MotionDetector : public DigitalIOGeneric {
 	public:
-		MotionDetector(uint8_t pin, uint8_t address) : DigitalIOGeneric(pin, true, address) {
+		void init(uint8_t pin, uint8_t address) {
+			DigitalIOGeneric::init(pin, true, address);
 		}
 
 		virtual boolean implementsInterface( HardwareTypeIdentifier type );

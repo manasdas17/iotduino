@@ -50,22 +50,23 @@ class RCSwitchTevionFSI07 : public DigitalIO {
 		}
 
 	public:
-		const void turnOnA();
-		const void turnOnB();
-		const void turnOnC();
-		const void turnOnD();
-		const void turnOnALL();
-		const void turnOffA();
-		const void turnOffB();
-		const void turnOffC();
-		const void turnOffD();
-		const void turnOffALL();
+		inline const void turnOnA();
+		inline const void turnOnB();
+		inline const void turnOnC();
+		inline const void turnOnD();
+		inline const void turnOnALL();
+		inline const void turnOffA();
+		inline const void turnOffB();
+		inline const void turnOffC();
+		inline const void turnOffD();
+		inline const void turnOffALL();
 
 		/**
 		 * @param pin
 		 * @param address
 		 */
-		RCSwitchTevionFSI07(uint8_t pin, uint8_t hwaddress) : DigitalIO(pin, false, hwaddress) {
+		void init(uint8_t pin, uint8_t hwaddress) {
+			DigitalIO::init(pin, false, hwaddress);
 			pinMode(pin, OUTPUT);
 		}
 

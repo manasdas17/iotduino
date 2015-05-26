@@ -21,10 +21,12 @@
 
 class DigitalIOGeneric : public DigitalIO {
 	public:
-		DigitalIOGeneric(uint8_t pin, uint8_t hwaddress) : DigitalIO(pin, hwaddress) {
+		void init(uint8_t pin, uint8_t hwaddress) {
+			DigitalIO::init(pin, hwaddress);
 		}
 
-		DigitalIOGeneric(uint8_t pin, boolean pullup, uint8_t hwaddress) : DigitalIO(pin, pullup, hwaddress) {
+		void init(uint8_t pin, boolean pullup, uint8_t hwaddress) {
+			DigitalIO::init(pin, pullup, hwaddress);
 		}
 
 		virtual boolean read();

@@ -1,12 +1,16 @@
 #include "PacketDispatcher.h"
 
+#ifdef ENABLE_DISCOVERY_SERVICE
 DiscoveryService* PacketDispatcher::getDiscoveryService() {
 	return &discoveryService;
 }
+#endif
 
+#ifdef ENABLE_SUBSCRIPTION_SERVICE
 SubscriptionService* PacketDispatcher::getSubscriptionsService() {
 	return &subscriptionService;
 }
+#endif
 
 boolean PacketDispatcher::handleUnNumbered(const packet_type_application_t type, const l3_address_t remote, packet_application_unnumbered_cmd_t* appPacket) const {
 	switch(type) {
@@ -118,17 +122,20 @@ void PacketDispatcher::loop() {
 	#endif
 }
 
- PacketDispatcher::PacketDispatcher(Layer3* networking, HardwareInterface* hwinterface) {
+void PacketDispatcher::init(Layer3* networking, HardwareInterface* hwinterface) {
 	this->networking = networking;
 	this->commandHandler.setHardwareInterface(hwinterface);
 
 	#ifdef ENABLE_DISCOVERY_SERVICE
-	this->discoveryService.setHardwareInterface(hwinterface);
+		this->discoveryService.setHardwareInterface(hwinterface);
 	#endif
 
 	#ifdef ENABLE_SUBSCRIPTION_SERVICE
-	this->subscriptionService.setHardwareInterface(hwinterface);
-	this->subscriptionService.setCommandHandler(&commandHandler);
-	this->subscriptionService.setNetworking(networking);
+		this->subscriptionService.setHardwareInterface(hwinterface);
+		this->subscriptionService.setCommandHandler(&commandHandler);
+		this->subscriptionService.setNetworking(networking);
 	#endif
+}
+
+ PacketDispatcher::PacketDispatcher() {
 }

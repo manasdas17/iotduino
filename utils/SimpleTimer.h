@@ -40,7 +40,7 @@
 //added param timerNumber by helge on 2015-05-17
 typedef void (*timer_callback)(int);
 
-class SimpleTimer : public Singleton<SimpleTimer> {
+class SimpleTimer {
 
 public:
     // maximum number of timers
@@ -49,9 +49,6 @@ public:
     // setTimer() constants
     const static int RUN_FOREVER = 0;
     const static int RUN_ONCE = 1;
-
-    // constructor
-    SimpleTimer();
 
     // this function must be called inside loop()
     void run();
@@ -96,6 +93,11 @@ public:
 	//added by helge on 2015-05-17
 	void setCallbackContext(int numTimer, void* callbackContext);
 
+//protected:
+	// constructor
+	//__attribute__((optimize("O1")))
+	SimpleTimer();
+
 private:
     // deferred call constants
     const static int DEFCALL_DONTRUN = 0;       // don't call the callback function
@@ -107,7 +109,7 @@ private:
 
     // value returned by the millis() function
     // in the previous run() call
-    unsigned long prev_millis[MAX_TIMERS];
+    uint32_t prev_millis[MAX_TIMERS]; //avoid strange infinite memset loop
 
     // pointers to the callback functions
     timer_callback callbacks[MAX_TIMERS];

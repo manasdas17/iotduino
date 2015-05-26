@@ -38,7 +38,14 @@ class PacketDispatcher {
 
 	//functions
 	public:
-		PacketDispatcher(Layer3* networking, HardwareInterface* hwinterface);
+		PacketDispatcher();
+
+		/**
+		 * initialise this class
+		 * @param networking
+		 * @param hwinterface
+		 */
+		void init(Layer3* networking, HardwareInterface* hwinterface);
 
 		~PacketDispatcher() {
 

@@ -93,7 +93,13 @@ class Layer3 {
 			delete eventCallbackClass;
 		}
 
-		Layer3(l3_address_t localAddress);
+		Layer3();
+
+		/**
+		 * init this class
+		 * @param localAddress
+		 */
+		void init(l3_address_t localAddress);
 
 		void setLayer2(Layer2rf24* l2) {
 			this->l2 = l2;
@@ -195,13 +201,14 @@ class Layer3 {
 		*/
 		boolean createPacketGeneric(packet_t* packet, l3_address_t destination, l3_packetType type, uint8_t* payload, uint8_t payloadLen);
 
-		protected:
-		private:
 
 		/**
 		* cleans the neighbourlist and sends beacon
 		*/
 		boolean sendBeacon();
+
+		protected:
+		private:
 
 		/**
 		* print debug information.
@@ -282,6 +289,8 @@ class Layer3 {
 		* neighbourtable maintenance, to be called periodically
 		*/
 		void cleanNeighbours();
+
+
 }; //Routing
 
 #endif

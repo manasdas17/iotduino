@@ -95,6 +95,7 @@ class SubscriptionService {
 		 * constructor.
 		 * basically sets the subcription list to 0
 		 */
+		//__attribute__((optimize("O1")))
 		SubscriptionService();
 
 		/** */

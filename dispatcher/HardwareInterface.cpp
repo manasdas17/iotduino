@@ -202,5 +202,5 @@ HardwareCommandResult* HardwareInterface::getFreeHardwareCommandResultEntry() {
 
  HardwareInterface::HardwareInterface() {
 	memset(resultSetInUse, 0, sizeof(resultSetInUse));
-			memset(driver, 0, sizeof(driver));
+	memset(driver, 0, sizeof(driver));
 }

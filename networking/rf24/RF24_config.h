@@ -6,7 +6,7 @@
  modify it under the terms of the GNU General Public License
  version 2 as published by the Free Software Foundation.
  */
- 
+
  /* spaniakos <spaniakos@gmail.com>
   Added __ARDUINO_X86__ support
 */
@@ -14,13 +14,13 @@
 #ifndef __RF24_CONFIG_H__
 #define __RF24_CONFIG_H__
 
-  /*** USER DEFINES:  ***/  
+  /*** USER DEFINES:  ***/
   //#define FAILURE_HANDLING
   //#define SERIAL_DEBUG
   //#define MINIMAL
   //#define SPI_UART  // Requires library from https://github.com/TMRh20/Sketches/tree/master/SPI_UART
   //#define SOFTSPI   // Requires library from https://github.com/greiman/DigitalIO
-  
+
   /**********************/
   #define rf24_max(a,b) (a>b?a:b)
   #define rf24_min(a,b) (a<b?a:b)
@@ -28,7 +28,7 @@
   #if defined SPI_HAS_TRANSACTION && !defined SPI_UART && !defined SOFTSPI
     #define RF24_SPI_TRANSACTIONS
   #endif
-  
+
 //Generic Linux/ARM and //http://iotdk.intel.com/docs/master/mraa/
 #if ( defined (__linux) || defined (LINUX) ) && defined( __arm__ ) || defined(MRAA) // BeagleBone Black running GNU/Linux or any other ARM-based linux device
 
@@ -37,28 +37,28 @@
   // The includes.h file defines either RF24_RPi, MRAA or RF24_BBB and includes the correct RF24_arch_config.h file
   #include "arch/includes.h"
 
-//ATTiny  
+//ATTiny
 #elif defined(__AVR_ATtiny25__) || defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__) || defined(__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
-  
+
   #define RF24_TINY
   #include "arch/ATTiny/RF24_arch_config.h"
 
-//LittleWire  
+//LittleWire
 #elif defined(LITTLEWIRE)
-  
+
   #include "arch/LittleWire/RF24_arch_config.h"
 
-//Teensy  
+//Teensy
 #elif defined (TEENSYDUINO)
 
-  #include "arch/Teensy/RF24_arch_config.h"  
+  #include "arch/Teensy/RF24_arch_config.h"
 //Everything else
-#else 
+#else
 
   #include <Arduino.h>
-  
+
   // RF modules support 10 Mhz SPI bus speed
-  const uint32_t RF_SPI_SPEED = 10000000;  
+  const uint32_t RF_SPI_SPEED = 10000000;
 
 #if defined (ARDUINO) && !defined (__arm__) && !defined (__ARDUINO_X86__)
       #if defined SPI_UART
@@ -67,13 +67,13 @@
 	  #elif defined SOFTSPI
 	  // change these pins to your liking
       //
-      const uint8_t SOFT_SPI_MISO_PIN = 16; 
-      const uint8_t SOFT_SPI_MOSI_PIN = 15; 
-      const uint8_t SOFT_SPI_SCK_PIN = 14;  
+      const uint8_t SOFT_SPI_MISO_PIN = 16;
+      const uint8_t SOFT_SPI_MOSI_PIN = 15;
+      const uint8_t SOFT_SPI_SCK_PIN = 14;
       const uint8_t SPI_MODE = 0;
       #define _SPI spi
-      
-	  #else	    
+
+	  #else
 		#include <SPI.h>
 		#define _SPI SPI
 	  #endif
@@ -88,7 +88,7 @@
    #include <SPI.h>
  #endif
 
- 
+
  #define _BV(x) (1<<(x))
  #if !defined(__arm__) && !defined (__ARDUINO_X86__)
    extern HardwareSPI SPI;
@@ -106,22 +106,22 @@
 	#define printf_P(...)
     #endif
   #endif
-  
+
 #if  defined (__ARDUINO_X86__)
 	#define printf_P printf
 	#define _BV(bit) (1<<(bit))
 #endif
-  
+
 // Avoid spurious warnings
 // Arduino DUE is arm and uses traditional PROGMEM constructs
-#if 1
-#if ! defined( NATIVE ) && defined( ARDUINO ) && ! defined(__arm__)
-#undef PROGMEM
-#define PROGMEM __attribute__(( section(".progmem.data") ))
-#undef PSTR
-#define PSTR(s) (__extension__({static const char __c[] PROGMEM = (s); &__c[0];}))
-#endif
-#endif
+////////#if 1
+////////#if ! defined( NATIVE ) && defined( ARDUINO ) && ! defined(__arm__)
+////////#undef PROGMEM
+////////#define PROGMEM __attribute__(( section(".progmem.data") ))
+////////#undef PSTR
+////////#define PSTR(s) (__extension__({static const char __c[] PROGMEM = (s); &__c[0];}))
+////////#endif
+////////#endif
 
 // Progmem is Arduino-specific
 // Arduino DUE is arm and does not include avr/pgmspace

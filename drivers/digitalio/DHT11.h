@@ -84,7 +84,8 @@ class DHT11 : public DigitalIO, public Temperature, public Humidity {
 		 * @param pin
 		 * @param address
 		 */
-		DHT11(uint8_t newPin, uint8_t hwaddress) : DigitalIO(newPin, false, hwaddress) {
+		void init(uint8_t newPin, uint8_t hwaddress) {
+			DigitalIO::init(newPin, false, hwaddress);
 			humidity = -127;
 			temperature = -127;
 

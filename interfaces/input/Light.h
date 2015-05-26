@@ -37,9 +37,11 @@
 
 class Light : public AnalogIOGeneric {
 	public:
-		Light(Multiplexible* pin, uint8_t hwaddress) : AnalogIOGeneric(pin, hwaddress) {
+		void init(Multiplexible* pin, uint8_t hwaddress) {
+			AnalogIOGeneric::init(pin, hwaddress) ;
 		}
-		Light(uint8_t pin, uint8_t hwaddress) : AnalogIOGeneric(pin, hwaddress) {
+		void init(uint8_t pin, uint8_t hwaddress) {
+			AnalogIOGeneric::init(pin, hwaddress) ;
 		}
 
 		virtual boolean implementsInterface( HardwareTypeIdentifier type );

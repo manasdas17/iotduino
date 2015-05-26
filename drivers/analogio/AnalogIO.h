@@ -24,10 +24,12 @@ class AnalogIO : public HardwareDriver {
 		Multiplexible* pin;
 		boolean pullup;
 	public:
-		AnalogIO(Multiplexible* pin, uint8_t hwaddress) : HardwareDriver(hwaddress) {
+		void init(Multiplexible* pin, uint8_t hwaddress) {
+			HardwareDriver::init(hwaddress);
 			this->pin = pin;
 		}
-		AnalogIO(uint8_t pin, uint8_t hwaddress) : HardwareDriver(hwaddress) {
+		void init(uint8_t pin, uint8_t hwaddress) {
+			HardwareDriver::init(hwaddress);
 			this->pin = new NoMultiplex(pin);
 		}
 

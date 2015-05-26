@@ -38,8 +38,14 @@ boolean SubscriptionService::handleRequest(EventCallbackInterface* callback, con
 }
 
  SubscriptionService::SubscriptionService() {
-	memset(subscriptions, 0, sizeof(subscriptions));
-	memset(subscriptionsLastExecution, 0, sizeof(subscriptionsLastExecution));
+	//memset(&subscriptions, 0,  (size_t) numSubscriptionList * sizeof(subscription_helper_t));
+	//memset(&subscriptionsLastExecution, 0, (size_t) numSubscriptionList * sizeof(uint32_t));
+
+	for(uint8_t i = 0; i < numSubscriptionList; i++) {
+		subscriptions[i].address = 0;
+		subscriptionsLastExecution[i] = 0;
+	}
+
 	lastSubscriptionCheckTimestamp = 0;
 
 	#ifdef ENABLE_EVENTS

@@ -5,46 +5,20 @@
  *  Author: helge
  */
 #include <Arduino.h>
+#include <Globals.h>
 
-#include <networking/Layer3.h>
-#include <drivers/HardwareDriver.h>
-#include <drivers/HardwareID.h>
-#include <dispatcher/HardwareInterface.h>
-#include <dispatcher/PacketDispatcher.h>
-#include <dispatcher/PacketFactory.h>
-#include <utils/SimpleTimer.h>
+#define PRODUCTIVE_MEGA328P
 
-#define address00 0x1000
-#define address01 0x1001
-#define address10 0x1002
-#define address11 0x1003
+#ifndef PRODUCTIVE_MEGA328P
+	#define address00 0x1000
+	#define address01 0x1001
+	#define address10 0x1002
+	#define address11 0x1003
 
-uint16_t address_local;
-uint16_t address_relay;
-uint16_t address_remote;
-boolean isServer;
-
-#define PIN_CE A0
-#define PIN_CSN SS
-Layer2rf24* l2;
-Layer3* l3;
-PacketDispatcher* dispatcher;
-HardwareInterface* hwInterface;
-PacketFactory* pf;
-
-#include <drivers/digitalio/DHT11.h>
-#include <interfaces/output/RCSwitchTevionFSI07.h>
-#include <interfaces/output/LED.h>
-#include <interfaces/output/MyTone.h>
-#include <interfaces/input/MotionDetector.h>
-#include <interfaces/input/Light.h>
-
-DHT11* dht11;
-RCSwitchTevionFSI07* rcsw;
-LED* led;
-MotionDetector* motion;
-Light* light;
-MyTone* mytone;
+	uint16_t address_relay;
+	uint16_t address_remote;
+	boolean isServer;
+#endif
 
 /**
  * read pin 4..9 inverted
@@ -77,6 +51,7 @@ void getAddress() {
 	#endif
 }
 
+#ifndef PRODUCTIVE_MEGA328P
 void testHardwareCommandRead() {
 	////create network packet
 	//cmd
@@ -110,7 +85,7 @@ void testHardwareCommandRead() {
 	p.data.payloadLen = sizeof(numbered);
 
 	//processing
-	dispatcher->handleNumberedFromNetwork(p);
+	dispatcher.handleNumberedFromNetwork(p);
 }
 
 void testHardwareCommand(uint8_t address, HardwareTypeIdentifier type, uint8_t isRead) {
@@ -121,7 +96,7 @@ void testHardwareCommand(uint8_t address, HardwareTypeIdentifier type, uint8_t i
 	cmd_packet.type = type;
 	HardwareCommandResult cmd = HardwareCommandResult();
 	cmd.deSerialize(&cmd_packet);
-	hwInterface->executeCommand(&cmd);
+	hwInterface.executeCommand(&cmd);
 }
 
 void testHardwareCommandTone() {
@@ -129,14 +104,14 @@ void testHardwareCommandTone() {
 
 	command_t cmd_packet;
 	memset(&cmd_packet, 0, sizeof(cmd_packet));
-	cmd_packet.address = mytone->getAddress();
+	cmd_packet.address = mytone.getAddress();
 	cmd_packet.isRead = false;
 	cmd_packet.type = HWType_tone;
 	cmd_packet.numUint16 = 1;
 	cmd_packet.uint16list[0] = 2000;
 	HardwareCommandResult cmd = HardwareCommandResult();
 	cmd.deSerialize(&cmd_packet);
-	hwInterface->executeCommand(&cmd);
+	hwInterface.executeCommand(&cmd);
 
 	SimpleTimer::instance()->run();
 	delay(2500);
@@ -177,7 +152,7 @@ void testSubscriptionSet() {
 	p3.data.payloadLen = sizeof(numbered3);
 
 	//processing
-	dispatcher->handleNumberedFromNetwork(p3);
+	dispatcher.handleNumberedFromNetwork(p3);
 }
 
 void testDiscovery() {
@@ -205,7 +180,7 @@ void testDiscovery() {
 	p2.data.payloadLen = sizeof(numbered2);
 
 	//processing
-	dispatcher->handleNumberedFromNetwork(p2);
+	dispatcher.handleNumberedFromNetwork(p2);
 }
 
 void testSubscriptionInfo() {
@@ -233,7 +208,7 @@ void testSubscriptionInfo() {
 	p4.data.payloadLen = sizeof(numbered4);
 
 	//processing
-	dispatcher->handleNumberedFromNetwork(p4);
+	dispatcher.handleNumberedFromNetwork(p4);
 }
 
 void testSubscriptionPolling() {
@@ -270,11 +245,11 @@ void testSubscriptionPolling() {
 		p3.data.payloadLen = sizeof(numbered3);
 
 		//processing
-		dispatcher->handleNumberedFromNetwork(p3);
+		dispatcher.handleNumberedFromNetwork(p3);
 
 		//wait
 		delay(1000);
-		dispatcher->loop();
+		dispatcher.loop();
 }
 
 void testSubscriptionPollingLight() {
@@ -311,7 +286,7 @@ void testSubscriptionPollingLight() {
 	p3.data.payloadLen = sizeof(numbered3);
 
 	//processing
-	dispatcher->handleNumberedFromNetwork(p3);
+	dispatcher.handleNumberedFromNetwork(p3);
 
 	//wait
 	delay(1000);
@@ -320,49 +295,50 @@ void testSubscriptionPollingLight() {
 
 void testSubscriptionExecution() {
 	delay(2000); //enough for our test.
-	dispatcher->loop();
+	dispatcher.loop();
 }
-
+#endif
 void setup() {
-	Serial.begin(115200);
+	Serial.begin(9600);
+	#ifdef DEBUG
 	Serial.println("start test...");
 	Serial.flush();
 
+	Serial.print(F("pin miso="));
+	Serial.print(MISO);
+	Serial.print(F(", pin mosi="));
+	Serial.print(MOSI);
+	Serial.print(F(", pin sck="));
+	Serial.print(SCK);
+	Serial.print(F(", pin ce="));
+	Serial.print(PIN_CE);
+	Serial.print(F(", pin csn(ss)="));
+	Serial.println(PIN_CSN);
+
+	#endif
 	//get address config
 	getAddress();
 
 	//init network
-	l3 = new Layer3(address_local);
-	l2 = new Layer2rf24(l3, PIN_CE, PIN_CSN, address_local);
-	l3->setLayer2(l2);
+	l3.init(address_local);
+	l2.init(&l3, PIN_CE, PIN_CSN, address_local);
+	l3.setLayer2(&l2);
 
-	pf = PacketFactory::instance();
-	pf->setLayer3(l3);
+	pf.setLayer3(&l3);
 
+	dht11.init(2, 20);
+	rcsw.init(A6, 21);
+	motion.init(A4, 50);
+	light.init(A5, 60);
 
+	hwInterface.registerDriver((HardwareDriver*) &dht11);
+	hwInterface.registerDriver((HardwareDriver*) &rcsw);
+	hwInterface.registerDriver((HardwareDriver*) &motion);
+	hwInterface.registerDriver((HardwareDriver*) &light);
 
-	if(address_local == 16) {
-		//pin, virtual hw-address
-		dht11 = new DHT11(17, 20);
-		rcsw = new RCSwitchTevionFSI07(14, 21);
-		led = new LED(30, 22);
-		motion = new MotionDetector(12, 50);
-		light = new Light(A10, 60);
-		mytone = new MyTone(3, 70);
+	dispatcher.init(&l3, &hwInterface);
 
-		hwInterface = new HardwareInterface();
-		hwInterface->registerDriver((HardwareDriver*) dht11);
-		hwInterface->registerDriver((HardwareDriver*) rcsw);
-		hwInterface->registerDriver((HardwareDriver*) led);
-		hwInterface->registerDriver((HardwareDriver*) motion);
-		hwInterface->registerDriver((HardwareDriver*) light);
-		hwInterface->registerDriver((HardwareDriver*) mytone);
-
-		address_remote = 32;
-	} else if(address_local == 32) {
-		address_remote = 16;
-	}
-	dispatcher = new PacketDispatcher(l3, hwInterface);
+	//mySimpleTimer = SimpleTimer::instance();
 
 	//Serial.println("### testHardwareCommand: Tone ###");
 	//Serial.flush();
@@ -415,43 +391,10 @@ void setup() {
 	//pinMode(LED_BUILTIN, LOW);
 }
 
-enum internalState {state_START, state_NEIGHBOUR_FOUND, state_INFO_REQUEST_SENT};
-
-internalState state = state_START;
-
 void loop() {
 	//do networking.
-	l3->Loop();
-	dispatcher->loop();
-	SimpleTimer::instance()->run();
-
-	if(address_local == 32) {
-		switch(state) {
-			case state_START: {
-				neighbourData* neighbours = l3->getNeighbours();
-
-				for(uint8_t i = 0; i < CONFIG_L3_NUM_NEIGHBOURS; i++) {
-					if(neighbours[i].nodeId == 16) {
-						//neighbour found
-						state = state_NEIGHBOUR_FOUND;
-						break;
-					}
-				}
-				break;
-			}
-			case state_NEIGHBOUR_FOUND: {
-
-				break;
-			}
-			case state_INFO_REQUEST_SENT: {
-				break;
-			}
-			default: {
-				break;
-			}
-		}
-	}
-
+	l3.Loop();
+	dispatcher.loop();
 
 /***
 	if(millis() - lastBeaconT > 60*1000UL) {

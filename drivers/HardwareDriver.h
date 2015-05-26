@@ -26,11 +26,11 @@ class HardwareDriver
 	public:
 		uint8_t hardwareAddress;
 
-		HardwareDriver() {
+		void init() {
 			this->hardwareAddress = random();
 		}
 
-		HardwareDriver(uint8_t hardwareAddress) {
+		void init(uint8_t hardwareAddress) {
 			this->hardwareAddress = hardwareAddress;
 		}
 

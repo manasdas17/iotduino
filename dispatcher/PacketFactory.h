@@ -18,7 +18,7 @@
  * singleton. class for creating application packets.
  * @author Helge
  */
-class PacketFactory : public Singleton<PacketFactory> {
+class PacketFactory {
 	private:
 		Layer3* l3;
 

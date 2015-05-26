@@ -114,22 +114,10 @@ public:
    * @param _cepin The pin attached to Chip Enable on the RF module
    * @param _cspin The pin attached to Chip Select
    */
-  RF24(uint8_t _cepin, uint8_t _cspin);
+  void init(uint8_t _cepin, uint8_t _cspin);
   //#if defined (RF24_LINUX)
 
-    /**
-  * Optional Raspberry Pi Constructor
-  *
-  * Creates a new instance of this driver.  Before using, you create an instance
-  * and send in the unique pins that this chip is connected to.
-  *
-  * @param _cepin The pin attached to Chip Enable on the RF module
-  * @param _cspin The pin attached to Chip Select
-  * @param spispeed For RPi, the SPI speed in MHZ ie: BCM2835_SPI_SPEED_8MHZ
-  */
-
-  RF24(uint8_t _cepin, uint8_t _cspin, uint32_t spispeed );
-  //#endif
+ //#endif
 
   #if defined (RF24_LINUX)
   virtual ~RF24() {};

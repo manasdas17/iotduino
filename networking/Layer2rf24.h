@@ -40,7 +40,7 @@ class Layer2rf24 {
 	private:
 		uint8_t pin_ce;
 		uint8_t pin_csn;
-		RF24* radio;
+		RF24 radio;
 		uint64_t deviceAddress;
 
 		frame_t receiveQueue[CONFIG_L2_RECEIVE_BUFFER_LEN];
@@ -83,13 +83,22 @@ class Layer2rf24 {
 		 */
 		boolean receiveQueuePop(frame_t* f);
 
+
+		Layer2rf24();
+
 		/**
-		 * constructor.
+		 * init.
 		 * @param ce pin
 		 * @param csn pin
 		 * @param local device address
 		 */
-		Layer2rf24(Layer3* l3, uint8_t pin_ce, uint8_t pin_csn, uint16_t deviceAddress);
+		void init(Layer3* l3, uint8_t pin_ce, uint8_t pin_csn, uint16_t deviceAddress);
+
+		/**
+		 * desctructor.
+		 */
+		~Layer2rf24() {
+		}
 
 		/**
 		 * receive all available data and push it to the queue.
@@ -110,12 +119,6 @@ class Layer2rf24 {
 		 */
 		void setupRadio();
 
-		/**
-		 * desctructor.
-		 */
-		~Layer2rf24() {
-			delete radio;
-		}
 }; //nrf24Mesh
 
 #endif //__NRF24MESH_H__

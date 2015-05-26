@@ -35,18 +35,28 @@ static inline unsigned long elapsed() { return millis(); }
 SimpleTimer::SimpleTimer() {
     unsigned long current_millis = elapsed();
 
-    for (int i = 0; i < MAX_TIMERS; i++) {
-        enabled[i] = false;
-        callbacks[i] = 0;                   // if the callback pointer is zero, the slot is free, i.e. doesn't "contain" any timer
-        prev_millis[i] = current_millis;
-        numRuns[i] = 0;
-    }
+	memset(enabled, 0, sizeof(enabled));
+	memset(&callbacks, 0, (size_t) MAX_TIMERS * sizeof(timer_callback));
+	memset(&numRuns, 0, (size_t) MAX_TIMERS * sizeof(int));
+	memset(&callbackContexts, 0, (size_t) MAX_TIMERS * sizeof(void*));
+	memset(&prev_millis, 0, (size_t) MAX_TIMERS * sizeof(uint32_t)); //results in infinite memset loop.
+
+
+    for (int8_t i = MAX_TIMERS-1; i >= 0; i--) {
+		prev_millis[i] = current_millis;
+		//enabled[i] = false;
+		//callbacks[i] = 0;                   // if the callback pointer is zero, the slot is free, i.e. doesn't "contain" any timer
+		//numRuns[i] = 0;
+	}
 
     numTimers = 0;
 }
 
 
 void SimpleTimer::run() {
+	Serial.println(F("SimpleTimer::run()"));
+	Serial.flush();
+
     int i;
     unsigned long current_millis;
 
