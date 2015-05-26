@@ -121,36 +121,20 @@ HardwareCommandResult* HardwareInterface::executeCommand(HardwareCommandResult* 
 	}
 }
 
-uint8_t HardwareInterface::getFreeResultIndex() const {
-	for(uint8_t i = 0; i < resultSetSize; i++) {
-		if(!resultSetInUse[i])
-			return i;
-	}
-
-	return 255;
-}
-
 HardwareCommandResult* HardwareInterface::readHardware(HardwareDriver* driver, HardwareCommandResult* cmd) {
 	#ifdef DEBUG_HARDWARE_ENABLE
 		Serial.print(millis());
 		Serial.println(F(": HardwareInterface::readHardware()"));
 	#endif
 
-	HardwareCommandResult* res = getFreeHardwareCommandResultEntry();
-
-	if(res == NULL)
+	if(cmd == NULL)
 		return NULL;
 
-	if(!driver->readVal(cmd->getHardwareType(), res)) {
-		releaseHardwareCommandResultEntry(res);
+	if(!driver->readVal(cmd->getHardwareType(), cmd)) {
 		return NULL;
 	}
 
-	res->setAddress(cmd->getAddress());
-	res->setHardwareType(cmd->getHardwareType());
-	res->setReadRequest(cmd->isReadRequest());
-
-	return res;
+	return cmd;
 }
 
 HardwareCommandResult* HardwareInterface::writeHardware(HardwareDriver* driver, HardwareCommandResult* cmd) {
@@ -168,39 +152,6 @@ HardwareInterface::~HardwareInterface() {
 
 }
 
-boolean HardwareInterface::releaseHardwareCommandResultEntry(HardwareCommandResult* ptr) {
-	//get id
-	for(uint8_t i = 0; i < resultSetSize; i++) {
-		if(ptr == &resultset[i] && resultSetInUse[i] == true) {
-
-			#ifdef DEBUG_HARDWARE_ENABLE
-				Serial.print(millis());
-				Serial.print(F(": HardwareInterface::releaseHardwareCommandResultEntry() index="));
-				Serial.println(i);
-				Serial.flush();
-			#endif
-
-			resultset[i].reset();
-			resultSetInUse[i] = false;
-
-			return true;
-		}
-	}
-
-	return false;
-}
-
-HardwareCommandResult* HardwareInterface::getFreeHardwareCommandResultEntry() {
-	uint8_t freeIndex = getFreeResultIndex();
-
-	if(freeIndex == 0xff)
-		return NULL;
-
-	resultSetInUse[freeIndex] = true;
-	return &resultset[freeIndex];
-}
-
- HardwareInterface::HardwareInterface() {
-	memset(resultSetInUse, 0, sizeof(resultSetInUse));
+HardwareInterface::HardwareInterface() {
 	memset(driver, 0, sizeof(driver));
 }

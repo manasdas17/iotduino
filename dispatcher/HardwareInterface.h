@@ -21,18 +21,9 @@ class HardwareInterface {
 		//const static resultSetSize = 10;
 		//const static driverPointerListSize = 5;
 
-		HardwareCommandResult resultset[resultSetSize];
-		boolean resultSetInUse[resultSetSize];
-
 		HardwareDriver* driver[driverPointerListSize];
 
 	protected:
-		/**
-		 * return the index of a free result set
-		 * @return index, 0xff if there is none.
-		 */
-		uint8_t getFreeResultIndex() const;
-
 		/**
 		 * check for a certain hardware driver
 		 * @param type
@@ -88,18 +79,6 @@ class HardwareInterface {
 		 * @param command
 		 */
 		HardwareCommandResult* executeCommand(HardwareCommandResult* cmd);
-
-		/**
-		 * free the hardware result set
-		 * @param set
-		 */
-		boolean releaseHardwareCommandResultEntry(HardwareCommandResult* ptr);
-
-		/**
-		 * get an unused resultset
-		 * @return set
-		 */
-		HardwareCommandResult* getFreeHardwareCommandResultEntry();
 
 		/**
 		 * @return list of pointers to driver instances

@@ -56,7 +56,6 @@ boolean CommandHandler::handleHardwareCommand(packet_application_numbered_cmd_t*
 		return false;
 
 	callback->doCallback(&appLayerPacket, remote, seq);
-	hardwareInterface->releaseHardwareCommandResultEntry(result);
 
 	return true;
 }
