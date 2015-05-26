@@ -14,7 +14,7 @@
 #include <dispatcher/EventCallbackInterface.h>
 
 #define responseTimeoutMillis (1000*10) //10s
-#define LISTENER_NUM 10
+#define LISTENER_NUM 4
 #define MAINTENANCE_PERIOD_MILLIS (1000*1) //1s
 
 class ResponseHandler {

@@ -14,7 +14,7 @@
 #include <drivers/HardwareID.h>
 #include <dispatcher/Commands.h>
 
-#define resultSetSize 10
+#define resultSetSize 4
 #define driverPointerListSize 10
 class HardwareInterface {
 	private:

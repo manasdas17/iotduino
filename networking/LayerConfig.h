@@ -3,14 +3,14 @@
  *
  * Created: 07.01.2015 21:41:42
  *  Author: helge
- */ 
+ */
 
 
 #ifndef LAYERCONFIG_H_
 #define LAYERCONFIG_H_
 #include "../DebugConfig.h"
 
-	#define CONFIG_L2_RECEIVE_BUFFER_LEN 10
+	#define CONFIG_L2_RECEIVE_BUFFER_LEN 5
 
 	#define CONFIG_RF_PA_LEVEL RF24_PA_LOW
 	#define CONFIG_RF_CHANNEL 70
@@ -39,13 +39,13 @@
 	typedef uint16_t l3_seq_t;
 	typedef uint32_t l3_timestamp;
 	typedef uint16_t l3_address_t;
-	#define CONFIG_L3_NUM_NEIGHBOURS 15
+	#define CONFIG_L3_NUM_NEIGHBOURS 10
 
 	#define CONFIG_L3_RECEIVE_BUFFER_LEN 5
 	#define CONFIG_L3_SEND_BUFFER_LEN 5
 	#define CONFIG_L3_NUMBERED_RETRANSMISSIONS 10
 	#define CONFIG_L3_NUMBERED_TIMEOUT_MS (5*1000L)
-	
+
 	enum l3_packetType {PACKET_ACK, PACKET_NUMBERED, PACKET_UNNUMBERED, PACKET_BEACON};
 
 #endif /* LAYERCONFIG_H_ */
