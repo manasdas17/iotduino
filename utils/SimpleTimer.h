@@ -98,6 +98,8 @@ public:
 	//__attribute__((optimize("O1")))
 	SimpleTimer();
 
+	void init();
+
 private:
     // deferred call constants
     const static int DEFCALL_DONTRUN = 0;       // don't call the callback function
