@@ -7,7 +7,7 @@
 
 #include "../../interfaces/output/MyTone.h"
 
-void* TIMERREFERENCE = 0;
+extern SimpleTimer timer;
 
 boolean MyTone::implementsInterface( HardwareTypeIdentifier type ) {
 	if(type == HWType_tone)
@@ -16,25 +16,25 @@ boolean MyTone::implementsInterface( HardwareTypeIdentifier type ) {
 }
 
 const void MyTone::stopOutputHook(int timerNum) {
-	//MyTone* tmp = (MyTone*) TIMERREFERENCE->getCallbackContext(timerNum);
-	//if(tmp != NULL)
-		//tmp->write(0);
+	MyTone* tmp = (MyTone*) timer.getCallbackContext(timerNum);
+	if(tmp != NULL)
+	tmp->write(0);
 }
 
 boolean MyTone::writeVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) {
-	//if(type == HWType_tone && result != NULL && result->getUint16ListNum() > 0) {
-		//uint16_t length = result->getUint16List()[0];
-//
-		//uint8_t tone = this->myTone;
-		//if(result->getUint16ListNum() > 1)
-			//tone = result->getUint16List()[1];
-//
-		//write(tone);
-		//int num = TIMERREFERENCE->setTimeout(length, (timer_callback) &MyTone::stopOutputHook);
-		//TIMERREFERENCE->setCallbackContext(num, (void*) this);
-//
-		//return true;
-	//}
+	if(type == HWType_tone && result != NULL && result->getUint16ListNum() > 0) {
+		uint16_t length = result->getUint16List()[0];
+
+		uint8_t tone = this->myTone;
+		if(result->getUint16ListNum() > 1)
+		tone = result->getUint16List()[1];
+
+		write(tone);
+		int num = timer.setTimeout(length, (timer_callback) &MyTone::stopOutputHook);
+		timer.setCallbackContext(num, (void*) this);
+
+		return true;
+	}
 
 	return false;
 }

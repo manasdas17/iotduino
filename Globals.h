@@ -38,6 +38,10 @@ DHT11 dht11;
 RCSwitchTevionFSI07 rcsw;
 MotionDetector motion;
 Light light;
-//MyTone mytone;
+
+#ifndef PRODUCTIVE_MEGA328P
+	#include <interfaces/output/MyTone.h>
+	MyTone mytone;
+#endif
 
 #endif /* GLOBALS_H_ */
