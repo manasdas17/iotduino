@@ -64,10 +64,11 @@ boolean Layer3::sendPacket( packet_t &packet )
 	//numbered? - handle via queue ONLY IF the packet is not routed.
 	if(packet.data.type == PACKET_NUMBERED && packet.data.source == localAddress) {
 		#ifdef DEBUG_NETWORK_ENABLE
-			Serial.print(F("\tnumbered - enqueue: remote="));
+			Serial.print(F("\tnumbered: if new - enqueue: remote="));
 			Serial.print(packet.data.destination);
 			Serial.print(F(" seq="));
-			Serial.println(((packet_numbered_t*) packet.data.payload)->seqNumber);
+			packet_numbered_t* tmp = (packet_numbered_t*) packet.data.payload;
+			Serial.println(tmp->seqNumber);
 		#endif
 		result &= addToSendingQueue(&packet);
 	}
@@ -87,22 +88,29 @@ void Layer3::printPacketInformation(packet_t* packet) {
 		Serial.print(F("\ttype="));
 		switch(packet->data.type) {
 			case PACKET_ACK:
-				Serial.print(F("ACK"));
+				Serial.println(F("ACK"));
 				break;
 			case PACKET_BEACON:
 				Serial.print(F("BEACON"));
 				break;
-			case PACKET_NUMBERED:
+			case PACKET_NUMBERED: {
 				Serial.print(F("NUMBERED"));
+				packet_numbered_t* tmpNumbered = (packet_numbered_t*) packet->data.payload;
+				Serial.print(F(" seq="));
+				Serial.print(tmpNumbered->seqNumber);
+				packet_application_numbered_cmd_t* tmpApp = (packet_application_numbered_cmd_t*) tmpNumbered->payload;
+				Serial.print(F(" appType="));
+				Serial.println(tmpApp->packetType);
 				break;
+			}
 			case PACKET_UNNUMBERED:
-				Serial.print(F("UNNUMBERED"));
+				Serial.println(F("UNNUMBERED"));
 				break;
 			default:
-				Serial.print(F("unknown"));
+				Serial.println(F("unknown"));
 				break;
 		}
-		Serial.print(F(" source="));
+		Serial.print(F("\tsource="));
 		Serial.print(packet->data.source);
 		Serial.print(F(" dest="));
 		Serial.print(packet->data.destination);
@@ -598,6 +606,7 @@ void Layer3::updateSendingBuffer() {
 		////Serial.flush();
 	////#endif
 
+	uint32_t now = millis();
 	for(uint8_t i = 0; i < CONFIG_L3_SEND_BUFFER_LEN; i++) {
 		//is this a packet to be retransmitted?
 		if(sendingNumberedBuffer[i].packet.data.destination != 0) {
@@ -619,9 +628,9 @@ void Layer3::updateSendingBuffer() {
 			}
 
 			//has it timed out? - or it may also be new (timestamp 0)
-			uint32_t now = millis();
 			if(sendingNumberedBuffer[i].lasttimestamp == 0
-				|| (now - sendingNumberedBuffer[i].lasttimestamp > CONFIG_L3_NUMBERED_TIMEOUT_MS
+				|| (now > sendingNumberedBuffer[i].lasttimestamp
+					&& now - sendingNumberedBuffer[i].lasttimestamp > CONFIG_L3_NUMBERED_TIMEOUT_MS
 					&& now > CONFIG_L3_NUMBERED_TIMEOUT_MS))
 			{
 				#ifdef DEBUG_NETWORK_ENABLE
@@ -629,11 +638,14 @@ void Layer3::updateSendingBuffer() {
 					Serial.print(F(": resend index="));
 					Serial.print(i);
 					Serial.print(F(": (re)sending #"));
-					Serial.println(sendingNumberedBuffer[i].retransmissions);
+					Serial.print(sendingNumberedBuffer[i].retransmissions);
+					Serial.print(F(" lastTimestamp="));
+					Serial.println(sendingNumberedBuffer[i].lasttimestamp);
 					Serial.flush();
 				#endif
 
-				sendingNumberedBuffer[i].lasttimestamp = millis();
+				//linear backoff.
+				sendingNumberedBuffer[i].lasttimestamp = now + sendingNumberedBuffer[i].retransmissions * 20;
 				sendingNumberedBuffer[i].retransmissions++;
 
 				//yep, resend it.

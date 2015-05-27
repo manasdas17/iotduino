@@ -62,7 +62,7 @@ class Layer3 {
 		typedef struct packet_sending_queue_item_struct {
 			packet_t packet;
 			uint8_t retransmissions;
-			uint16_t lasttimestamp;
+			uint32_t lasttimestamp;
 		} packet_sending_queue_item_t;
 
 		l3_address_t localAddress;
