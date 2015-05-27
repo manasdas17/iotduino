@@ -117,7 +117,7 @@ void Layer3::printPacketInformation(packet_t* packet) {
 						break;
 					}
 					case HARDWARE_COMMAND_READ: {
-						Serial.print(F("HARDWARE_COMMAND_READ"));
+						Serial.print(F("HARDWARE_COMMAND_READ "));
 						command_t* cmd = (command_t*) tmpApp->payload;
 						Serial.print(F("hwtype="));
 						Serial.print(cmd->type);
@@ -129,7 +129,7 @@ void Layer3::printPacketInformation(packet_t* packet) {
 						break;
 					}
 					case HARDWARE_COMMAND_RES: {
-						Serial.print(F("HARDWARE_COMMAND_RES"));
+						Serial.print(F("HARDWARE_COMMAND_RES "));
 						command_t* cmd = (command_t*) tmpApp->payload;
 						Serial.print(F("hwtype="));
 						Serial.print(cmd->type);

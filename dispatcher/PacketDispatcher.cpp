@@ -31,11 +31,18 @@ boolean PacketDispatcher::handleNumbered(const seq_t seq, const packet_type_appl
 		case HARDWARE_COMMAND_READ:
 			return commandHandler.handleNumbered(networking->getCallbackInterface(), seq, type, remote, appPacket);
 
+
+	#ifdef ENABLE_DISCOVERY_SERVICE
+		case HARDWARE_DISCOVERY_RES:
+	#endif
+		case ACK:
+		case NACK:
+		case HARDWARE_COMMAND_RES:
+			return responseHandler.handleReponseNumbered(seq, type, remote, appPacket);
+
 	#ifdef ENABLE_DISCOVERY_SERVICE
 		case HARDWARE_DISCOVERY_REQ:
 			return discoveryService.handleInfoRequest(networking->getCallbackInterface(), seq, type, remote, appPacket);
-		case HARDWARE_DISCOVERY_RES:
-			return responseHandler.handleReponseNumbered(seq, type, remote, appPacket);
 	#endif
 
 	#ifdef ENABLE_SUBSCRIPTION_SERVICE
@@ -43,10 +50,6 @@ boolean PacketDispatcher::handleNumbered(const seq_t seq, const packet_type_appl
 		case HARDWARE_SUBSCRIPTION_INFO:
 			return subscriptionService.handleRequest(networking->getCallbackInterface(), seq, type, remote, appPacket);
 	#endif
-
-		case ACK:
-		case NACK:
-			return responseHandler.handleReponseNumbered(seq, type, remote, appPacket);
 
 		default:
 			return false;

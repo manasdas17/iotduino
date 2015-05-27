@@ -16,14 +16,14 @@
 
 
 typedef struct hwCommand {
-	HardwareTypeIdentifier type : 7;
-	uint8_t isRead : 1;
+	HardwareTypeIdentifier type;
+	uint8_t isRead;
 	uint8_t address;
 
-	uint8_t numUint8 : 4;
-	uint8_t numUint16 : 4;
-	uint8_t numInt8 : 4;
-	uint8_t numInt16 : 4;
+	uint8_t numUint8;
+	uint8_t numUint16;
+	uint8_t numInt8;
+	uint8_t numInt16;
 
 	union {
 		uint8_t uint8list[sizeUInt8List];
@@ -35,7 +35,7 @@ typedef struct hwCommand {
 
 
 //sanity check.
-#if (CONFIG_L3_PACKET_NUMBERED_MAX_LEN < (4 + sizeUInt8List*1 + sizeFloatList*4))
+#if (CONFIG_L3_PACKET_NUMBERED_MAX_LEN < (7 + sizeUInt8List*1))
 	#error maximum payload len exceeded.
 #endif
 

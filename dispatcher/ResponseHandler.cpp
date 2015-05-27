@@ -34,10 +34,10 @@ boolean ResponseHandler::handleReponseNumbered(const seq_t seq, const packet_typ
 	return true;
 }
 
-boolean ResponseHandler::registerListener(const uint32_t timeout, const seq_t seqNumber, const l3_address_t remoteAddress, EventCallbackInterface* callbackObject) {
+boolean ResponseHandler::registerListenerBySeq(const uint32_t timeout, const seq_t seqNumber, const l3_address_t remoteAddress, EventCallbackInterface* callbackObject) {
 	return registerListener(timeout, seqNumber, (packet_type_application_t) 0xff, remoteAddress, callbackObject);
 }
-boolean ResponseHandler::registerListener(const uint32_t timeout, packet_type_application_t type, const l3_address_t remoteAddress, EventCallbackInterface* callbackObject) {
+boolean ResponseHandler::registerListenerByPacketType(const uint32_t timeout, packet_type_application_t type, const l3_address_t remoteAddress, EventCallbackInterface* callbackObject) {
 	return registerListener(timeout, 0, type, remoteAddress, callbackObject);
 }
 
@@ -47,7 +47,7 @@ boolean ResponseHandler::registerListener(const uint32_t timeout, const seq_t se
 		Serial.print(F(": ResponseHandler::registerListener() remote="));
 		Serial.print(remoteAddress);
 		Serial.print(F(" seq="));
-		Serial.println(seqNumber);
+		Serial.print(seqNumber);
 		Serial.print(F(" type="));
 		Serial.println(type);
 		Serial.flush();
@@ -76,7 +76,7 @@ boolean ResponseHandler::registerListener(const uint32_t timeout, const seq_t se
 uint8_t ResponseHandler::getListenerSlot() const {
 	uint8_t freeIndex = 0xff;
 	for(uint8_t i = 0; i < LISTENER_NUM; i++) {
-		if(listeners[i].timestamp == 0) {
+		if(listeners[i].callbackObj == NULL) {
 			freeIndex= i;
 			break;
 		}
@@ -127,7 +127,7 @@ ResponseHandler::responseListener_t* ResponseHandler::getListener(const seq_t se
 		Serial.flush();
 		#endif
 		for(uint8_t i = 0; i < LISTENER_NUM; i++) {
-			if(listeners[i].timestamp > 0 && listeners[i].seqNumber == seq && listeners[i].remote == remote) {
+			if(listeners[i].seqNumber == seq && listeners[i].remote == remote) {
 				#ifdef DEBUG_HANDLER_ENABLE
 				Serial.print(millis());
 				Serial.println(F(":\tfound"));
@@ -155,7 +155,7 @@ ResponseHandler::responseListener_t* ResponseHandler::getListener(const packet_t
 	Serial.flush();
 	#endif
 	for(uint8_t i = 0; i < LISTENER_NUM; i++) {
-		if(listeners[i].timestamp > 0 && listeners[i].packetType == type && listeners[i].remote == remote) {
+		if(listeners[i].packetType == type && listeners[i].remote == remote) {
 			#ifdef DEBUG_HANDLER_ENABLE
 			Serial.print(millis());
 			Serial.println(F(":\tfound"));

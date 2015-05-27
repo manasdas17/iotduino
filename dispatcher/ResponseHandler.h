@@ -56,7 +56,7 @@ class ResponseHandler {
 		 * @param callback object
 		 * @return true on success, false otherwise
 		 */
-		boolean registerListener(uint32_t timeout, const seq_t seqNumber, const l3_address_t remoteAddress, EventCallbackInterface* callbackObject);
+		boolean registerListenerBySeq(uint32_t timeout, const seq_t seqNumber, const l3_address_t remoteAddress, EventCallbackInterface* callbackObject);
 
 		/**
 		 * register a new listener for a specific remote address and sequence number with callback
@@ -66,7 +66,7 @@ class ResponseHandler {
 		 * @param callback object
 		 * @return true on success, false otherwise
 		 */
-		boolean registerListener(uint32_t timeout, packet_type_application_t type, const l3_address_t remoteAddress, EventCallbackInterface* callbackObject);
+		boolean registerListenerByPacketType(uint32_t timeout, packet_type_application_t type, const l3_address_t remoteAddress, EventCallbackInterface* callbackObject);
 
 		/**
 		 * maintenance.

@@ -230,24 +230,24 @@ class PacketFactory {
 		 */
 		seq_t generateHardwareCommand(Layer3::packet_t* p, l3_address_t destination, HardwareCommandResult* command) {
 			if(l3 == NULL)
-			return false;
+				return false;
 
 			//numbered
-			packet_numbered_t* numbered;
+			packet_numbered_t numbered;
 			memset(&numbered, 0, sizeof(packet_numbered_t));
-			numbered->seqNumber = random(1, 0xffffffff);
-			numbered->payloadLen = sizeof(packet_application_numbered_cmd_t);
+			numbered.seqNumber = random(1, 0xffffffff);
+			numbered.payloadLen = sizeof(packet_application_numbered_cmd_t);
 
-			packet_application_numbered_cmd_t* appCmd = (packet_application_numbered_cmd_t*) numbered->payload;
-			memset(&appCmd, 0, sizeof(appCmd));
+			packet_application_numbered_cmd_t* appCmd = (packet_application_numbered_cmd_t*) numbered.payload;
+			//memset(&appCmd, 0, sizeof(appCmd));
 
 			//write data into app packet.
 			command->serialize((command_t*) appCmd->payload);
 
 			appCmd->packetType = (!command->isReadRequest()) ? HARDWARE_COMMAND_WRITE : HARDWARE_COMMAND_READ;
 
-			l3->createPacketGeneric(p, destination, PACKET_NUMBERED, (void*) numbered, sizeof(packet_numbered_t));
-			return numbered->seqNumber;
+			l3->createPacketGeneric(p, destination, PACKET_NUMBERED, (void*) &numbered, sizeof(packet_numbered_t));
+			return numbered.seqNumber;
 		}
 };
 
