@@ -14,7 +14,7 @@
 #include <dispatcher/EventCallbackInterface.h>
 
 #define LISTENER_NUM 4
-#define MAINTENANCE_PERIOD_MILLIS (1000*1UL) //1s
+#define MAINTENANCE_PERIOD_MILLIS (15*1000) //1s
 
 class ResponseHandler {
 	//variables
@@ -35,7 +35,7 @@ class ResponseHandler {
 		uint8_t activeListenersNum;
 
 		/** timestamp for maintenance loop */
-		uint16_t lastCheckedTimestampMillis;
+		uint32_t lastCheckedTimestampMillis;
 	//functions
 	public:
 		/**

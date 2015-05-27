@@ -89,8 +89,9 @@ void ResponseHandler::maintainListeners() {
 	if(activeListenersNum == 0)
 		return;
 
-	if(millis() - lastCheckedTimestampMillis > MAINTENANCE_PERIOD_MILLIS) {
-		lastCheckedTimestampMillis = millis();
+	uint32_t now = millis();
+	if(now > MAINTENANCE_PERIOD_MILLIS && now - lastCheckedTimestampMillis > MAINTENANCE_PERIOD_MILLIS) {
+		lastCheckedTimestampMillis = now;
 
 
 		#ifdef DEBUG_HANDLER_ENABLE
