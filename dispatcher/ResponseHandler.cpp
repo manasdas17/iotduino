@@ -34,14 +34,14 @@ boolean ResponseHandler::handleReponseNumbered(const seq_t seq, const packet_typ
 	return true;
 }
 
-boolean ResponseHandler::registerListener(const seq_t seqNumber, const l3_address_t remoteAddress, EventCallbackInterface* callbackObject) {
-	return registerListener(seqNumber, (packet_type_application_t) 0xff, remoteAddress, callbackObject);
+boolean ResponseHandler::registerListener(const uint32_t timeout, const seq_t seqNumber, const l3_address_t remoteAddress, EventCallbackInterface* callbackObject) {
+	return registerListener(timeout, seqNumber, (packet_type_application_t) 0xff, remoteAddress, callbackObject);
 }
-boolean ResponseHandler::registerListener(packet_type_application_t type, const l3_address_t remoteAddress, EventCallbackInterface* callbackObject) {
-	return registerListener(0, type, remoteAddress, callbackObject);
+boolean ResponseHandler::registerListener(const uint32_t timeout, packet_type_application_t type, const l3_address_t remoteAddress, EventCallbackInterface* callbackObject) {
+	return registerListener(timeout, 0, type, remoteAddress, callbackObject);
 }
 
-boolean ResponseHandler::registerListener(const seq_t seqNumber, const packet_type_application_t type, const l3_address_t remoteAddress, EventCallbackInterface* callbackObject) {
+boolean ResponseHandler::registerListener(const uint32_t timeout, const seq_t seqNumber, const packet_type_application_t type, const l3_address_t remoteAddress, EventCallbackInterface* callbackObject) {
 	#ifdef DEBUG_HANDLER_ENABLE
 		Serial.print(millis());
 		Serial.print(F(": ResponseHandler::registerListener() remote="));
@@ -62,7 +62,7 @@ boolean ResponseHandler::registerListener(const seq_t seqNumber, const packet_ty
 		return false;
 	}
 
-	listeners[index].timestamp = millis();
+	listeners[index].timestamp = timeout;
 	listeners[index].callbackObj = callbackObject;
 	listeners[index].remote = remoteAddress;
 	listeners[index].seqNumber = seqNumber;

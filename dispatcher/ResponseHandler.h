@@ -13,9 +13,8 @@
 #include <networking/Packets.h>
 #include <dispatcher/EventCallbackInterface.h>
 
-#define responseTimeoutMillis (1000*10) //10s
 #define LISTENER_NUM 4
-#define MAINTENANCE_PERIOD_MILLIS (1000*1) //1s
+#define MAINTENANCE_PERIOD_MILLIS (1000*1UL) //1s
 
 class ResponseHandler {
 	//variables
@@ -51,21 +50,23 @@ class ResponseHandler {
 
 		/**
 		 * register a new listener for a specific remote address and sequence number with callback
+		 * @param timeout
 		 * @param sequence
 		 * @param l3 remote address
 		 * @param callback object
 		 * @return true on success, false otherwise
 		 */
-		boolean registerListener(const seq_t seqNumber, const l3_address_t remoteAddress, EventCallbackInterface* callbackObject);
+		boolean registerListener(uint32_t timeout, const seq_t seqNumber, const l3_address_t remoteAddress, EventCallbackInterface* callbackObject);
 
 		/**
 		 * register a new listener for a specific remote address and sequence number with callback
+		 * @param timeout 0=no timeout
 		 * @param sequence
 		 * @param type of packet
 		 * @param callback object
 		 * @return true on success, false otherwise
 		 */
-		boolean registerListener(packet_type_application_t type, const l3_address_t remoteAddress, EventCallbackInterface* callbackObject);
+		boolean registerListener(uint32_t timeout, packet_type_application_t type, const l3_address_t remoteAddress, EventCallbackInterface* callbackObject);
 
 		/**
 		 * maintenance.
@@ -81,13 +82,14 @@ class ResponseHandler {
 	protected:
 		/**
 		 * register a new listener for a specific remote address and sequence number with callback
+		 * @param timeout
 		 * @param sequence
 		 * @param type
 		 * @param l3 remote address
 		 * @param callback object
 		 * @return true on success, false otherwise
 		 */
-		boolean registerListener(const seq_t seqNumber, const packet_type_application_t type, const l3_address_t remoteAddress, EventCallbackInterface* callbackObject);
+		boolean registerListener(uint32_t timeout, const seq_t seqNumber, const packet_type_application_t type, const l3_address_t remoteAddress, EventCallbackInterface* callbackObject);
 
 		/**
 		 * return a listener if available
