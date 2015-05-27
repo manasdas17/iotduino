@@ -7,18 +7,7 @@
 #include <Arduino.h>
 #include <Globals.h>
 
-#define PRODUCTIVE_MEGA328P
-
-#ifndef PRODUCTIVE_MEGA328P
-	#define address00 0x1000
-	#define address01 0x1001
-	#define address10 0x1002
-	#define address11 0x1003
-
-	uint16_t address_relay;
-	uint16_t address_remote;
-	boolean isServer;
-#endif
+//#define PRODUCTIVE_MEGA328P
 
 /**
  * read pin 4..9 inverted
@@ -51,255 +40,256 @@ void getAddress() {
 	#endif
 }
 
-#ifndef PRODUCTIVE_MEGA328P
-void testHardwareCommandRead() {
-	////create network packet
-	//cmd
-	command_t cmdX;
-	memset(&cmdX, 0, sizeof(cmdX));
-	cmdX.address = dht11->getAddress();
-	cmdX.type = HWType_temprature;
-	cmdX.isRead = 1;
-
-	//app layer
-	packet_application_numbered_cmd_t appCmd;
-	memset(&appCmd, 0, sizeof(appCmd));
-	appCmd.packetType = HARDWARE_COMMAND_READ;
-	memcpy(appCmd.payload, (byte*) &cmdX, sizeof(cmdX));
-
-	//networking numbered
-	packet_numbered_t numbered;
-	memset(&numbered, 0, sizeof(numbered));
-	numbered.seqNumber = 37;
-	memcpy(numbered.payload, (byte*) &appCmd, sizeof(appCmd));
-	numbered.payloadLen = sizeof(appCmd);
-
-	//network packet
-	Layer3::packet_t p;
-	memset(&p, 0, sizeof(p));
-	p.data.destination = address_local;
-	p.data.hopcount = 5;
-	p.data.source = 12;
-	p.data.type = PACKET_NUMBERED;
-	memcpy(p.data.payload, (byte*) &numbered, sizeof(numbered));
-	p.data.payloadLen = sizeof(numbered);
-
-	//processing
-	dispatcher.handleNumberedFromNetwork(p);
-}
-
-void testHardwareCommand(uint8_t address, HardwareTypeIdentifier type, uint8_t isRead) {
-	command_t cmd_packet;
-	memset(&cmd_packet, 0, sizeof(cmd_packet));
-	cmd_packet.address = address;
-	cmd_packet.isRead = isRead;
-	cmd_packet.type = type;
-	HardwareCommandResult cmd = HardwareCommandResult();
-	cmd.deSerialize(&cmd_packet);
-	hwInterface.executeCommand(&cmd);
-}
-
-void testHardwareCommandTone() {
-	SimpleTimer::instance()->run();
-
-	command_t cmd_packet;
-	memset(&cmd_packet, 0, sizeof(cmd_packet));
-	cmd_packet.address = mytone.getAddress();
-	cmd_packet.isRead = false;
-	cmd_packet.type = HWType_tone;
-	cmd_packet.numUint16 = 1;
-	cmd_packet.uint16list[0] = 2000;
-	HardwareCommandResult cmd = HardwareCommandResult();
-	cmd.deSerialize(&cmd_packet);
-	hwInterface.executeCommand(&cmd);
-
-	SimpleTimer::instance()->run();
-	delay(2500);
-	SimpleTimer::instance()->run();
-}
-
-void testSubscriptionSet() {
-		//numbered for subscription
-	//app layer
-	subscription_set_t cmdSubscription;
-	memset(&cmdSubscription, 0, sizeof(cmdSubscription));
-	cmdSubscription.info.address = 2; //node address
-	cmdSubscription.info.hardwareAddress = dht11->getAddress();
-	cmdSubscription.info.hardwareType = HWType_temprature;
-	cmdSubscription.info.millisecondsDelay = 1347;
-	cmdSubscription.info.sequence = 1337;
-	cmdSubscription.info.onEventType = EVENT_TYPE_DISABLED;
-
-	packet_application_numbered_cmd_t appCmd3;
-	memset(&appCmd3, 0, sizeof(appCmd3));
-	appCmd3.packetType = HARDWARE_SUBSCRIPTION_SET;
-	memcpy(&appCmd3.payload, &cmdSubscription, sizeof(cmdSubscription));
-
-	//networking numbered
-	packet_numbered_t numbered3;
-	memset(&numbered3, 0, sizeof(numbered3));
-	numbered3.seqNumber = 37;
-	memcpy(numbered3.payload, (byte*) &appCmd3, sizeof(appCmd3));
-	numbered3.payloadLen = sizeof(appCmd3);
-
-	//network packet
-	Layer3::packet_t p3;
-	p3.data.destination = address_local;
-	p3.data.hopcount = 5;
-	p3.data.source = 12;
-	p3.data.type = PACKET_NUMBERED;
-	memcpy(p3.data.payload, (byte*) &numbered3, sizeof(numbered3));
-	p3.data.payloadLen = sizeof(numbered3);
-
-	//processing
-	dispatcher.handleNumberedFromNetwork(p3);
-}
-
-void testDiscovery() {
-		//numbered for discovery
-	//app layer
-	packet_application_numbered_cmd_t appCmd2;
-	memset(&appCmd2, 0, sizeof(appCmd2));
-	appCmd2.packetType = HARDWARE_DISCOVERY_REQ;
-
-	//networking numbered
-	packet_numbered_t numbered2;
-	memset(&numbered2, 0, sizeof(numbered2));
-	numbered2.seqNumber = 37;
-	memcpy(numbered2.payload, (byte*) &appCmd2, sizeof(appCmd2));
-	numbered2.payloadLen = sizeof(appCmd2);
-
-	//network packet
-	Layer3::packet_t p2;
-	memset(&p2, 0, sizeof(p2));
-	p2.data.destination = address_local;
-	p2.data.hopcount = 5;
-	p2.data.source = 12;
-	p2.data.type = PACKET_NUMBERED;
-	memcpy(p2.data.payload, (byte*) &numbered2, sizeof(packet_numbered_t));
-	p2.data.payloadLen = sizeof(numbered2);
-
-	//processing
-	dispatcher.handleNumberedFromNetwork(p2);
-}
-
-void testSubscriptionInfo() {
-	////subscription info
-	//app layer
-	packet_application_numbered_cmd_t appCmd4;
-	memset(&appCmd4, 0, sizeof(appCmd4));
-	appCmd4.packetType = HARDWARE_SUBSCRIPTION_INFO;
-	memset(&appCmd4.payload, 0, sizeof(appCmd4.payload));
-
-	//networking numbered
-	packet_numbered_t numbered4;
-	memset(&numbered4, 0, sizeof(numbered4));
-	numbered4.seqNumber = 37;
-	memcpy(numbered4.payload, (byte*) &appCmd4, sizeof(appCmd4));
-	numbered4.payloadLen = sizeof(appCmd4);
-
-	//network packet
-	Layer3::packet_t p4;
-	p4.data.destination = address_local;
-	p4.data.hopcount = 5;
-	p4.data.source = 12;
-	p4.data.type = PACKET_NUMBERED;
-	memcpy(p4.data.payload, (byte*) &numbered4, sizeof(numbered4));
-	p4.data.payloadLen = sizeof(numbered4);
-
-	//processing
-	dispatcher.handleNumberedFromNetwork(p4);
-}
-
-void testSubscriptionPolling() {
-		//numbered for subscription
-		//app layer
-		subscription_set_t cmdSubscription;
-		memset(&cmdSubscription, 0, sizeof(cmdSubscription));
-		cmdSubscription.info.address = 147; //node address
-		cmdSubscription.info.hardwareAddress = motion->getAddress();
-		cmdSubscription.info.hardwareType = HWType_motion;
-		cmdSubscription.info.millisecondsDelay = 0;
-		cmdSubscription.info.sequence = 1337;
-		cmdSubscription.info.onEventType = EVENT_TYPE_CHANGE;
-
-		packet_application_numbered_cmd_t appCmd3;
-		memset(&appCmd3, 0, sizeof(appCmd3));
-		appCmd3.packetType = HARDWARE_SUBSCRIPTION_SET;
-		memcpy(&appCmd3.payload, &cmdSubscription, sizeof(cmdSubscription));
-
-		//networking numbered
-		packet_numbered_t numbered3;
-		memset(&numbered3, 0, sizeof(numbered3));
-		numbered3.seqNumber = 37;
-		memcpy(numbered3.payload, (byte*) &appCmd3, sizeof(appCmd3));
-		numbered3.payloadLen = sizeof(appCmd3);
-
-		//network packet
-		Layer3::packet_t p3;
-		p3.data.destination = address_local;
-		p3.data.hopcount = 5;
-		p3.data.source = 12;
-		p3.data.type = PACKET_NUMBERED;
-		memcpy(p3.data.payload, (byte*) &numbered3, sizeof(numbered3));
-		p3.data.payloadLen = sizeof(numbered3);
-
-		//processing
-		dispatcher.handleNumberedFromNetwork(p3);
-
-		//wait
-		delay(1000);
-		dispatcher.loop();
-}
-
-void testSubscriptionPollingLight() {
-	//numbered for subscription
-	//app layer
-	subscription_set_t cmdSubscription;
-	memset(&cmdSubscription, 0, sizeof(cmdSubscription));
-	cmdSubscription.info.address = 147; //node address
-	cmdSubscription.info.hardwareAddress = light->getAddress();
-	cmdSubscription.info.hardwareType = HWType_light;
-	cmdSubscription.info.millisecondsDelay = 0;
-	cmdSubscription.info.sequence = 1337;
-	cmdSubscription.info.onEventType = EVENT_TYPE_CHANGE;
-
-	packet_application_numbered_cmd_t appCmd3;
-	memset(&appCmd3, 0, sizeof(appCmd3));
-	appCmd3.packetType = HARDWARE_SUBSCRIPTION_SET;
-	memcpy(&appCmd3.payload, &cmdSubscription, sizeof(cmdSubscription));
-
-	//networking numbered
-	packet_numbered_t numbered3;
-	memset(&numbered3, 0, sizeof(numbered3));
-	numbered3.seqNumber = 37;
-	memcpy(numbered3.payload, (byte*) &appCmd3, sizeof(appCmd3));
-	numbered3.payloadLen = sizeof(appCmd3);
-
-	//network packet
-	Layer3::packet_t p3;
-	p3.data.destination = address_local;
-	p3.data.hopcount = 5;
-	p3.data.source = 12;
-	p3.data.type = PACKET_NUMBERED;
-	memcpy(p3.data.payload, (byte*) &numbered3, sizeof(numbered3));
-	p3.data.payloadLen = sizeof(numbered3);
-
-	//processing
-	dispatcher.handleNumberedFromNetwork(p3);
-
-	//wait
-	delay(1000);
-	dispatcher->loop();
-}
-
-void testSubscriptionExecution() {
-	delay(2000); //enough for our test.
-	dispatcher.loop();
-}
-#endif
+/*
+//#ifndef PRODUCTIVE_MEGA328P
+//void testHardwareCommandRead() {
+	//////create network packet
+	////cmd
+	//command_t cmdX;
+	//memset(&cmdX, 0, sizeof(cmdX));
+	//cmdX.address = dht11->getAddress();
+	//cmdX.type = HWType_temprature;
+	//cmdX.isRead = 1;
+//
+	////app layer
+	//packet_application_numbered_cmd_t appCmd;
+	//memset(&appCmd, 0, sizeof(appCmd));
+	//appCmd.packetType = HARDWARE_COMMAND_READ;
+	//memcpy(appCmd.payload, (byte*) &cmdX, sizeof(cmdX));
+//
+	////networking numbered
+	//packet_numbered_t numbered;
+	//memset(&numbered, 0, sizeof(numbered));
+	//numbered.seqNumber = 37;
+	//memcpy(numbered.payload, (byte*) &appCmd, sizeof(appCmd));
+	//numbered.payloadLen = sizeof(appCmd);
+//
+	////network packet
+	//Layer3::packet_t p;
+	//memset(&p, 0, sizeof(p));
+	//p.data.destination = address_local;
+	//p.data.hopcount = 5;
+	//p.data.source = 12;
+	//p.data.type = PACKET_NUMBERED;
+	//memcpy(p.data.payload, (byte*) &numbered, sizeof(numbered));
+	//p.data.payloadLen = sizeof(numbered);
+//
+	////processing
+	//dispatcher.handleNumberedFromNetwork(p);
+//}
+//
+//void testHardwareCommand(uint8_t address, HardwareTypeIdentifier type, uint8_t isRead) {
+	//command_t cmd_packet;
+	//memset(&cmd_packet, 0, sizeof(cmd_packet));
+	//cmd_packet.address = address;
+	//cmd_packet.isRead = isRead;
+	//cmd_packet.type = type;
+	//HardwareCommandResult cmd = HardwareCommandResult();
+	//cmd.deSerialize(&cmd_packet);
+	//hwInterface.executeCommand(&cmd);
+//}
+//
+//void testHardwareCommandTone() {
+	//SimpleTimer::instance()->run();
+//
+	//command_t cmd_packet;
+	//memset(&cmd_packet, 0, sizeof(cmd_packet));
+	//cmd_packet.address = mytone.getAddress();
+	//cmd_packet.isRead = false;
+	//cmd_packet.type = HWType_tone;
+	//cmd_packet.numUint16 = 1;
+	//cmd_packet.uint16list[0] = 2000;
+	//HardwareCommandResult cmd = HardwareCommandResult();
+	//cmd.deSerialize(&cmd_packet);
+	//hwInterface.executeCommand(&cmd);
+//
+	//SimpleTimer::instance()->run();
+	//delay(2500);
+	//SimpleTimer::instance()->run();
+//}
+//
+//void testSubscriptionSet() {
+		////numbered for subscription
+	////app layer
+	//subscription_set_t cmdSubscription;
+	//memset(&cmdSubscription, 0, sizeof(cmdSubscription));
+	//cmdSubscription.info.address = 2; //node address
+	//cmdSubscription.info.hardwareAddress = dht11->getAddress();
+	//cmdSubscription.info.hardwareType = HWType_temprature;
+	//cmdSubscription.info.millisecondsDelay = 1347;
+	//cmdSubscription.info.sequence = 1337;
+	//cmdSubscription.info.onEventType = EVENT_TYPE_DISABLED;
+//
+	//packet_application_numbered_cmd_t appCmd3;
+	//memset(&appCmd3, 0, sizeof(appCmd3));
+	//appCmd3.packetType = HARDWARE_SUBSCRIPTION_SET;
+	//memcpy(&appCmd3.payload, &cmdSubscription, sizeof(cmdSubscription));
+//
+	////networking numbered
+	//packet_numbered_t numbered3;
+	//memset(&numbered3, 0, sizeof(numbered3));
+	//numbered3.seqNumber = 37;
+	//memcpy(numbered3.payload, (byte*) &appCmd3, sizeof(appCmd3));
+	//numbered3.payloadLen = sizeof(appCmd3);
+//
+	////network packet
+	//Layer3::packet_t p3;
+	//p3.data.destination = address_local;
+	//p3.data.hopcount = 5;
+	//p3.data.source = 12;
+	//p3.data.type = PACKET_NUMBERED;
+	//memcpy(p3.data.payload, (byte*) &numbered3, sizeof(numbered3));
+	//p3.data.payloadLen = sizeof(numbered3);
+//
+	////processing
+	//dispatcher.handleNumberedFromNetwork(p3);
+//}
+//
+//void testDiscovery() {
+		////numbered for discovery
+	////app layer
+	//packet_application_numbered_cmd_t appCmd2;
+	//memset(&appCmd2, 0, sizeof(appCmd2));
+	//appCmd2.packetType = HARDWARE_DISCOVERY_REQ;
+//
+	////networking numbered
+	//packet_numbered_t numbered2;
+	//memset(&numbered2, 0, sizeof(numbered2));
+	//numbered2.seqNumber = 37;
+	//memcpy(numbered2.payload, (byte*) &appCmd2, sizeof(appCmd2));
+	//numbered2.payloadLen = sizeof(appCmd2);
+//
+	////network packet
+	//Layer3::packet_t p2;
+	//memset(&p2, 0, sizeof(p2));
+	//p2.data.destination = address_local;
+	//p2.data.hopcount = 5;
+	//p2.data.source = 12;
+	//p2.data.type = PACKET_NUMBERED;
+	//memcpy(p2.data.payload, (byte*) &numbered2, sizeof(packet_numbered_t));
+	//p2.data.payloadLen = sizeof(numbered2);
+//
+	////processing
+	//dispatcher.handleNumberedFromNetwork(p2);
+//}
+//
+//void testSubscriptionInfo() {
+	//////subscription info
+	////app layer
+	//packet_application_numbered_cmd_t appCmd4;
+	//memset(&appCmd4, 0, sizeof(appCmd4));
+	//appCmd4.packetType = HARDWARE_SUBSCRIPTION_INFO;
+	//memset(&appCmd4.payload, 0, sizeof(appCmd4.payload));
+//
+	////networking numbered
+	//packet_numbered_t numbered4;
+	//memset(&numbered4, 0, sizeof(numbered4));
+	//numbered4.seqNumber = 37;
+	//memcpy(numbered4.payload, (byte*) &appCmd4, sizeof(appCmd4));
+	//numbered4.payloadLen = sizeof(appCmd4);
+//
+	////network packet
+	//Layer3::packet_t p4;
+	//p4.data.destination = address_local;
+	//p4.data.hopcount = 5;
+	//p4.data.source = 12;
+	//p4.data.type = PACKET_NUMBERED;
+	//memcpy(p4.data.payload, (byte*) &numbered4, sizeof(numbered4));
+	//p4.data.payloadLen = sizeof(numbered4);
+//
+	////processing
+	//dispatcher.handleNumberedFromNetwork(p4);
+//}
+//
+//void testSubscriptionPolling() {
+		////numbered for subscription
+		////app layer
+		//subscription_set_t cmdSubscription;
+		//memset(&cmdSubscription, 0, sizeof(cmdSubscription));
+		//cmdSubscription.info.address = 147; //node address
+		//cmdSubscription.info.hardwareAddress = motion->getAddress();
+		//cmdSubscription.info.hardwareType = HWType_motion;
+		//cmdSubscription.info.millisecondsDelay = 0;
+		//cmdSubscription.info.sequence = 1337;
+		//cmdSubscription.info.onEventType = EVENT_TYPE_CHANGE;
+//
+		//packet_application_numbered_cmd_t appCmd3;
+		//memset(&appCmd3, 0, sizeof(appCmd3));
+		//appCmd3.packetType = HARDWARE_SUBSCRIPTION_SET;
+		//memcpy(&appCmd3.payload, &cmdSubscription, sizeof(cmdSubscription));
+//
+		////networking numbered
+		//packet_numbered_t numbered3;
+		//memset(&numbered3, 0, sizeof(numbered3));
+		//numbered3.seqNumber = 37;
+		//memcpy(numbered3.payload, (byte*) &appCmd3, sizeof(appCmd3));
+		//numbered3.payloadLen = sizeof(appCmd3);
+//
+		////network packet
+		//Layer3::packet_t p3;
+		//p3.data.destination = address_local;
+		//p3.data.hopcount = 5;
+		//p3.data.source = 12;
+		//p3.data.type = PACKET_NUMBERED;
+		//memcpy(p3.data.payload, (byte*) &numbered3, sizeof(numbered3));
+		//p3.data.payloadLen = sizeof(numbered3);
+//
+		////processing
+		//dispatcher.handleNumberedFromNetwork(p3);
+//
+		////wait
+		//delay(1000);
+		//dispatcher.loop();
+//}
+//
+//void testSubscriptionPollingLight() {
+	////numbered for subscription
+	////app layer
+	//subscription_set_t cmdSubscription;
+	//memset(&cmdSubscription, 0, sizeof(cmdSubscription));
+	//cmdSubscription.info.address = 147; //node address
+	//cmdSubscription.info.hardwareAddress = light->getAddress();
+	//cmdSubscription.info.hardwareType = HWType_light;
+	//cmdSubscription.info.millisecondsDelay = 0;
+	//cmdSubscription.info.sequence = 1337;
+	//cmdSubscription.info.onEventType = EVENT_TYPE_CHANGE;
+//
+	//packet_application_numbered_cmd_t appCmd3;
+	//memset(&appCmd3, 0, sizeof(appCmd3));
+	//appCmd3.packetType = HARDWARE_SUBSCRIPTION_SET;
+	//memcpy(&appCmd3.payload, &cmdSubscription, sizeof(cmdSubscription));
+//
+	////networking numbered
+	//packet_numbered_t numbered3;
+	//memset(&numbered3, 0, sizeof(numbered3));
+	//numbered3.seqNumber = 37;
+	//memcpy(numbered3.payload, (byte*) &appCmd3, sizeof(appCmd3));
+	//numbered3.payloadLen = sizeof(appCmd3);
+//
+	////network packet
+	//Layer3::packet_t p3;
+	//p3.data.destination = address_local;
+	//p3.data.hopcount = 5;
+	//p3.data.source = 12;
+	//p3.data.type = PACKET_NUMBERED;
+	//memcpy(p3.data.payload, (byte*) &numbered3, sizeof(numbered3));
+	//p3.data.payloadLen = sizeof(numbered3);
+//
+	////processing
+	//dispatcher.handleNumberedFromNetwork(p3);
+//
+	////wait
+	//delay(1000);
+	//dispatcher->loop();
+//}
+//
+//void testSubscriptionExecution() {
+	//delay(2000); //enough for our test.
+	//dispatcher.loop();
+//}
+//#endif*/
 void setup() {
-	Serial.begin(9600);
+	Serial.begin(115200);
 	#ifdef DEBUG
 	Serial.println("start test...");
 	Serial.flush();
@@ -314,8 +304,8 @@ void setup() {
 	Serial.print(PIN_CE);
 	Serial.print(F(", pin csn(ss)="));
 	Serial.println(PIN_CSN);
-
 	#endif
+
 	//get address config
 	getAddress();
 
@@ -338,6 +328,9 @@ void setup() {
 
 	dispatcher.init(&l3, &hwInterface);
 
+	timer.init();
+
+/*
 	//mySimpleTimer = SimpleTimer::instance();
 
 	//Serial.println("### testHardwareCommand: Tone ###");
@@ -388,13 +381,121 @@ void setup() {
 	//testSubscriptionPollingLight();
 //
 	////turn off LED
-	//pinMode(LED_BUILTIN, LOW);
+	//pinMode(LED_BUILTIN, LOW);*/
 }
+
+enum state {START, INFO_REQUEST_SENT, SENSOR_REQUEST_SENT};
+
+volatile state mystate = START;
+
+class peter : public EventCallbackInterface {
+	virtual void doCallback(packet_application_numbered_cmd_t* appLayerPacket, l3_address_t address, seq_t seq) {
+		Serial.print(millis());
+		Serial.print(F(": appPacket=[packetType="));
+		Serial.print(appLayerPacket->packetType);
+
+		switch(appLayerPacket->packetType) {
+			case HARDWARE_DISCOVERY_RES:
+			{
+				Serial.print(F("HARDWARE_DISCOVERY_RES numSensors="));
+				packet_application_numbered_discovery_info_t* info = (packet_application_numbered_discovery_info_t*) appLayerPacket->payload;
+				Serial.println(info->numSensors);
+				for(uint8_t i = 0; i < info->numSensors; i++) {
+					Serial.print(F("\thwtype="));
+					Serial.print(info->infos[i].hardwareType);
+					Serial.print(F(" hwaddress="));
+					Serial.print(info->infos[i].hardwareAddress);
+					Serial.print(F(" events="));
+					Serial.println(info->infos[i].canDetectEvents);
+				}
+				Serial.println(F("\t]"));
+				break;
+			}
+			case HARDWARE_SUBSCRIPTION_INFO:
+			{
+				Serial.print(F("HARDWARE_SUBSCRIPTION_INFO infowFollowing="));
+				subscription_info_t* info = (subscription_info_t*) appLayerPacket->payload;
+				Serial.print(info->numInfosFollowing);
+				Serial.print(F(" forAddress="));
+				Serial.print(info->forAddress);
+				Serial.print(F(" subscriptions=["));
+				Serial.print(F("\tremote="));
+				Serial.print(info->info.address);
+				Serial.print(F(" hwType="));
+				Serial.print(info->info.hardwareType);
+				Serial.print(F(" hwAddress="));
+				Serial.print(info->info.hardwareAddress);
+				Serial.print(F(" delay="));
+				Serial.print(info->info.millisecondsDelay);
+				Serial.print(F(" eventType="));
+				Serial.print(info->info.onEventType);
+				Serial.print(F(" seq="));
+				Serial.print(info->info.sequence);
+				Serial.println(F("\t]"));
+				break;
+			}
+			case ACK:
+			{
+				Serial.print(F("ACK"));
+				break;
+			}
+			case NACK:
+			{
+				Serial.print(F("NACK"));
+				break;
+			}
+			default:
+			{
+				Serial.print(F("unknown"));
+				break;
+			}
+		}
+		Serial.println(F("]"));
+	}
+
+	virtual void fail(seq_t seq, l3_address_t remote) {
+		Serial.print(millis());
+		Serial.print(F(": remote="));
+		Serial.println(remote);
+		Serial.print(F(" seq="));
+		Serial.print(seq);
+		Serial.println(F(" failed."));
+	}
+};
+
+peter callbackListener;
 
 void loop() {
 	//do networking.
 	l3.Loop();
 	dispatcher.loop();
+
+	if(address_local == 16) {
+		switch(mystate) {
+			case START: {
+				neighbourData* neighbours = l3.getNeighbours();
+				for(uint8_t i = 0; i < CONFIG_L3_NUM_NEIGHBOURS; i++) {
+					if(neighbours[i].nodeId != 0) {
+						l3.sendBeacon();
+
+						Layer3::packet_t p;
+						//seq_t seq =
+						pf.generateDiscoveryInfoRequest(&p, neighbours[i].nodeId);
+
+						dispatcher.getResponseHandler()->registerListener(0, HARDWARE_DISCOVERY_RES, neighbours[i].nodeId, &callbackListener);
+						l3.sendPacket(p);
+						mystate = INFO_REQUEST_SENT;
+					}
+				}
+
+				break;
+			}
+			default:
+				break;
+		}
+	}
+
+}
 
 /***
 	if(millis() - lastBeaconT > 60*1000UL) {
@@ -506,4 +607,3 @@ void loop() {
 
 	delay(5000);
 ***/
-}

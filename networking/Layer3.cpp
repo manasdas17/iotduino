@@ -59,8 +59,6 @@ boolean Layer3::sendPacket( packet_t &packet )
 	}
 
 
-	boolean result = true;
-
 	//numbered? - handle via queue ONLY IF the packet is not routed.
 	if(packet.data.type == PACKET_NUMBERED && packet.data.source == localAddress) {
 		#ifdef DEBUG_NETWORK_ENABLE
@@ -70,29 +68,32 @@ boolean Layer3::sendPacket( packet_t &packet )
 			packet_numbered_t* tmp = (packet_numbered_t*) packet.data.payload;
 			Serial.println(tmp->seqNumber);
 		#endif
-		result &= addToSendingQueue(&packet);
+		addToSendingQueue(&packet);
 	}
 
-	//one shot: send directly. give it to layer2
+	//send.
 	Layer2rf24::frame_t f;
-	result &= l2->createFrame(&f, l2DestinationAddress, sizeof(packet_t), packet.bytes);
+	l2->createFrame(&f, l2DestinationAddress, sizeof(packet_t), packet.bytes);
 
-	if(result)
-		result = l2->sendFrame(&f);
-
-	return result;
+	return l2->sendFrame(&f);
 }
 
 void Layer3::printPacketInformation(packet_t* packet) {
 	#ifdef DEBUG_NETWORK_ENABLE
 		Serial.print(F("\ttype="));
 		switch(packet->data.type) {
-			case PACKET_ACK:
-				Serial.println(F("ACK"));
+			case PACKET_ACK: {
+				Serial.print(F("ACK seq="));
+				packet_ack_t* tmp = (packet_ack_t*) packet->data.payload;
+				Serial.println(tmp->ack);
+				Serial.flush();
 				break;
-			case PACKET_BEACON:
+			}
+			case PACKET_BEACON: {
 				Serial.print(F("BEACON"));
+				Serial.flush();
 				break;
+			}
 			case PACKET_NUMBERED: {
 				Serial.print(F("NUMBERED"));
 				packet_numbered_t* tmpNumbered = (packet_numbered_t*) packet->data.payload;
@@ -100,7 +101,121 @@ void Layer3::printPacketInformation(packet_t* packet) {
 				Serial.print(tmpNumbered->seqNumber);
 				packet_application_numbered_cmd_t* tmpApp = (packet_application_numbered_cmd_t*) tmpNumbered->payload;
 				Serial.print(F(" appType="));
-				Serial.println(tmpApp->packetType);
+				Serial.flush();
+
+				switch(tmpApp->packetType) {
+					case HARDWARE_COMMAND_WRITE: {
+						Serial.print(F("HARDWARE_COMMAND_WRITE "));
+						command_t* cmd = (command_t*) tmpApp->payload;
+						Serial.print(F("hwtype="));
+						Serial.print(cmd->type);
+						Serial.print(F(" address="));
+						Serial.print(cmd->address);
+						Serial.print(F(" isRead="));
+						Serial.println(cmd->isRead);
+						Serial.flush();
+						break;
+					}
+					case HARDWARE_COMMAND_READ: {
+						Serial.print(F("HARDWARE_COMMAND_READ"));
+						command_t* cmd = (command_t*) tmpApp->payload;
+						Serial.print(F("hwtype="));
+						Serial.print(cmd->type);
+						Serial.print(F(" address="));
+						Serial.print(cmd->address);
+						Serial.print(F(" isRead="));
+						Serial.println(cmd->isRead);
+						Serial.flush();
+						break;
+					}
+					case HARDWARE_COMMAND_RES: {
+						Serial.print(F("HARDWARE_COMMAND_RES"));
+						command_t* cmd = (command_t*) tmpApp->payload;
+						Serial.print(F("hwtype="));
+						Serial.print(cmd->type);
+						Serial.print(F(" address="));
+						Serial.print(cmd->address);
+						Serial.print(F(" isRead="));
+						Serial.println(cmd->isRead);
+						Serial.flush();
+						break;
+					}
+					case HARDWARE_DISCOVERY_REQ: {
+						Serial.print(F("HARDWARE_DISCOVERY_REQ"));
+						break;
+					}
+					case HARDWARE_DISCOVERY_RES: {
+						Serial.print(F("HARDWARE_DISCOVERY_RES "));
+						Serial.print(F("numSensors="));
+						packet_application_numbered_discovery_info_t* info = (packet_application_numbered_discovery_info_t*) tmpApp->payload;
+						Serial.println(info->numSensors);
+
+						for(uint8_t i = 0; i < info->numSensors; i++) {
+							Serial.print(F("\thwtype="));
+							Serial.print(info->infos[i].hardwareType);
+							Serial.print(F(" hwaddress="));
+							Serial.print(info->infos[i].hardwareAddress);
+							Serial.print(F(" events="));
+							Serial.println(info->infos[i].canDetectEvents);
+							Serial.flush();
+						}
+						Serial.println(F("\t]"));
+						Serial.flush();
+						break;
+					}
+					case HARDWARE_SUBSCRIPTION_SET: {
+						Serial.print(F("HARDWARE_SUBSCRIPTION_SET"));
+						Serial.flush();
+						break;
+					}
+					case HARDWARE_SUBSCRIPTION_INFO: {
+						Serial.print(F("HARDWARE_SUBSCRIPTION_INFO"));
+						subscription_info_t* info = (subscription_info_t*) tmpApp->payload;
+						Serial.print(F(" forAddress="));
+						Serial.println(info->forAddress);
+						Serial.flush();
+						break;
+					}
+					case HARDWARE_SUBSCRIPTION_INFO_RES: {
+						Serial.print(F("HARDWARE_SUBSCRIPTION_INFO_RES"));
+						Serial.print(F(" infoFollowing="));
+						subscription_info_t* info = (subscription_info_t*) tmpApp->payload;
+						Serial.print(info->numInfosFollowing);
+						Serial.print(F(" forAddress="));
+						Serial.print(info->forAddress);
+						Serial.print(F(" subscriptions=["));
+						Serial.print(F("\tremote="));
+						Serial.print(info->info.address);
+						Serial.print(F(" hwType="));
+						Serial.print(info->info.hardwareType);
+						Serial.print(F(" hwAddress="));
+						Serial.print(info->info.hardwareAddress);
+						Serial.print(F(" delay="));
+						Serial.print(info->info.millisecondsDelay);
+						Serial.print(F(" eventType="));
+						Serial.print(info->info.onEventType);
+						Serial.print(F(" seq="));
+						Serial.print(info->info.sequence);
+						Serial.println(F("\t]"));
+						Serial.flush();
+						break;
+					}
+					case ACK: {
+						Serial.println(F("app based ACK"));
+						Serial.flush();
+						break;
+					}
+					case NACK: {
+						Serial.println(F("app based NACK"));
+						Serial.flush();
+						break;
+					}
+					default: {
+						Serial.println(F("UNKNOWN"));
+						Serial.flush();
+						break;
+					}
+				}
 				break;
 			}
 			case PACKET_UNNUMBERED:
@@ -180,7 +295,7 @@ boolean Layer3::sendAck(packet_t* packet) {
 
 	//create l3 packet
 	packet_t answer;
-	if(!createPacketGeneric(&answer, packet->data.source, PACKET_ACK, (uint8_t*) &ack, sizeof(packet_ack_t)))
+	if(!createPacketGeneric(&answer, packet->data.source, PACKET_ACK, (void*) &ack, sizeof(packet_ack_t)))
 		return false;
 
 	//send.
@@ -592,7 +707,7 @@ boolean Layer3::addToSendingQueue( packet_t* packet ) {
 	}
 
 	//create copy.
-	sendingNumberedBuffer[freeIndex].lasttimestamp = 0; //millis();
+	sendingNumberedBuffer[freeIndex].lasttimestamp = millis();
 	sendingNumberedBuffer[freeIndex].retransmissions = 0;
 	memcpy(&sendingNumberedBuffer[freeIndex].packet, packet, sizeof(packet_t));
 
@@ -694,6 +809,9 @@ boolean Layer3::handleAck( packet_t* packet ) {
 				Serial.flush();
 			#endif
 
+			//clear.
+			memset(&sendingNumberedBuffer[i], 0, sizeof(packet_sending_queue_item_t));
+
 			return true;
 		}
 	}
@@ -741,6 +859,7 @@ seq_t Layer3::sendNumbered( l3_address_t destination, seq_t seq, void* payload, 
 
 	//create enclosing numbered payload
 	packet_numbered_t pn;
+	memset(&pn, 0, sizeof(pn));
 	pn.seqNumber = seq;
 	pn.payloadLen = payloadLen;
 	memcpy(&pn.payload, payload, payloadLen);

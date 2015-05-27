@@ -9,6 +9,8 @@
 #ifndef GLOBALS_H_
 #define GLOBALS_H_
 
+#include <DebugConfig.h>
+
 #include <networking/Layer3.h>
 #include <drivers/HardwareDriver.h>
 #include <drivers/HardwareID.h>
@@ -25,11 +27,10 @@ Layer3 l3;
 PacketDispatcher dispatcher;
 HardwareInterface hwInterface;
 PacketFactory pf;
+SimpleTimer timer;
 
 #include <drivers/digitalio/DHT11.h>
 #include <interfaces/output/RCSwitchTevionFSI07.h>
-#include <interfaces/output/LED.h>
-#include <interfaces/output/MyTone.h>
 #include <interfaces/input/MotionDetector.h>
 #include <interfaces/input/Light.h>
 
@@ -38,6 +39,5 @@ RCSwitchTevionFSI07 rcsw;
 MotionDetector motion;
 Light light;
 //MyTone mytone;
-
 
 #endif /* GLOBALS_H_ */
