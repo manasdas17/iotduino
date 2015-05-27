@@ -66,9 +66,9 @@ uint8_t Layer2rf24::receive()
 		#ifdef DEBUG_NETWORK_ENABLE
 			Serial.print(millis());
 			Serial.println(F(": L2.receive()"));
-			Serial.print(F("\tfrom="));
+			Serial.print(F("\tto="));
 			Serial.print(frame.data.destination);
-			Serial.print(F(" to="));
+			Serial.print(F(" from="));
 			Serial.print(frame.data.source);
 			Serial.print(F(" len="));
 			Serial.println(frame.data.payloadLen);
