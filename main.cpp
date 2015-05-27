@@ -384,7 +384,7 @@ void setup() {
 	//pinMode(LED_BUILTIN, LOW);*/
 }
 
-enum state {START, INFO_REQUEST_SENT, SENSOR_REQUEST_SENT};
+enum state {START, INFO_REQUEST_SENT, SENSOR_REQUEST_SENT, INFO_REQUEST_RECEIVED};
 
 volatile state mystate = START;
 
@@ -395,6 +395,54 @@ class peter : public EventCallbackInterface {
 		Serial.print(appLayerPacket->packetType);
 
 		switch(appLayerPacket->packetType) {
+			case HARDWARE_COMMAND_RES: {
+				Serial.print(F("HARDWARE_COMMAND_RES "));
+				command_t* info = (command_t*) appLayerPacket->payload;
+				Serial.print(F("hwaddress="));
+				Serial.print(info->address);
+				Serial.print(F(" hwtype="));
+				Serial.print(info->type);
+				Serial.print(F(" isRead="));
+				Serial.println(info->isRead);
+
+				Serial.print(F("\tInt8="));
+				Serial.print(info->numInt8);
+				Serial.print(F(" {"));
+				for(uint8_t i = 0; i < info->numInt8; i++) {
+					Serial.print(info->int8list[i]);
+					Serial.print(F(" "));
+				}
+				Serial.println(F("}"));
+
+				Serial.print(F("\tInt16="));
+				Serial.print(info->numInt16);
+				Serial.print(F(" {"));
+				for(uint8_t i = 0; i < info->numInt16; i++) {
+					Serial.print(info->int16list[i]);
+					Serial.print(F(" "));
+				}
+				Serial.println(F("}"));
+
+				Serial.print(F("\tUint8="));
+				Serial.print(info->numUint8);
+				Serial.print(F(" {"));
+				for(uint8_t i = 0; i < info->numUint8; i++) {
+					Serial.print(info->uint8list[i]);
+					Serial.print(F(" "));
+				}
+				Serial.println(F("}"));
+
+				Serial.print(F("\tUInt16="));
+				Serial.print(info->numUint16);
+				Serial.print(F(" {"));
+				for(uint8_t i = 0; i < info->numUint16; i++) {
+					Serial.print(info->uint16list[i]);
+					Serial.print(F(" "));
+				}
+				Serial.println(F("}"));
+
+				break;
+			}
 			case HARDWARE_DISCOVERY_RES:
 			{
 				Serial.print(F("HARDWARE_DISCOVERY_RES numSensors="));
@@ -409,6 +457,7 @@ class peter : public EventCallbackInterface {
 					Serial.println(info->infos[i].canDetectEvents);
 				}
 				Serial.println(F("\t]"));
+				mystate = INFO_REQUEST_RECEIVED;
 				break;
 			}
 			case HARDWARE_SUBSCRIPTION_INFO:
@@ -430,8 +479,7 @@ class peter : public EventCallbackInterface {
 				Serial.print(F(" eventType="));
 				Serial.print(info->info.onEventType);
 				Serial.print(F(" seq="));
-				Serial.print(info->info.sequence);
-				Serial.println(F("\t]"));
+				Serial.println(info->info.sequence);
 				break;
 			}
 			case ACK:
@@ -450,7 +498,7 @@ class peter : public EventCallbackInterface {
 				break;
 			}
 		}
-		Serial.println(F("]"));
+		Serial.println(F("\t]"));
 	}
 
 	virtual void fail(seq_t seq, l3_address_t remote) {
@@ -482,12 +530,21 @@ void loop() {
 						//seq_t seq =
 						pf.generateDiscoveryInfoRequest(&p, neighbours[i].nodeId);
 
-						dispatcher.getResponseHandler()->registerListener(0, HARDWARE_DISCOVERY_RES, neighbours[i].nodeId, &callbackListener);
+						dispatcher.getResponseHandler()->registerListenerByPacketType(0, HARDWARE_DISCOVERY_RES, neighbours[i].nodeId, &callbackListener);
 						l3.sendPacket(p);
 						mystate = INFO_REQUEST_SENT;
 					}
 				}
 
+				break;
+			}
+			case INFO_REQUEST_RECEIVED: {
+				Layer3::packet_t p;
+				seq_t seq = pf.generateHardwareCommandRead(&p, 32, 0, HWType_light);
+				dispatcher.getResponseHandler()->registerListenerByPacketType(0, HARDWARE_COMMAND_RES, 32, &callbackListener);
+				l3.sendPacket(p);
+
+				mystate = SENSOR_REQUEST_SENT;
 				break;
 			}
 			default:
