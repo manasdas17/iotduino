@@ -15,6 +15,8 @@
 
 #ifdef ENABLE_DISCOVERY_SERVICE
 
+#define INTERFACES_BUF_SIZE 15
+
 class DiscoveryService {
 	//variables
 	public:
@@ -45,9 +47,11 @@ class DiscoveryService {
 
 	protected:
 		/**
-		 * @param application packet
+		 * @param info list
+		 * @param bufSize
+		 * @return num interfaces
 		 */
-		uint8_t getDriverInterfacesAll(packet_application_numbered_discovery_info_t* info);
+		uint8_t getDriverInterfacesAll(packet_application_numbered_discovery_info_helper_t* info, uint8_t bufSize);
 
 	private:
 

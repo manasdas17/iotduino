@@ -10,7 +10,7 @@
 
 #ifdef ENABLE_DISCOVERY_SERVICE
 
-uint8_t DiscoveryService::getDriverInterfacesAll(packet_application_numbered_discovery_info_t* info) {
+uint8_t DiscoveryService::getDriverInterfacesAll(packet_application_numbered_discovery_info_helper_t* info, uint8_t bufSize) {
 	if(info == NULL)
 		return 0;
 
@@ -29,16 +29,16 @@ uint8_t DiscoveryService::getDriverInterfacesAll(packet_application_numbered_dis
 			//did we get a valid result?
 			if(result != NULL) {
 				//iterate interfaces.
-				for(uint8_t j = 0; j < tempArraySize; j++) {
+				for(uint8_t j = 0; j < tempArraySize && numDrivers < bufSize; j++) {
 					if(tempArray[j] != 0) {
 						//this is an interface.
-						info->infos[numDrivers].hardwareAddress = drivers[i]->getAddress();
-						info->infos[numDrivers].hardwareType = tempArray[j];
+						info[numDrivers].hardwareAddress = drivers[i]->getAddress();
+						info[numDrivers].hardwareType = tempArray[j];
 
 						#ifdef ENABLE_EVENTS
-							info->infos[numDrivers].canDetectEvents = drivers[i]->canDetectEvents();
+							info[numDrivers].canDetectEvents = drivers[i]->canDetectEvents();
 						#else
-							info->infos[numDrivers].canDetectEvents = 0;
+							info[numDrivers].canDetectEvents = 0;
 						#endif
 
 						numDrivers++;
@@ -62,18 +62,34 @@ boolean DiscoveryService::handleInfoRequest(EventCallbackInterface* callback, se
 	if(callback == NULL || appPacket == NULL)
 		return false;
 
-	//create response - add info in place.
-	//info
-	packet_application_numbered_discovery_info_t* info = (packet_application_numbered_discovery_info_t*) appPacket->payload;
-	//memset(info, 0, sizeof(info)); //should not be necessary
-	uint8_t num = getDriverInterfacesAll(info);
-	info->numSensors = num;
+	//get driver infos
+	packet_application_numbered_discovery_info_helper_t interfaces[INTERFACES_BUF_SIZE];
+	memset(interfaces, 0, sizeof(interfaces));
+	uint8_t num = getDriverInterfacesAll(interfaces, INTERFACES_BUF_SIZE);
 
-	//packet
-	packet_application_numbered_cmd_t appLayerPacket;
-	appLayerPacket.packetType = HARDWARE_DISCOVERY_RES;
-	memcpy(appLayerPacket.payload, &info, sizeof(info));
-	callback->doCallback(&appLayerPacket, remote, seq);
+	//number of packets to send
+	uint8_t numPerPacket = PACKET_APP_NUMBERED_DISCOVERY_DRIVERS_NUM;
+	uint8_t packets = ceil((double) num / numPerPacket);
+
+	//send packets
+	for(uint8_t i = 0; i < packets; i++) {
+		packet_application_numbered_cmd_t appLayerPacket;
+		memset(&appLayerPacket, 0, sizeof(appLayerPacket));
+		appLayerPacket.packetType = HARDWARE_DISCOVERY_RES;
+		packet_application_numbered_discovery_info_t* discoveryInfo = (packet_application_numbered_discovery_info_t*) appLayerPacket.payload;
+
+		if(i == packets -1) {
+			//copy part
+			discoveryInfo->numSensors = num - numPerPacket * i;
+			memcpy(discoveryInfo->infos, &interfaces[i * numPerPacket], discoveryInfo->numSensors * sizeof(packet_application_numbered_discovery_info_helper_t));
+		} else {
+			//copy full
+			memcpy(discoveryInfo->infos, &interfaces[i * numPerPacket], numPerPacket * sizeof(packet_application_numbered_discovery_info_helper_t));
+			discoveryInfo->numSensors = numPerPacket;
+		}
+
+		callback->doCallback(&appLayerPacket, remote, seq++);
+	}
 
 	return true;
 }

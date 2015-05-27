@@ -49,6 +49,9 @@ class PacketFactory {
 			packet_application_numbered_cmd_t* appCmd = (packet_application_numbered_cmd_t*) numbered->payload;
 			appCmd->packetType = HARDWARE_DISCOVERY_REQ;
 
+			packet_application_numbered_discovery_info_t* infoReq = (packet_application_numbered_discovery_info_t*) appCmd->payload;
+			infoReq->numSensors = 0;
+
 			l3->createPacketGeneric(p, destination, PACKET_NUMBERED, (void*) numbered, sizeof(packet_numbered_t));
 			return numbered->seqNumber;
 		}
