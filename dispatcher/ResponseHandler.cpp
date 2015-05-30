@@ -190,10 +190,8 @@ boolean ResponseHandler::unregisterListener(EventCallbackInterface* callbackObje
 	boolean result = false;
 	for(uint8_t i = 0; i < LISTENER_NUM; i++) {
 		if(listeners->callbackObj == callbackObject) {
-			removeListener(i);
-			result = true;
+			result |= removeListener(i);
 		}
 	}
-
 	return result;
 }

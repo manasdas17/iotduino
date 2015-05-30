@@ -4,8 +4,6 @@ Layer3::Layer3() {
 }
 
 void Layer3::init(l3_address_t localAddress) {
-	randomSeed(analogRead(0));
-
 	this->eventCallbackClass = new callbackClass(this);
 
 	memset(sendingNumberedBuffer, 0, sizeof(sendingNumberedBuffer));

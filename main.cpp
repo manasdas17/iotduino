@@ -300,6 +300,8 @@ void setup() {
 	Serial.println("start test...");
 	Serial.flush();
 
+	randomSeed(analogRead(1));
+
 	Serial.print(F("pin miso="));
 	Serial.print(MISO);
 	Serial.print(F(", pin mosi="));
@@ -403,140 +405,6 @@ void setup() {
 	//pinMode(LED_BUILTIN, LOW);*/
 }
 
-#ifndef PRODUCTIVE_MEGA328P
-
-enum state {START, INFO_REQUEST_SENT, SENSOR_REQUEST_SENT, INFO_REQUEST_RECEIVED};
-
-volatile state mystate = START;
-
-class peter : public EventCallbackInterface {
-	virtual void doCallback(packet_application_numbered_cmd_t* appLayerPacket, l3_address_t address, seq_t seq) {
-		Serial.print(millis());
-		Serial.print(F(": appPacket=[packetType="));
-		Serial.print(appLayerPacket->packetType);
-
-		switch(appLayerPacket->packetType) {
-			case HARDWARE_COMMAND_RES: {
-				Serial.print(F("HARDWARE_COMMAND_RES "));
-				command_t* info = (command_t*) appLayerPacket->payload;
-				Serial.print(F("hwaddress="));
-				Serial.print(info->address);
-				Serial.print(F(" hwtype="));
-				Serial.print(info->type);
-				Serial.print(F(" isRead="));
-				Serial.println(info->isRead);
-
-				Serial.print(F("\tInt8="));
-				Serial.print(info->numInt8);
-				Serial.print(F(" {"));
-				for(uint8_t i = 0; i < info->numInt8; i++) {
-					Serial.print(info->int8list[i]);
-					Serial.print(F(" "));
-				}
-				Serial.println(F("}"));
-
-				Serial.print(F("\tInt16="));
-				Serial.print(info->numInt16);
-				Serial.print(F(" {"));
-				for(uint8_t i = 0; i < info->numInt16; i++) {
-					Serial.print(info->int16list[i]);
-					Serial.print(F(" "));
-				}
-				Serial.println(F("}"));
-
-				Serial.print(F("\tUint8="));
-				Serial.print(info->numUint8);
-				Serial.print(F(" {"));
-				for(uint8_t i = 0; i < info->numUint8; i++) {
-					Serial.print(info->uint8list[i]);
-					Serial.print(F(" "));
-				}
-				Serial.println(F("}"));
-
-				Serial.print(F("\tUInt16="));
-				Serial.print(info->numUint16);
-				Serial.print(F(" {"));
-				for(uint8_t i = 0; i < info->numUint16; i++) {
-					Serial.print(info->uint16list[i]);
-					Serial.print(F(" "));
-				}
-				Serial.println(F("}"));
-
-				break;
-			}
-			case HARDWARE_DISCOVERY_RES:
-			{
-				Serial.print(F("HARDWARE_DISCOVERY_RES numSensors="));
-				packet_application_numbered_discovery_info_t* info = (packet_application_numbered_discovery_info_t*) appLayerPacket->payload;
-				Serial.println(info->numSensors);
-				for(uint8_t i = 0; i < info->numSensors; i++) {
-					Serial.print(F("\thwtype="));
-					Serial.print(info->infos[i].hardwareType);
-					Serial.print(F(" hwaddress="));
-					Serial.print(info->infos[i].hardwareAddress);
-					Serial.print(F(" events="));
-					Serial.println(info->infos[i].canDetectEvents);
-				}
-				Serial.println(F("\t]"));
-				mystate = INFO_REQUEST_RECEIVED;
-				break;
-			}
-			case HARDWARE_SUBSCRIPTION_INFO:
-			{
-				Serial.print(F("HARDWARE_SUBSCRIPTION_INFO infowFollowing="));
-				subscription_info_t* info = (subscription_info_t*) appLayerPacket->payload;
-				Serial.print(info->numInfosFollowing);
-				Serial.print(F(" forAddress="));
-				Serial.print(info->forAddress);
-				Serial.print(F(" subscriptions=["));
-				Serial.print(F("\tremote="));
-				Serial.print(info->info.address);
-				Serial.print(F(" hwType="));
-				Serial.print(info->info.hardwareType);
-				Serial.print(F(" hwAddress="));
-				Serial.print(info->info.hardwareAddress);
-				Serial.print(F(" delay="));
-				Serial.print(info->info.millisecondsDelay);
-				Serial.print(F(" eventType="));
-				Serial.print(info->info.onEventType);
-				Serial.print(F(" seq="));
-				Serial.println(info->info.sequence);
-				break;
-			}
-			case ACK:
-			{
-				Serial.print(F("ACK"));
-				break;
-			}
-			case NACK:
-			{
-				Serial.print(F("NACK"));
-				break;
-			}
-			default:
-			{
-				Serial.print(F("unknown"));
-				break;
-			}
-		}
-		Serial.println(F("\t]"));
-	}
-
-	virtual void fail(seq_t seq, l3_address_t remote) {
-		Serial.print(millis());
-		Serial.print(F(": remote="));
-		Serial.println(remote);
-		Serial.print(F(" seq="));
-		Serial.print(seq);
-		Serial.println(F(" failed."));
-	}
-};
-
-peter callbackListener;
-#endif
-
-
-
 void loop() {
 	//do networking.
 	l3.Loop();
@@ -550,42 +418,6 @@ void loop() {
 
 	//watchdog reset.
 	wdt_reset();
-
-#ifndef PRODUCTIVE_MEGA328P
-	if(address_local == 16) {
-		switch(mystate) {
-			case START: {
-				neighbourData* neighbours = l3.getNeighbours();
-				for(uint8_t i = 0; i < CONFIG_L3_NUM_NEIGHBOURS; i++) {
-					if(neighbours[i].nodeId != 0) {
-						l3.sendBeacon();
-
-						Layer3::packet_t p;
-						//seq_t seq =
-						pf.generateDiscoveryInfoRequest(&p, neighbours[i].nodeId);
-
-						dispatcher.getResponseHandler()->registerListenerByPacketType(0, HARDWARE_DISCOVERY_RES, neighbours[i].nodeId, &callbackListener);
-						l3.sendPacket(p);
-						mystate = INFO_REQUEST_SENT;
-					}
-				}
-
-				break;
-			}
-			case INFO_REQUEST_RECEIVED: {
-				Layer3::packet_t p;
-				seq_t seq = pf.generateHardwareCommandRead(&p, 32, 0, HWType_light);
-				dispatcher.getResponseHandler()->registerListenerByPacketType(0, HARDWARE_COMMAND_RES, 32, &callbackListener);
-				l3.sendPacket(p);
-
-				mystate = SENSOR_REQUEST_SENT;
-				break;
-			}
-			default:
-				break;
-		}
-	}
-#endif
 }
 
 /***

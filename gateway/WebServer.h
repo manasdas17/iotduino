@@ -78,9 +78,7 @@ class discoveryListener : public webserverListener {
 	}
 
 	virtual void doCallback(packet_application_numbered_cmd_t* appLayerPacket, l3_address_t address, seq_t seq) {
-		if(address != remote)
-			return;
-		if(appLayerPacket->packetType != HARDWARE_DISCOVERY_RES)
+		if(address != remote || appLayerPacket == NULL || appLayerPacket->packetType != HARDWARE_DISCOVERY_RES)
 			return;
 
 		packet_application_numbered_discovery_info_t* info = (packet_application_numbered_discovery_info_t*) appLayerPacket->payload;
@@ -110,6 +108,38 @@ class discoveryListener : public webserverListener {
 };
 
 
+class hardwareRequestListener : public webserverListener {
+	public:
+	l3_address_t remote;
+
+	command_t cmd;
+	HardwareTypeIdentifier hwtype;
+	uint8_t hwaddress;
+
+	hardwareRequestListener(l3_address_t remote, HardwareTypeIdentifier hwtype, uint8_t hwaddress) {
+		this->remote = remote;
+		this->state = AWAITING_ANSWER;
+		this->hwtype = hwtype;
+		this->hwaddress = hwaddress;
+
+		memset(&cmd, 0, sizeof(cmd));
+	}
+
+	virtual void doCallback(packet_application_numbered_cmd_t* appLayerPacket, l3_address_t address, seq_t seq) {
+		if(address != remote || appLayerPacket == NULL || appLayerPacket->packetType != HARDWARE_COMMAND_RES)
+			return;
+
+		command_t* info = (command_t*) appLayerPacket->payload;
+
+		this->cmd = *info;
+
+		state = FINISHED;
+	}
+
+	virtual void fail(seq_t seq, l3_address_t remote) {
+		state = FAILED;
+	}
+};
 
 /**
  * tokenises string <code>key1=val1&key2=val2</code>
@@ -295,11 +325,14 @@ class WebServer {
 		MethodHead
 	};
 
+	#define TIMEOUT_MILLIS (2*1000)
+
 	typedef char BUFFER[STRING_BUFFER_SIZE];
 
 	typedef struct clientInstances_struct {
 		PAGES requestType;
 		boolean waiting;
+		uint32_t timestamp;
 		webserverListener* callback;
 		boolean inUse;
 	} clientInstances_t;
@@ -349,8 +382,9 @@ class WebServer {
 		}
 
 		// write out everything left but trailing NUL
-		if (bufferEnd > 1)
-		client.write(buffer, bufferEnd - 1);
+		if (bufferEnd > 1) {
+			client.write(buffer, bufferEnd - 1);
+		}
 	}
 
 	/** HTML */
@@ -362,6 +396,8 @@ class WebServer {
 		client.println(F("Connection: close"));  // the connection will be closed after completion of the response
 		client.println();
 		client.println(F("404 - Not found."));
+
+		closeClient(clientId);
 	}
 
 	void sendHttp500WithBody(uint8_t clientId) {
@@ -372,6 +408,8 @@ class WebServer {
 		client.println(F("Connection: close"));  // the connection will be closed after completion of the response
 		client.println();
 		client.println(F("500 Internal error."));
+
+		closeClient(clientId);
 	}
 
 	void sendHttpOk(uint8_t clientId) {
@@ -410,33 +448,7 @@ class WebServer {
 		client.println(F("<br/><hr/><br/><span style='text-align: right; font-style: italic;'><a href='http://iotduino.de'>iotduino</a> webserver.</span></body></html>"));
 	}
 
-	/**********************************************************************************************************************
-	*                                              Method for read HTTP Header Request from web client
-	*
-	* The HTTP request format is defined at http://www.w3.org/Protocols/HTTP/1.0/spec.html#Message-Types
-	* and shows the following structure:
-	*  Full-Request and Full-Response use the generic message format of RFC 822 [7] for transferring entities. Both messages may include
-	optional header fields
-	*  (also known as "headers") and an entity body. The entity body is separated from the headers by a null line (i.e., a line with nothing
-	preceding the CRLF).
-	*      Full-Request   = Request-Line
-	*                       *( General-Header
-	*                        | Request-Header
-	*                        | Entity-Header )
-	*                       CRLF
-	*                       [ Entity-Body ]
-	*
-	* The Request-Line begins with a method token, followed by the Request-URI and the protocol version, and ending with CRLF. The elements are
-	separated by SP characters.
-	* No CR or LF are allowed except in the final CRLF sequence.
-	*      Request-Line   = Method SP Request-URI SP HTTP-Version CRLF
-	* HTTP header fields, which include General-Header, Request-Header, Response-Header, and Entity-Header fields, follow the same generic
-	format.
-	* Each header field consists of a name followed immediately by a colon (":"), a single space (SP) character, and the field value.
-	* Field names are case-insensitive. Header fields can be extended over multiple lines by preceding each extra line with at least one SP or
-	HT, though this is not recommended.
-	*      HTTP-header    = field-name ":" [ field-value ] CRLF
-	***********************************************************************************************************************/
+
 	// Read HTTP request, setting Uri Index, the requestContent and returning the method type.
 	MethodType readHttpRequest(uint8_t clientId, String* uri, RequestContent* req)
 	{
@@ -523,19 +535,7 @@ class WebServer {
 		{
 			getNextHttpLine(clientId, readBuffer);
 			//    Serial.println(readBuffer); // DEBUG
-			// Process a header. We only need to extract the (optionl) content
-			// length for the binary content that follows all these headers.
-			// General-Header = Date | Pragma
-			// Request-Header = Authorization | From | If-Modified-Since | Referer | User-Agent
-			// Entity-Header  = Allow | Content-Encoding | Content-Length | Content-Type
-			//                | Expires | Last-Modified | extension-header
-			// extension-header = HTTP-header
-			//       HTTP-header    = field-name ":" [ field-value ] CRLF
-			//       field-name     = token
-			//       field-value    = *( field-content | LWS )
-			//       field-content  = <the OCTETs making up the field-value
-			//                        and consisting of either *TEXT or combinations
-			//                        of token, tspecials, and quoted-string>
+
 			char * pFieldName  = strtok(readBuffer, pSpDelimiters);
 			char * pFieldValue = strtok(NULL, pSpDelimiters);
 
@@ -573,9 +573,6 @@ class WebServer {
 		//  Serial.println(content);
 	}
 
-	/**********************************************************************************************************************
-	* Read the next HTTP header record which is CRLF delimited.  We replace CRLF with string terminating null.
-	***********************************************************************************************************************/
 	void getNextHttpLine(uint8_t clientId, BUFFER & readBuffer)
 	{
 		char c;
@@ -601,15 +598,6 @@ class WebServer {
 		}
 	}
 
-
-	int8_t getFreeClientSlot() {
-		for(uint8_t i = 0; i < CLIENT_INSTANCES_NUM; i++) {
-			if(clientStatus->inUse == false)
-				return i;
-		}
-
-		return -1;
-	}
 
 	boolean closeClient(uint8_t i) {
 		if(clientStatus[i].inUse == false)
@@ -658,12 +646,11 @@ class WebServer {
 
 			//check for answers from listeners
 			if(clientStatus[i].waiting == true) {
-				if(clientStatus[i].callback->state == webserverListener::FINISHED) {
+				if(clientStatus[i].callback != NULL && clientStatus[i].callback->state == webserverListener::FINISHED) {
 					handleFinishedCallback(i);
-				} else if(clientStatus[i].callback->state == webserverListener::FAILED) {
+				} else if(clientStatus[i].callback != NULL && (clientStatus[i].callback->state == webserverListener::FAILED || millis() - clientStatus[i].timestamp > TIMEOUT_MILLIS)) {
 					//no answer.
 					sendHttp500WithBody(i);
-					closeClient(i);
 				}
 			}
 
@@ -680,7 +667,9 @@ class WebServer {
 	}
 
 	void handleFinishedCallback(uint8_t clientId) {
-		if(clientStatus[clientId].requestType == PAGE_GETSENSORINFO) {
+		if(clientStatus[clientId].requestType == PAGE_REQUEST_SENSOR) {
+			doPageRequestSensor2(clientId);
+		} else if(clientStatus[clientId].requestType == PAGE_GETSENSORINFO) {
 			doPageSensorInfo2(clientId);
 		} else {
 			//unknown request
@@ -717,6 +706,13 @@ class WebServer {
 	}
 
 	void doPageNodes(uint8_t clientId) {
+		neighbourData* neighbours = l3.getNeighbours();
+
+		if(neighbours == NULL) {
+			sendHttp500WithBody(clientId);
+			return;
+		}
+
 		sendHttpOk(clientId);
 		sendHtmlHeader(clientId, pageTitles[PAGE_MAIN]);
 		sendHtmlMenu(clientId);
@@ -728,7 +724,6 @@ class WebServer {
 
 		//table
 		client.println(F("<table><tr><th>ID</th><th>nextHop</th><th>#hops</th><th>age</th><th>discover</th></tr>"));
-		neighbourData* neighbours = l3.getNeighbours();
 		uint8_t numNeighbours = 0;
 		uint32_t now = millis();
 		for(uint8_t i = 0; i < CONFIG_L3_NUM_NEIGHBOURS; i++) {
@@ -780,28 +775,39 @@ class WebServer {
 	}
 
 	void doPageSensorInfo(uint8_t clientId, RequestContent* req) {
+		if(req == NULL) {
+			sendHttp500WithBody(clientId);
+			return;
+		}
+
 		String* id = req->getValue(variableRemote);
 		uint8_t idInt = id->toInt();
 
 		if(id == NULL) {
 			sendHttp500WithBody(clientId);
-			closeClient(clientId);
 			return;
 		}
 
 		Layer3::packet_t p;
 		pf.generateDiscoveryInfoRequest(&p, idInt);
 		discoveryListener* tmp = new discoveryListener(idInt);
+
+		if(tmp == NULL) {
+			sendHttp500WithBody(clientId);
+			return;
+		}
+
 		clientStatus[clientId].callback = tmp;
 
-		boolean success = dispatcher.getResponseHandler()->registerListenerByPacketType(millis()+2000, HARDWARE_DISCOVERY_RES, idInt, tmp);
+		boolean success = dispatcher.getResponseHandler()->registerListenerByPacketType(millis()+TIMEOUT_MILLIS, HARDWARE_DISCOVERY_RES, idInt, tmp);
 
 
-		success &= l3.sendPacket(p);
-
+		if(success) {
+			success = l3.sendPacket(p);
+		}
 		if(!success) {
 			sendHttp500WithBody(clientId);
-			closeClient(clientId);
+			dispatcher.getResponseHandler()->unregisterListener(tmp);
 			return;
 		}
 	}
@@ -810,6 +816,11 @@ class WebServer {
 		//yay!
 		EthernetClient client = EthernetClient(clientId);
 		discoveryListener* listener = (discoveryListener*) clientStatus[clientId].callback;
+
+		if(listener == NULL) {
+			sendHttp500WithBody(clientId);
+			return;
+		}
 
 		sendHttpOk(clientId);
 		sendHtmlHeader(clientId, pageTitles[PAGE_GETSENSORINFO]);
@@ -820,7 +831,9 @@ class WebServer {
 
 		client.println(F("<table><tr><th>HardwareAddress</th><th>HardwareType</th><th>HasEvents</th><th>RequestInfo</th></tr>"));
 		for(uint8_t i = 0; i < listener->gottenInfos; i++) {
-			client.print(F("<tr><td>"));
+			client.print(F("<tr"));
+			sendHtmlBgColorAlternate(client, i);
+			client.print(F("><td>"));
 			client.print(listener->sensorInfos[i].hardwareAddress);
 			client.print(F("</td><td>"));
 
@@ -885,23 +898,141 @@ class WebServer {
 		//select page
 		if(strcmp_P(uriChars, pageAddresses[PAGE_MAIN]) == 0) {
 			doPageStart(clientId);
-			closeClient(clientId);
 		} else if(strcmp_P(uriChars, pageAddresses[PAGE_NODES]) == 0) {
 			doPageNodes(clientId);
-			closeClient(clientId);
 		} else if(strcmp_P(uriChars, pageAddresses[PAGE_CSS]) == 0) {
 			doPageCss(clientId);
-			closeClient(clientId);
 		} else if(strcmp_P(uriChars, pageAddresses[PAGE_GETSENSORINFO]) == 0) {
 			doPageSensorInfo(clientId, &req);
 			clientStatus[clientId].requestType = PAGE_GETSENSORINFO;
 			clientStatus[clientId].waiting = true;
+			clientStatus[clientId].timestamp = millis();
+		} else if(strcmp_P(uriChars, pageAddresses[PAGE_REQUEST_SENSOR]) == 0) {
+			doPageRequestSensor(clientId, &req);
+			clientStatus[clientId].requestType = PAGE_REQUEST_SENSOR;
+			clientStatus[clientId].waiting = true;
+			clientStatus[clientId].timestamp = millis();
 		} else {
 			sendHttp404WithBody(clientId);
-			closeClient(clientId);
 		}
 
+		if(!clientStatus[clientId].waiting) {
+			closeClient(clientId);
+		}
 	}
+
+	void doPageRequestSensor(uint8_t clientId, RequestContent* req) {
+		String* id = req->getValue(variableRemote);
+		if(id == NULL) {
+			sendHttp500WithBody(clientId);
+			return;
+		}
+		int8_t idInt = id->toInt();
+
+		String* hwAddressStr = req->getValue(variableHwAddress);
+		if(hwAddressStr == NULL) {
+			sendHttp500WithBody(clientId);
+			return;
+		}
+		int8_t hwaddress = hwAddressStr->toInt();
+
+		String* hwtypeStr = req->getValue(variableHwType);
+		if(hwtypeStr == NULL) {
+			sendHttp500WithBody(clientId);
+			return;
+		}
+		int8_t hwtype = hwtypeStr->toInt();
+
+		if(idInt == -1 || hwaddress == -1 || hwtype == -1) {
+			sendHttp500WithBody(clientId);
+			closeClient(clientId);
+			return;
+		}
+
+		Layer3::packet_t p;
+		seq_t sequence = pf.generateHardwareCommandRead(&p, idInt, hwaddress, (HardwareTypeIdentifier) hwtype);
+		hardwareRequestListener* tmp = new hardwareRequestListener(idInt, (HardwareTypeIdentifier) hwtype, hwaddress);
+
+		if(tmp == NULL) {
+			sendHttp500WithBody(clientId);
+			return;
+		}
+
+		clientStatus[clientId].callback = tmp;
+
+		boolean success = dispatcher.getResponseHandler()->registerListenerBySeq(millis()+TIMEOUT_MILLIS, sequence, idInt, tmp);
+
+		success &= l3.sendPacket(p);
+
+		if(!success) {
+			sendHttp500WithBody(clientId);
+			closeClient(clientId);
+			dispatcher.getResponseHandler()->unregisterListener(tmp);
+			return;
+		}
+	}
+
+	void doPageRequestSensor2(uint8_t clientId) {
+		EthernetClient client = EthernetClient(clientId);
+		hardwareRequestListener* listener = (hardwareRequestListener*) clientStatus[clientId].callback;
+
+		sendHttpOk(clientId);
+		sendHtmlHeader(clientId, pageTitles[PAGE_REQUEST_SENSOR]);
+		sendHtmlMenu(clientId);
+		client.print(F("<h1>Sensor Info id="));
+		client.print(listener->remote);
+		client.println(F("</h1>"));
+		client.print(F("<h2>hwaddress="));
+		client.print(listener->hwaddress);
+		client.print(F(" hwtype="));
+		printP(clientId, hardwareTypeStrings[listener->hwtype]);
+		if(listener->cmd.isRead) {
+			client.print(F(" read"));
+		} else {
+			client.print(F(" write"));
+		}
+		client.println(F("</h2>"));
+
+		client.println(F("<code><pre>"));
+		if(listener->cmd.numUint8 > 0) {
+			client.print(F("Uint8:\t"));
+			for(uint8_t i = 0; i < listener->cmd.numUint8; i++)	 {
+				client.print(listener->cmd.uint8list[i]);
+				client.print(F("\t"));
+			}
+			client.println(F("<br/>"));
+		}
+		if(listener->cmd.numUint16 > 0) {
+			client.print(F("Uint16:\t"));
+			for(uint8_t i = 0; i < listener->cmd.numUint16; i++) {
+				client.print(listener->cmd.uint16list[i]);
+				client.print(F("\t"));
+			}
+			client.println(F("<br/>"));
+		}
+		if(listener->cmd.numInt8 > 0) {
+			client.print(F("Int8:\t"));
+			for(uint8_t i = 0; i < listener->cmd.numInt8; i++) {
+				client.print(listener->cmd.int8list[i]);
+				client.print(F("\t"));
+			}
+			client.println(F("<br/>"));
+		}
+		if(listener->cmd.numInt16 > 0) {
+			client.print(F("Int16:\t"));
+			for(uint8_t i = 0; i < listener->cmd.numInt16; i++) {
+				client.print(listener->cmd.int16list[i]);
+				client.print(F("\t"));
+			}
+			client.println(F("<br/>"));
+		}
+		client.println(F("</pre></code>"));
+
+		sendHtmlFooter(clientId);
+		closeClient(clientId);
+	}
+
+
 };
 
 

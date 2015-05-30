@@ -40,20 +40,20 @@ class PacketFactory {
 				return false;
 
 			//numbered
-			packet_numbered_t* numbered = (packet_numbered_t*) p->data.payload;
-			memset(&numbered, 0, sizeof(numbered));
-			numbered->seqNumber = random(1, 0xffffffff);
-			numbered->payloadLen = sizeof(packet_application_numbered_cmd_t);
+			packet_numbered_t numbered;
+			memset(&numbered, 0, sizeof(packet_numbered_t));
+			numbered.seqNumber = random(1, 0xffff);
+			numbered.payloadLen = sizeof(packet_application_numbered_cmd_t);
 
 			//applayer
-			packet_application_numbered_cmd_t* appCmd = (packet_application_numbered_cmd_t*) numbered->payload;
+			packet_application_numbered_cmd_t* appCmd = (packet_application_numbered_cmd_t*) numbered.payload;
 			appCmd->packetType = HARDWARE_DISCOVERY_REQ;
 
 			packet_application_numbered_discovery_info_t* infoReq = (packet_application_numbered_discovery_info_t*) appCmd->payload;
 			infoReq->numSensors = 0;
 
-			l3->createPacketGeneric(p, destination, PACKET_NUMBERED, (void*) numbered, sizeof(packet_numbered_t));
-			return numbered->seqNumber;
+			l3->createPacketGeneric(p, destination, PACKET_NUMBERED, &numbered, sizeof(packet_numbered_t));
+			return numbered.seqNumber;
 		}
 
 		/**
@@ -66,20 +66,20 @@ class PacketFactory {
 				return false;
 
 			//numbered
-			packet_numbered_t* numbered = (packet_numbered_t*) p->data.payload;
-			memset(&numbered, 0, sizeof(numbered));
-			numbered->seqNumber = random(1, 0xffffffff);
-			numbered->payloadLen = sizeof(packet_application_numbered_cmd_t);
+			packet_numbered_t numbered;
+			memset(&numbered, 0, sizeof(packet_numbered_t));
+			numbered.seqNumber = random(1, 0xffff);
+			numbered.payloadLen = sizeof(packet_application_numbered_cmd_t);
 
 			//app layer
-			packet_application_numbered_cmd_t* appCmd = (packet_application_numbered_cmd_t*) numbered->payload;
+			packet_application_numbered_cmd_t* appCmd = (packet_application_numbered_cmd_t*) numbered.payload;
 
 			appCmd->packetType = HARDWARE_SUBSCRIPTION_INFO;
 			subscription_info_t* subscriptionInfo = (subscription_info_t*) appCmd->payload;
 			subscriptionInfo->forAddress = l3->localAddress;
 
-			l3->createPacketGeneric(p, destination, PACKET_NUMBERED, (void*) numbered, sizeof(packet_numbered_t));
-			return numbered->seqNumber;
+			l3->createPacketGeneric(p, destination, PACKET_NUMBERED, &numbered, sizeof(packet_numbered_t));
+			return numbered.seqNumber;
 		}
 
 		/**
@@ -201,13 +201,13 @@ class PacketFactory {
 				return false;
 
 			//numbered
-			packet_numbered_t* numbered = (packet_numbered_t*) p->data.payload;
-			memset(&numbered, 0, sizeof(numbered));
-			numbered->seqNumber = random(1, 0xffffffff);
-			numbered->payloadLen = sizeof(packet_application_numbered_cmd_t);
+			packet_numbered_t numbered;
+			memset(&numbered, 0, sizeof(packet_numbered_t));
+			numbered.seqNumber = random(1, 0xffff);
+			numbered.payloadLen = sizeof(packet_application_numbered_cmd_t);
 
 			//app layer
-			packet_application_numbered_cmd_t* appCmd = (packet_application_numbered_cmd_t*) numbered->payload;
+			packet_application_numbered_cmd_t* appCmd = (packet_application_numbered_cmd_t*) numbered.payload;
 			appCmd->packetType = HARDWARE_SUBSCRIPTION_SET;
 
 			subscription_set_t* subscriptionSet = (subscription_set_t*) appCmd->payload;
@@ -218,8 +218,8 @@ class PacketFactory {
 			subscriptionSet->info.onEventType = eventType;
 			subscriptionSet->info.sequence = callbackSequence;
 
-			l3->createPacketGeneric(p, destination, PACKET_NUMBERED, (void*) numbered, sizeof(packet_numbered_t));
-			return numbered->seqNumber;
+			l3->createPacketGeneric(p, destination, PACKET_NUMBERED, &numbered, sizeof(packet_numbered_t));
+			return numbered.seqNumber;
 		}
 
 		/**
@@ -235,7 +235,7 @@ class PacketFactory {
 			//numbered
 			packet_numbered_t numbered;
 			memset(&numbered, 0, sizeof(packet_numbered_t));
-			numbered.seqNumber = random(1, 0xffffffff);
+			numbered.seqNumber = random(1, 0xffff);
 			numbered.payloadLen = sizeof(packet_application_numbered_cmd_t);
 
 			packet_application_numbered_cmd_t* appCmd = (packet_application_numbered_cmd_t*) numbered.payload;
