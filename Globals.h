@@ -44,4 +44,7 @@ Light light;
 	MyTone mytone;
 #endif
 
+#define WEBSERVER_ENABLE
+
+
 #endif /* GLOBALS_H_ */

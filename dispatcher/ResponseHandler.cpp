@@ -185,3 +185,15 @@ boolean ResponseHandler::removeListener(uint8_t i) {
 	activeListenersNum--;
 	return true;
 }
+
+boolean ResponseHandler::unregisterListener(EventCallbackInterface* callbackObject) {
+	boolean result = false;
+	for(uint8_t i = 0; i < LISTENER_NUM; i++) {
+		if(listeners->callbackObj == callbackObject) {
+			removeListener(i);
+			result = true;
+		}
+	}
+
+	return result;
+}

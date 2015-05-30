@@ -14,11 +14,9 @@
 #include <drivers/HardwareID.h>
 #include <dispatcher/Commands.h>
 
-#define resultSetSize 4
-#define driverPointerListSize 10
+#define driverPointerListSize 6
 class HardwareInterface {
 	private:
-		//const static resultSetSize = 10;
 		//const static driverPointerListSize = 5;
 
 		HardwareDriver* driver[driverPointerListSize];

@@ -69,6 +69,13 @@ class ResponseHandler {
 		boolean registerListenerByPacketType(uint32_t timeout, packet_type_application_t type, const l3_address_t remoteAddress, EventCallbackInterface* callbackObject);
 
 		/**
+		 * register a new listener for a specific remote address and sequence number with callback
+		 * @param callback object
+		 * @return true on success, false otherwise
+		 */
+		boolean unregisterListener(EventCallbackInterface* callbackObject);
+
+		/**
 		 * maintenance.
 		 */
 		void loop();

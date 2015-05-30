@@ -15,7 +15,7 @@
 
 #ifdef ENABLE_DISCOVERY_SERVICE
 
-#define INTERFACES_BUF_SIZE 15
+#define INTERFACES_BUF_SIZE 18
 
 class DiscoveryService {
 	//variables

@@ -108,6 +108,7 @@ typedef struct discoveryInfo_helper_struct {
 /** struct for hardware discovery information */
 #define PACKET_APP_NUMBERED_DISCOVERY_DRIVERS_NUM (CONFIG_L3_PACKET_NUMBERED_MAX_LEN - 1) / sizeof(packet_application_numbered_discovery_info_helper_t)
 typedef struct discoveryInfo_struct {
+	uint8_t numTotalSensors;
 	uint8_t numSensors;
 	packet_application_numbered_discovery_info_helper_t infos[PACKET_APP_NUMBERED_DISCOVERY_DRIVERS_NUM];
 } packet_application_numbered_discovery_info_t;

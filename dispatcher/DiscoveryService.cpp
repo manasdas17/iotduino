@@ -78,6 +78,8 @@ boolean DiscoveryService::handleInfoRequest(EventCallbackInterface* callback, se
 		appLayerPacket.packetType = HARDWARE_DISCOVERY_RES;
 		packet_application_numbered_discovery_info_t* discoveryInfo = (packet_application_numbered_discovery_info_t*) appLayerPacket.payload;
 
+		discoveryInfo->numTotalSensors = num;
+
 		if(i == packets -1) {
 			//copy part
 			discoveryInfo->numSensors = num - numPerPacket * i;
