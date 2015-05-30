@@ -17,7 +17,7 @@
 #define ENABLE_DISCOVERY_SERVICE	//~500 bytes program memory
 
 #define DEBUG_NETWORK_ENABLE
-#define DEBUG_HANDLER_ENABLE
+//#define DEBUG_HANDLER_ENABLE
 #define DEBUG_HARDWARE_ENABLE
 
 

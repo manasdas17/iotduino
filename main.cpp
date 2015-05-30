@@ -6,8 +6,14 @@
  */
 #include <Arduino.h>
 #include <Globals.h>
+#include <avr/wdt.h>
 
-//#define PRODUCTIVE_MEGA328P
+
+#ifdef WEBSERVER_ENABLE
+	#include <gateway/WebServer.h>
+	WebServer webServer;
+#endif
+
 
 /**
  * read pin 4..9 inverted
@@ -306,8 +312,15 @@ void setup() {
 	Serial.println(PIN_CSN);
 	#endif
 
+	//enable watchdog
+	wdt_enable(WDTO_8S);
+
 	//get address config
 	getAddress();
+
+	#ifdef WEBSERVER_ENABLE
+		webServer.init();
+	#endif
 
 	//init network
 	l3.init(address_local);
@@ -321,10 +334,16 @@ void setup() {
 	motion.init(A4, 50);
 	light.init(A5, 60);
 
+
 	hwInterface.registerDriver((HardwareDriver*) &dht11);
 	hwInterface.registerDriver((HardwareDriver*) &rcsw);
 	hwInterface.registerDriver((HardwareDriver*) &motion);
 	hwInterface.registerDriver((HardwareDriver*) &light);
+
+	#ifndef PRODUCTIVE_MEGA328P
+		hwInterface.registerDriver((HardwareDriver*) &mytone);
+		mytone.init(14, 70);
+	#endif
 
 	dispatcher.init(&l3, &hwInterface);
 
@@ -383,6 +402,8 @@ void setup() {
 	////turn off LED
 	//pinMode(LED_BUILTIN, LOW);*/
 }
+
+#ifndef PRODUCTIVE_MEGA328P
 
 enum state {START, INFO_REQUEST_SENT, SENSOR_REQUEST_SENT, INFO_REQUEST_RECEIVED};
 
@@ -512,12 +533,25 @@ class peter : public EventCallbackInterface {
 };
 
 peter callbackListener;
+#endif
+
+
 
 void loop() {
 	//do networking.
 	l3.Loop();
+
+	//do handling.
 	dispatcher.loop();
 
+	#ifdef WEBSERVER_ENABLE
+		webServer.loop();
+	#endif
+
+	//watchdog reset.
+	wdt_reset();
+
+#ifndef PRODUCTIVE_MEGA328P
 	if(address_local == 16) {
 		switch(mystate) {
 			case START: {
@@ -551,7 +585,7 @@ void loop() {
 				break;
 		}
 	}
-
+#endif
 }
 
 /***
