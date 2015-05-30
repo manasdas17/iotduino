@@ -34,6 +34,7 @@
 
 #include <networking/Layer3.h>
 #include <dispatcher/PacketDispatcher.h>
+#include <drivers/HardwareID.h>
 
 extern Layer3 l3;
 extern PacketDispatcher dispatcher;
@@ -52,17 +53,21 @@ byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 #endif
 
 
-
-class discoveryListener : public EventCallbackInterface {
+class webserverListener : public EventCallbackInterface {
+	public:
 	enum STATE {START, AWAITING_ANSWER, FINISHED, FAILED};
 	STATE state;
+};
+
+class discoveryListener : public webserverListener {
+	public:
+
 	int8_t totalInfos;
 	uint8_t gottenInfos;
 	l3_address_t remote;
 
 	packet_application_numbered_discovery_info_helper_t sensorInfos[INTERFACES_BUF_SIZE];
 
-	public:
 
 	discoveryListener(l3_address_t remote) {
 		this->state = START;
@@ -74,9 +79,9 @@ class discoveryListener : public EventCallbackInterface {
 
 	virtual void doCallback(packet_application_numbered_cmd_t* appLayerPacket, l3_address_t address, seq_t seq) {
 		if(address != remote)
-		return;
+			return;
 		if(appLayerPacket->packetType != HARDWARE_DISCOVERY_RES)
-		return;
+			return;
 
 		packet_application_numbered_discovery_info_t* info = (packet_application_numbered_discovery_info_t*) appLayerPacket->payload;
 		//how many infos do we expect?
@@ -214,18 +219,71 @@ const char pageAddressMain[] PROGMEM = {"/"};
 const char pageAddressGetSensorInfo[] PROGMEM = {"/getSensorInfo"};
 const char pageNodes[] PROGMEM = {"/nodes"};
 const char pageCss[] PROGMEM = {"/css"};
-PGM_P pageAddresses[] = {NULL, pageAddressMain, pageAddressGetSensorInfo, pageNodes, pageCss};
+const char pageRequestSensor[] PROGMEM = {"/sensor"};
+PGM_P pageAddresses[] = {NULL, pageAddressMain, pageAddressGetSensorInfo, pageNodes, pageCss, pageRequestSensor};
 
 const char pageTitleMain[] PROGMEM = {"Start"};
 const char pageTitleGetSensorInfo[] PROGMEM = {"Sensor Info"};
 const char pageTitleNodes[] PROGMEM = {"Nodes"};
+const char pageTitleRequestSensor[] PROGMEM = {"Rquested Sensor Information"};
 
-PGM_P pageTitles[] = {NULL, pageTitleMain, pageTitleGetSensorInfo, pageTitleNodes, NULL};
-enum PAGES {PAGE_NONE, PAGE_MAIN, PAGE_GETSENSORINFO, PAGE_NODES, PAGE_CSS};
+PGM_P pageTitles[] = {NULL, pageTitleMain, pageTitleGetSensorInfo, pageTitleNodes, NULL, pageTitleRequestSensor};
+enum PAGES {PAGE_NONE, PAGE_MAIN, PAGE_GETSENSORINFO, PAGE_NODES, PAGE_CSS, PAGE_REQUEST_SENSOR};
 
 const char variableRemote[] PROGMEM = {"remote"};
 const char variableHwAddress[] PROGMEM = {"hwaddress"};
 const char variableHwType[] PROGMEM = {"hwtype"};
+
+/** hw type strs */
+const char strHWType_UNKNOWN[] PROGMEM = {"UNKNOWN"};
+const char strHWType_ANALOG[] PROGMEM = {"ANALOG"};
+const char strHWType_DIGITAL[] PROGMEM = {"DIGITAL"};
+const char strHWType_accelerometer[] PROGMEM = {"Accelerometer"};
+const char strHWType_button[] PROGMEM = {"Button"};
+const char strHWType_gyroscope[] PROGMEM = {"Gyroscope"};
+const char strHWType_humidity[] PROGMEM = {"Humidity"};
+const char strHWType_ir[] PROGMEM = {"IR"};
+const char strHWType_keypad[] PROGMEM = {"Keypad"};
+const char strHWType_magneticField[] PROGMEM = {"Magnetic Field"};
+const char strHWType_methane[] PROGMEM = {"Methane"};
+const char strHWType_motion[] PROGMEM = {"Motion"};
+const char strHWType_pressure[] PROGMEM = {"Pressure"};
+const char strHWType_rtc[] PROGMEM = {"RTC"};
+const char strHWType_dcf77[] PROGMEM = {"DCF77"};
+const char strHWType_sonar[] PROGMEM = {"Sonar"};
+const char strHWType_hwSwitch[] PROGMEM = {"Switch"};
+const char strHWType_temprature[] PROGMEM = {"Temperature"};
+const char strHWType_touchpad[] PROGMEM = {"Touchpad"};
+const char strHWType_led[] PROGMEM = {"LED"};
+const char strHWType_rcswitch[] PROGMEM = {"RC Switch"};
+const char strHWType_relay[] PROGMEM = {"Relay"};
+const char strHWType_light[] PROGMEM = {"Light"};
+const char strHWType_tone[] PROGMEM = {"Tone"};
+
+PGM_P hardwareTypeStrings[] = {	strHWType_UNKNOWN,
+	strHWType_ANALOG,
+	strHWType_DIGITAL,
+	strHWType_accelerometer,
+	strHWType_button,
+	strHWType_gyroscope,
+	strHWType_humidity,
+	strHWType_ir,
+	strHWType_keypad,
+	strHWType_magneticField,
+	strHWType_methane,
+	strHWType_motion,
+	strHWType_pressure,
+	strHWType_rtc,
+	strHWType_dcf77,
+	strHWType_sonar,
+	strHWType_hwSwitch,
+	strHWType_temprature,
+	strHWType_touchpad,
+	strHWType_led,
+	strHWType_rcswitch,
+	strHWType_relay,
+	strHWType_light,
+	strHWType_tone};
 
 class WebServer {
 
@@ -242,7 +300,7 @@ class WebServer {
 	typedef struct clientInstances_struct {
 		PAGES requestType;
 		boolean waiting;
-		EventCallbackInterface* callback;
+		webserverListener* callback;
 		boolean inUse;
 	} clientInstances_t;
 
@@ -598,6 +656,17 @@ class WebServer {
 				clientStatus[i].inUse = true;
 			}
 
+			//check for answers from listeners
+			if(clientStatus[i].waiting == true) {
+				if(clientStatus[i].callback->state == webserverListener::FINISHED) {
+					handleFinishedCallback(i);
+				} else if(clientStatus[i].callback->state == webserverListener::FAILED) {
+					//no answer.
+					sendHttp500WithBody(i);
+					closeClient(i);
+				}
+			}
+
 			//handle conenctions
 			if(clientStatus[i].inUse == true && clientStatus[i].waiting == false) {
 				#ifdef DEBUG_WEBSERVER
@@ -607,6 +676,16 @@ class WebServer {
 				#endif
 				doClientHandling(i);
 			}
+		}
+	}
+
+	void handleFinishedCallback(uint8_t clientId) {
+		if(clientStatus[clientId].requestType == PAGE_GETSENSORINFO) {
+			doPageSensorInfo2(clientId);
+		} else {
+			//unknown request
+			sendHttp500WithBody(clientId);
+			closeClient(clientId);
 		}
 	}
 
@@ -701,29 +780,81 @@ class WebServer {
 	}
 
 	void doPageSensorInfo(uint8_t clientId, RequestContent* req) {
-		EthernetClient client = EthernetClient(clientId);
 		String* id = req->getValue(variableRemote);
 		uint8_t idInt = id->toInt();
 
 		if(id == NULL) {
 			sendHttp500WithBody(clientId);
+			closeClient(clientId);
 			return;
 		}
 
 		Layer3::packet_t p;
 		pf.generateDiscoveryInfoRequest(&p, idInt);
 		discoveryListener* tmp = new discoveryListener(idInt);
+		clientStatus[clientId].callback = tmp;
+
 		boolean success = dispatcher.getResponseHandler()->registerListenerByPacketType(millis()+2000, HARDWARE_DISCOVERY_RES, idInt, tmp);
 
-		sendHttpOk(clientId);
-		sendHtmlHeader(clientId, pageTitles[PAGE_MAIN]);
-		sendHtmlMenu(clientId);
 
-		//page title
-		client.print(F("<h1>Node Info (id="));
-		client.print(idInt);
-		client.println(F(")</h1>"));
+		success &= l3.sendPacket(p);
+
+		if(!success) {
+			sendHttp500WithBody(clientId);
+			closeClient(clientId);
+			return;
+		}
+	}
+
+	void doPageSensorInfo2(uint8_t clientId) {
+		//yay!
+		EthernetClient client = EthernetClient(clientId);
+		discoveryListener* listener = (discoveryListener*) clientStatus[clientId].callback;
+
+		sendHttpOk(clientId);
+		sendHtmlHeader(clientId, pageTitles[PAGE_GETSENSORINFO]);
+		sendHtmlMenu(clientId);
+		client.print(F("<h1>Sensor Info id="));
+		client.print(listener->remote);
+		client.println(F("</h1>"));
+
+		client.println(F("<table><tr><th>HardwareAddress</th><th>HardwareType</th><th>HasEvents</th><th>RequestInfo</th></tr>"));
+		for(uint8_t i = 0; i < listener->gottenInfos; i++) {
+			client.print(F("<tr><td>"));
+			client.print(listener->sensorInfos[i].hardwareAddress);
+			client.print(F("</td><td>"));
+
+			uint8_t tmp = listener->sensorInfos[i].hardwareType;
+			if(tmp > sizeof(hardwareTypeStrings)) tmp = 0;
+			printP(clientId, hardwareTypeStrings[tmp]);
+
+			client.print(F("</td><td>"));
+			client.print(listener->sensorInfos[i].canDetectEvents);
+			client.print(F("<td><a href='"));
+			printP(clientId, pageAddresses[PAGE_REQUEST_SENSOR]);
+			client.print(F("?"));
+			printP(clientId, variableRemote);
+			client.print(F("="));
+			client.print(listener->remote);
+			client.print(F("&"));
+			printP(clientId, variableHwAddress);
+			client.print(F("="));
+			client.print(listener->sensorInfos[i].hardwareAddress);
+			client.print(F("&"));
+			printP(clientId, variableHwType);
+			client.print(F("="));
+			client.print(listener->sensorInfos[i].hardwareType);
+			client.print(F("'>x</a>"));
+			client.print(F("</td>"));
+			client.println(F("</tr>"));
+		}
+		client.print(F("<tr><th colspan='4'>"));
+		client.print(listener->gottenInfos);
+		client.println(F(" entries</th></tr></table>"));
+
 		sendHtmlFooter(clientId);
+
+		closeClient(clientId);
 	}
 
 	void doClientHandling(uint8_t clientId) {
@@ -763,6 +894,7 @@ class WebServer {
 			closeClient(clientId);
 		} else if(strcmp_P(uriChars, pageAddresses[PAGE_GETSENSORINFO]) == 0) {
 			doPageSensorInfo(clientId, &req);
+			clientStatus[clientId].requestType = PAGE_GETSENSORINFO;
 			clientStatus[clientId].waiting = true;
 		} else {
 			sendHttp404WithBody(clientId);
