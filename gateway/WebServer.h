@@ -68,8 +68,7 @@ class discoveryListener : public webserverListener {
 
 	packet_application_numbered_discovery_info_helper_t sensorInfos[INTERFACES_BUF_SIZE];
 
-
-	discoveryListener(l3_address_t remote) {
+	void init(l3_address_t remote) {
 		this->state = START;
 		this->totalInfos = -1;
 		this->gottenInfos = 0;
@@ -116,7 +115,7 @@ class hardwareRequestListener : public webserverListener {
 	HardwareTypeIdentifier hwtype;
 	uint8_t hwaddress;
 
-	hardwareRequestListener(l3_address_t remote, HardwareTypeIdentifier hwtype, uint8_t hwaddress) {
+	void init (l3_address_t remote, HardwareTypeIdentifier hwtype, uint8_t hwaddress) {
 		this->remote = remote;
 		this->state = AWAITING_ANSWER;
 		this->hwtype = hwtype;
@@ -339,6 +338,9 @@ class WebServer {
 
 	#define CLIENT_INSTANCES_NUM 4
 	clientInstances_t clientStatus[CLIENT_INSTANCES_NUM];
+
+	discoveryListener listenerDiscovery;
+	hardwareRequestListener listenerHardwareRequest;
 
 	WebServer() {
 		for(uint8_t i = 0; i < CLIENT_INSTANCES_NUM; i++) {
@@ -600,15 +602,13 @@ class WebServer {
 
 
 	boolean closeClient(uint8_t i) {
-		if(clientStatus[i].inUse == false)
-			return false;
-
 		#ifdef DEBUG_WEBSERVER
 		Serial.print(millis());
 		Serial.print(F(": WebServer::closeClient() clientSlot="));
 		Serial.println(i);
 		#endif
 
+		/*
 		//is there a pending request?
 		if(EthernetClient(i).available()) {
 			#ifdef DEBUG_WEBSERVER
@@ -618,7 +618,7 @@ class WebServer {
 			clientStatus[i].waiting = false;
 
 			return false;
-		}
+		}*/
 
 		delay(1);
 		EthernetClient(i).stop();
@@ -628,7 +628,6 @@ class WebServer {
 
 		if(clientStatus[i].callback != NULL) {
 			dispatcher.getResponseHandler()->unregisterListener(clientStatus[i].callback);
-			delete clientStatus[i].callback;
 		}
 
 		return true;
@@ -790,16 +789,11 @@ class WebServer {
 
 		Layer3::packet_t p;
 		pf.generateDiscoveryInfoRequest(&p, idInt);
-		discoveryListener* tmp = new discoveryListener(idInt);
+		listenerDiscovery.init(idInt);
 
-		if(tmp == NULL) {
-			sendHttp500WithBody(clientId);
-			return;
-		}
+		clientStatus[clientId].callback = &listenerDiscovery;
 
-		clientStatus[clientId].callback = tmp;
-
-		boolean success = dispatcher.getResponseHandler()->registerListenerByPacketType(millis()+TIMEOUT_MILLIS, HARDWARE_DISCOVERY_RES, idInt, tmp);
+		boolean success = dispatcher.getResponseHandler()->registerListenerByPacketType(millis()+TIMEOUT_MILLIS, HARDWARE_DISCOVERY_RES, idInt, &listenerDiscovery);
 
 
 		if(success) {
@@ -807,7 +801,7 @@ class WebServer {
 		}
 		if(!success) {
 			sendHttp500WithBody(clientId);
-			dispatcher.getResponseHandler()->unregisterListener(tmp);
+			dispatcher.getResponseHandler()->unregisterListener(&listenerDiscovery);
 			return;
 		}
 	}
@@ -951,23 +945,18 @@ class WebServer {
 
 		Layer3::packet_t p;
 		seq_t sequence = pf.generateHardwareCommandRead(&p, idInt, hwaddress, (HardwareTypeIdentifier) hwtype);
-		hardwareRequestListener* tmp = new hardwareRequestListener(idInt, (HardwareTypeIdentifier) hwtype, hwaddress);
+		listenerHardwareRequest.init(idInt, (HardwareTypeIdentifier) hwtype, hwaddress);
 
-		if(tmp == NULL) {
-			sendHttp500WithBody(clientId);
-			return;
-		}
+		clientStatus[clientId].callback = &listenerHardwareRequest;
 
-		clientStatus[clientId].callback = tmp;
-
-		boolean success = dispatcher.getResponseHandler()->registerListenerBySeq(millis()+TIMEOUT_MILLIS, sequence, idInt, tmp);
+		boolean success = dispatcher.getResponseHandler()->registerListenerBySeq(millis()+TIMEOUT_MILLIS, sequence, idInt, &listenerHardwareRequest);
 
 		success &= l3.sendPacket(p);
 
 		if(!success) {
 			sendHttp500WithBody(clientId);
 			closeClient(clientId);
-			dispatcher.getResponseHandler()->unregisterListener(tmp);
+			dispatcher.getResponseHandler()->unregisterListener(&listenerHardwareRequest);
 			return;
 		}
 	}
