@@ -253,6 +253,9 @@ boolean Layer3::receive( void* payload )
 		return handleBeacon(packet);
 	}
 
+	//update the neighbour - this is no beacon.
+	updateNeighbour(packet->data.source, packet->data.source, 0);
+
 	//do we have to route the packet? - no broadcast routing.
 	if(packet->data.destination != localAddress && packet->data.destination != CONFIG_L3_ADDRESS_BROADCAST) {
 		return routePacket(packet);
