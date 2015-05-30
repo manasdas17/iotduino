@@ -131,6 +131,6 @@ boolean RCSwitchTevionFSI07::writeVal( HardwareTypeIdentifier type, HardwareComm
 }
 
 HardwareTypeIdentifier* RCSwitchTevionFSI07::getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
-	DigitalIO::getImplementedInterfaces(arr, maxLen);
+	//DigitalIO::getImplementedInterfaces(arr, maxLen);
 	return this->addImplementedInterface(arr, maxLen, HWType_rcswitch);
 }

@@ -10,7 +10,7 @@
 extern SimpleTimer timer;
 
 boolean MyTone::implementsInterface( HardwareTypeIdentifier type ) {
-	if(type == HWType_tone)
+	if(AnalogIOGeneric::implementsInterface(type) || type == HWType_tone)
 		return true;
 	return false;
 }

@@ -5,7 +5,7 @@
 //  @ Project : Untitled
 //  @ File Name : Methane.cpp
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
@@ -13,7 +13,7 @@
 #include "../../interfaces/input/Methane.h"
 
 boolean Methane::implementsInterface( HardwareTypeIdentifier type ) {
-	if(type == HWType_methane)
+	if(AnalogIOGeneric::implementsInterface(type) ||type == HWType_methane)
 		return true;
 	return false;
 }

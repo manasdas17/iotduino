@@ -26,7 +26,7 @@ boolean Relay::outputRead() {
 }
 
 boolean Relay::implementsInterface( HardwareTypeIdentifier type ) {
-	if(type == HWType_relay)
+	if(DigitalIOGeneric::implementsInterface(type) || type == HWType_relay)
 		return true;
 	return false;
 }

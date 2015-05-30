@@ -26,7 +26,7 @@ void LED::toggle() {
 }
 
 boolean LED::implementsInterface( HardwareTypeIdentifier type ) {
-	if(type == HWTYPE_led)
+	if(DigitalIOGeneric::implementsInterface(type) || type == HWTYPE_led)
 		return true;
 	return false;
 }

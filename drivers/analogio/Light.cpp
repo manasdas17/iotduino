@@ -8,7 +8,7 @@
 #include "../../interfaces/input/Light.h"
 
 boolean Light::implementsInterface( HardwareTypeIdentifier type ) {
-	if(type == HWType_light)
+	if(AnalogIOGeneric::implementsInterface(type) || type == HWType_light)
 		return true;
 	return false;
 }

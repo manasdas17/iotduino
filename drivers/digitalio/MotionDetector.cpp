@@ -13,7 +13,7 @@
 #include "../../interfaces/input/MotionDetector.h"
 
 boolean MotionDetector::implementsInterface( HardwareTypeIdentifier type ) {
-	if(type == HWType_motion)
+	if(DigitalIOGeneric::implementsInterface(type) || type == HWType_motion)
 		return true;
 	return false;
 }

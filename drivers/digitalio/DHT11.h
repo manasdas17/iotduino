@@ -172,7 +172,7 @@ class DHT11 : public DigitalIO, public Temperature, public Humidity {
 		boolean implementsInterface( HardwareTypeIdentifier type );
 
 		HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
-			arr = DigitalIO::getImplementedInterfaces(arr, maxLen);
+			//arr = DigitalIO::getImplementedInterfaces(arr, maxLen);
 			arr = this->addImplementedInterface(arr, maxLen, HWType_humidity);
 			return this->addImplementedInterface(arr, maxLen, HWType_temprature);
 		}
