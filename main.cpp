@@ -14,12 +14,6 @@
 	WebServer webServer;
 #endif
 
-#ifdef SDCARD_ENABLE
-	#include <sdcard/SDcard.h>
-	SDcard sdcard;
-#endif
-
-
 /**
  * read pin 4..9 inverted
  */
@@ -302,6 +296,7 @@ void getAddress() {
 void setup() {
 	Serial.begin(115200);
 	#ifdef DEBUG
+
 	Serial.println("start test...");
 	Serial.flush();
 
@@ -329,6 +324,10 @@ void setup() {
 		webServer.init();
 	#endif
 
+	#ifdef SDCARD_ENABLE
+		sdcard.init();
+	#endif
+
 	//init network
 	l3.init(address_local);
 	l2.init(&l3, PIN_CE, PIN_CSN, address_local);
@@ -344,6 +343,27 @@ void setup() {
 
 	#ifdef RTC_ENABLE
 		rtc.init(90);
+		uint32_t tmp = rtc.read();
+		setTime(tmp);
+		Serial.print(millis());
+		Serial.print(F(": time updated to: "));
+		Serial.print(tmp);
+		Serial.print(F(" = "));
+
+		tmElements_t tmElems;
+		breakTime(tmp, tmElems);
+		Serial.print((uint16_t) 1970 + tmElems.Year);
+		Serial.print(F("/"));
+		Serial.print(tmElems.Month);
+		Serial.print(F("/"));
+		Serial.print(tmElems.Day);
+		Serial.print(F(" "));
+		Serial.print(tmElems.Hour);
+		Serial.print(F(":"));
+		Serial.print(tmElems.Minute);
+		Serial.print(F(":"));
+		Serial.println(tmElems.Second);
+
 		hwInterface.registerDriver((HardwareDriver*) &rtc);
 	#endif
 
@@ -356,6 +376,24 @@ void setup() {
 	dispatcher.init(&l3, &hwInterface);
 
 	timer.init();
+
+	#ifdef SDCARD_ENABLE
+	char buf[17];
+	memset(buf, 0, sizeof(buf));
+	Serial.print(millis());
+	Serial.print(F(": nodeinfo"));
+	if(sdcard.getNodeInfo(l3.localAddress, (uint8_t*) buf, sizeof(buf))) {
+		buf[16] = '\0';
+		Serial.print(F("=\""));
+		Serial.print(buf);
+		Serial.println(F("\""));
+		} else {
+		Serial.println(F(" not available"));
+	}
+
+	dispatcher.getResponseHandler()->registerListenerByPacketType(0, HARDWARE_COMMAND_RES, 0, &sdlistener);
+	#endif
+
 /*
 	//mySimpleTimer = SimpleTimer::instance();
 
