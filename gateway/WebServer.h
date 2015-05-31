@@ -46,28 +46,45 @@ extern PacketFactory pf;
 //#define USE_DHCP_FOR_IP_ADDRESS
 
 
+//ethernet start on defailt port 80
 EthernetServer server(80);
+//max
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 #ifndef USE_DHCP_FOR_IP_ADDRESS
+	//ip
 	byte ip[] = { 192, 168, 0, 177 };
 #endif
 
 
+/**
+ * generic webserver listener class - includes a state.
+ */
 class webserverListener : public EventCallbackInterface {
 	public:
 	enum STATE {START, AWAITING_ANSWER, FINISHED, FAILED};
 	STATE state;
 };
 
+/**
+ * listener class for discovery results
+ */
 class discoveryListener : public webserverListener {
 	public:
 
+	/** # infos */
 	int8_t totalInfos;
+	/** # infos we have received yet */
 	uint8_t gottenInfos;
+	/** remote */
 	l3_address_t remote;
 
+	/** actual infos */
 	packet_application_numbered_discovery_info_helper_t sensorInfos[INTERFACES_BUF_SIZE];
 
+	/**
+	 * object init
+	 * @param remote
+	 */
 	void init(l3_address_t remote) {
 		this->state = START;
 		this->totalInfos = -1;
@@ -76,6 +93,12 @@ class discoveryListener : public webserverListener {
 		memset(sensorInfos, 0, sizeof(sensorInfos));
 	}
 
+	/**
+	 * callback on response - store info and change state to finished
+	 * @param appLayerPacket
+	 * @param address remote
+	 * @param seq
+	 */
 	virtual void doCallback(packet_application_numbered_cmd_t* appLayerPacket, l3_address_t address, seq_t seq) {
 		if(address != remote || appLayerPacket == NULL || appLayerPacket->packetType != HARDWARE_DISCOVERY_RES)
 			return;
@@ -101,20 +124,37 @@ class discoveryListener : public webserverListener {
 		}
 	}
 
+	/**
+	 * update state
+	 * @param seq
+	 * @param remote
+	 */
 	virtual void fail(seq_t seq, l3_address_t remote) {
 		state = FAILED;
 	}
 };
 
-
+/**
+ * listener class for hardware results
+ */
 class hardwareRequestListener : public webserverListener {
 	public:
-	l3_address_t remote;
-
+	/** storage for cmd */
 	command_t cmd;
+
+	/** remote address */
+	l3_address_t remote;
+	/** hw type */
 	HardwareTypeIdentifier hwtype;
+	/** hw address */
 	uint8_t hwaddress;
 
+	/**
+	 * initialise object
+	 * @param remote
+	 * @param hwtype
+	 * @param hwaddress
+	 */
 	void init (l3_address_t remote, HardwareTypeIdentifier hwtype, uint8_t hwaddress) {
 		this->remote = remote;
 		this->state = AWAITING_ANSWER;
@@ -124,6 +164,12 @@ class hardwareRequestListener : public webserverListener {
 		memset(&cmd, 0, sizeof(cmd));
 	}
 
+	/**
+	 * callback on response - store info and change state to finished
+	 * @param appLayerPacket
+	 * @param address remote
+	 * @param seq
+	 */
 	virtual void doCallback(packet_application_numbered_cmd_t* appLayerPacket, l3_address_t address, seq_t seq) {
 		if(address != remote || appLayerPacket == NULL || appLayerPacket->packetType != HARDWARE_COMMAND_RES)
 			return;
@@ -135,23 +181,33 @@ class hardwareRequestListener : public webserverListener {
 		state = FINISHED;
 	}
 
+	/**
+	 * update state
+	 * @param seq
+	 * @param remote
+	 */
 	virtual void fail(seq_t seq, l3_address_t remote) {
 		state = FAILED;
 	}
 };
 
 /**
- * tokenises string <code>key1=val1&key2=val2</code>
+ * simple map.
  */
 class RequestContent {
+	/** max number of keys*/
 	#define RequestContentNumKeys 10
 
 	public:
 
+	/** keys */
 	String keys[RequestContentNumKeys];
+	/** vals */
 	String values[RequestContentNumKeys];
+	/** num used */
 	uint8_t num;
 
+	/** initialise object */
 	RequestContent() {
 		num = 0;
 		memset(keys, 0, sizeof(keys));
@@ -170,11 +226,19 @@ class RequestContent {
 		return values;
 	}
 
+	/**
+	 * @pram key
+	 * @pram value
+	 * @return index -1 if full
+	 */
 	int8_t putKey(String key, String value) {
 		int8_t index = hasKey(key);
 
 		if(index == -1) {
 			index = num;
+
+			if(num >= RequestContentNumKeys)
+				return -1
 			keys[index] = key;
 			num++;
 		}
@@ -218,6 +282,10 @@ class RequestContent {
 		return &values[index];
 	}
 
+	/**
+	 * parse a x-www-form-urlencoded string
+	 * @param requestContent
+	 */
 	void parse(String requestContent) {
 		num = 0;
 
@@ -289,6 +357,7 @@ const char strHWType_relay[] PROGMEM = {"Relay"};
 const char strHWType_light[] PROGMEM = {"Light"};
 const char strHWType_tone[] PROGMEM = {"Tone"};
 
+/** string representations of hwtypes */
 PGM_P hardwareTypeStrings[] = {	strHWType_UNKNOWN,
 	strHWType_ANALOG,
 	strHWType_DIGITAL,
@@ -314,8 +383,8 @@ PGM_P hardwareTypeStrings[] = {	strHWType_UNKNOWN,
 	strHWType_light,
 	strHWType_tone};
 
+/** webserver */
 class WebServer {
-
 	public:
 	enum MethodType {
 		MethodUnknown,
@@ -339,7 +408,9 @@ class WebServer {
 	#define CLIENT_INSTANCES_NUM 4
 	clientInstances_t clientStatus[CLIENT_INSTANCES_NUM];
 
+	/** static dicoverylistener object */
 	discoveryListener listenerDiscovery;
+	/** static hardwarerequestlistener object */
 	hardwareRequestListener listenerHardwareRequest;
 
 	WebServer() {
@@ -366,6 +437,11 @@ class WebServer {
 	const char *pStxDelimiter = "\002";    // STX - ASCII start of text character
 
 
+	/**
+	 * print to ethernet client from PGM space
+	 * @param clientId
+	 * @param str
+	 */
 	void printP(uint8_t clientId, const char * str) {
 		if(str == NULL)
 			return;
@@ -389,7 +465,10 @@ class WebServer {
 		}
 	}
 
-	/** HTML */
+	/**
+	 * 404 page
+	 * @param clientId
+	 */
 	void sendHttp404WithBody(uint8_t clientId) {
 		EthernetClient client = EthernetClient(clientId);
 		client.println(F("HTTP/1.1 404 Not Found"));
@@ -402,6 +481,10 @@ class WebServer {
 		closeClient(clientId);
 	}
 
+	/**
+	 * 500 page
+	 * @param clientId
+	 */
 	void sendHttp500WithBody(uint8_t clientId) {
 		EthernetClient client = EthernetClient(clientId);
 		client.println(F("HTTP/1.1 500 Internal error"));
@@ -414,6 +497,10 @@ class WebServer {
 		closeClient(clientId);
 	}
 
+	/**
+	 * 200 ok head
+	 * @param clientId
+	 */
 	void sendHttpOk(uint8_t clientId) {
 		EthernetClient client = EthernetClient(clientId);
 		client.println(F("HTTP/1.1 200 OK"));
@@ -422,6 +509,10 @@ class WebServer {
 		client.println();
 	}
 
+	/**
+	 * html head
+	 * @param clientId
+	 */
 	void sendHtmlHeader(uint8_t clientId, PGM_P title) {
 		EthernetClient client = EthernetClient(clientId);
 		client.print(F("<html><header><link rel='stylesheet' href='css' type='text/css'><title>"));
@@ -429,6 +520,10 @@ class WebServer {
 		client.println(F("</title></header><body>"));
 	}
 
+	/**
+	 * html menu
+	 * @param clientId
+	 */
 	void sendHtmlMenu(uint8_t clientId) {
 		EthernetClient client = EthernetClient(clientId);
 		uint8_t menuPages[] = {PAGE_MAIN, PAGE_NODES};
@@ -445,13 +540,22 @@ class WebServer {
 		client.print("</ul><br/><hr/><br/>");
 	}
 
+	/**
+	 * html footer
+	 * @param clientId
+	 */
 	void sendHtmlFooter(uint8_t clientId) {
 		EthernetClient client = EthernetClient(clientId);
-		client.println(F("<br/><hr/><br/><span style='text-align: right; font-style: italic;'><a href='http://iotduino.de'>iotduino</a> webserver.</span></body></html>"));
+		client.println(F("<br/><br/><hr/><br/><span style='text-align: right; font-style: italic;'><a href='http://iotduino.de'>iotduino</a> webserver.</span></body></html>"));
 	}
 
 
-	// Read HTTP request, setting Uri Index, the requestContent and returning the method type.
+	/**
+	 * Read HTTP request, setting Uri Index, the requestContent and returning the method type.
+	 * @param clientId
+	 * @param uri
+	 * @param req here the GET dats is stored
+	 */
 	MethodType readHttpRequest(uint8_t clientId, String* uri, RequestContent* req)
 	{
 		BUFFER requestContent;
@@ -480,9 +584,16 @@ class WebServer {
 		return eMethod;
 	}
 
-	// Read the first line of the HTTP request, setting Uri Index and returning the method type.
-	// If it is a GET method then we set the requestContent to whatever follows the '?'. For a other
-	// methods there is no content except it may get set later, after the headers for a POST method.
+	/**
+	 * Read the first line of the HTTP request, setting Uri Index and returning the method type.
+	 * If it is a GET method then we set the requestContent to whatever follows the '?'. For a other
+	 * methods there is no content except it may get set later, after the headers for a POST method.
+	 * @param clientId
+	 * @param readBuffer
+	 * @param uri
+	 * @param requestContent buffer
+	 * @param req request content map object
+	 */
 	MethodType readRequestLine(uint8_t clientId, BUFFER & readBuffer, String* uri, BUFFER & requestContent, RequestContent* req)
 	{
 		MethodType eMethod;
@@ -525,7 +636,13 @@ class WebServer {
 		return eMethod;
 	}
 
-	// Read each header of the request till we get the terminating CRLF
+	/**
+	 * Read each header of the request till we get the terminating CRLF
+	 * @param clientID
+	 * @param readBuffer
+	 * @param nContentLenth
+	 * @parambIsUrlEncoded
+	 */
 	void readRequestHeaders(uint8_t clientId, BUFFER & readBuffer, int & nContentLength, bool & bIsUrlEncoded)
 	{
 		nContentLength = 0;      // Default is zero in cate there is no content length.
@@ -553,7 +670,12 @@ class WebServer {
 		} while (strlen(readBuffer) > 0);    // empty string terminates
 	}
 
-	// Read the entity body of given length (after all the headers) into the buffer.
+	/**
+	 * Read the entity body of given length (after all the headers) into the buffer.
+	 * @param  clientId
+	 * @param nContentLength
+	 * @param content buffer
+	 */
 	void readEntityBody(uint8_t clientId, int nContentLength, BUFFER & content)
 	{
 		int i;
@@ -575,6 +697,11 @@ class WebServer {
 		//  Serial.println(content);
 	}
 
+	/**
+	 * eat headers.
+	 * @param clientId
+	 * @param readBuffer
+	 */
 	void getNextHttpLine(uint8_t clientId, BUFFER & readBuffer)
 	{
 		char c;
@@ -601,6 +728,11 @@ class WebServer {
 	}
 
 
+	/**
+	 * close a client connection and delete callback
+	 * @param socketNumber
+	 * @return success
+	 */
 	boolean closeClient(uint8_t i) {
 		#ifdef DEBUG_WEBSERVER
 		Serial.print(millis());
@@ -633,6 +765,9 @@ class WebServer {
 		return true;
 	}
 
+	/**
+	 * main loop.
+	 */
 	void loop() {
 		server.available();
 
@@ -665,6 +800,10 @@ class WebServer {
 		}
 	}
 
+	/**
+	 * callback has finished, now execute this (usually actual page creation)
+	 * @param clintId
+	 */
 	void handleFinishedCallback(uint8_t clientId) {
 		if(clientStatus[clientId].requestType == PAGE_REQUEST_SENSOR) {
 			doPageRequestSensor2(clientId);
@@ -677,6 +816,10 @@ class WebServer {
 		}
 	}
 
+	/**
+	 * welcome page
+	 * @param clientId
+	 */
 	void doPageStart(uint8_t clientId) {
 		EthernetClient client = EthernetClient(clientId);
 		sendHttpOk(clientId);
@@ -687,6 +830,10 @@ class WebServer {
 		sendHtmlFooter(clientId);
 	}
 
+	/**
+	 * stylesheet
+	 * @param clientId
+	 */
 	void doPageCss(uint8_t clientId) {
 		sendHttpOk(clientId);
 		EthernetClient client = EthernetClient(clientId);
@@ -704,6 +851,10 @@ class WebServer {
 		client.println(F("hr { border:none; height: 1px; background-color: black; }"));
 	}
 
+	/**
+	 * node overview (from routing table)
+	 * @param clientId
+	 */
 	void doPageNodes(uint8_t clientId) {
 		neighbourData* neighbours = l3.getNeighbours();
 
@@ -764,6 +915,11 @@ class WebServer {
 		sendHtmlFooter(client);
 	}
 
+	/**
+	 * helper for alternating background color str
+	 * @param clientId
+	 * @param i
+	 */
 	void sendHtmlBgColorAlternate(uint8_t clientId, uint8_t i) {
 		EthernetClient client = EthernetClient(clientId);
 		if(i % 2 == 0) {
@@ -773,6 +929,11 @@ class WebServer {
 		client.print(F(" class='bg2'"));
 	}
 
+	/**
+	 * initiating sensor discovery for a node
+	 * @param clientId
+	 * @param req
+	 */
 	void doPageSensorInfo(uint8_t clientId, RequestContent* req) {
 		if(req == NULL) {
 			sendHttp500WithBody(clientId);
@@ -806,6 +967,10 @@ class WebServer {
 		}
 	}
 
+	/**
+	 * discovery has finished - print result
+	 * @param clientId
+	 */
 	void doPageSensorInfo2(uint8_t clientId) {
 		//yay!
 		EthernetClient client = EthernetClient(clientId);
@@ -864,6 +1029,10 @@ class WebServer {
 		closeClient(clientId);
 	}
 
+	/**
+	 * first method when client connects - read http request
+	 * @param clientId
+	 */
 	void doClientHandling(uint8_t clientId) {
 
 		// now client is connected to arduino we need to extract the
@@ -915,6 +1084,11 @@ class WebServer {
 		}
 	}
 
+	/**
+	 * initiate sensor reading
+	 * @param clientId
+	 * @param req
+	 */
 	void doPageRequestSensor(uint8_t clientId, RequestContent* req) {
 		String* id = req->getValue(variableRemote);
 		if(id == NULL) {
@@ -961,6 +1135,10 @@ class WebServer {
 		}
 	}
 
+	/**
+	 * sensor reading has finished - print
+	 * @param clientId
+	 */
 	void doPageRequestSensor2(uint8_t clientId) {
 		EthernetClient client = EthernetClient(clientId);
 		hardwareRequestListener* listener = (hardwareRequestListener*) clientStatus[clientId].callback;
