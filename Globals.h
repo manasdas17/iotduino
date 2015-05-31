@@ -45,6 +45,7 @@ Light light;
 #endif
 
 #define WEBSERVER_ENABLE
+#define SDCARD_ENABLE
 
 
 #endif /* GLOBALS_H_ */
