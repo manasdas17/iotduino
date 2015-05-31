@@ -33,19 +33,22 @@ SimpleTimer timer;
 #include <interfaces/output/RCSwitchTevionFSI07.h>
 #include <interfaces/input/MotionDetector.h>
 #include <interfaces/input/Light.h>
+#include <interfaces/output/MyTone.h>
+
+#define RTC_ENABLE
+#ifdef RTC_ENABLE
+	#include <interfaces/input/RTC.h>
+	RTC rtc;
+#endif
+
 
 DHT11 dht11;
 RCSwitchTevionFSI07 rcsw;
 MotionDetector motion;
 Light light;
 
-#ifndef PRODUCTIVE_MEGA328P
-	#include <interfaces/output/MyTone.h>
-	MyTone mytone;
-#endif
-
-#define WEBSERVER_ENABLE
-#define SDCARD_ENABLE
+//#define WEBSERVER_ENABLE
+//#define SDCARD_ENABLE
 
 
 #endif /* GLOBALS_H_ */

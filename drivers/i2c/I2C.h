@@ -24,6 +24,8 @@ class I2C : public HardwareDriver {
 		virtual void init(uint8_t i2cAddress, uint8_t hwaddress) {
 			this->i2cAddress = i2cAddress;
 			HardwareDriver::init(hwaddress);
+
+			Wire.begin();
 		}
 
 	public:

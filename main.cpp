@@ -14,6 +14,11 @@
 	WebServer webServer;
 #endif
 
+#ifdef SDCARD_ENABLE
+	#include <sdcard/SDcard.h>
+	SDcard sdcard;
+#endif
+
 
 /**
  * read pin 4..9 inverted
@@ -335,22 +340,22 @@ void setup() {
 	rcsw.init(A6, 21);
 	motion.init(A4, 50);
 	light.init(A5, 60);
+	//mytone.init(A8, 70);
 
+	#ifdef RTC_ENABLE
+		rtc.init(90);
+		hwInterface.registerDriver((HardwareDriver*) &rtc);
+	#endif
 
 	hwInterface.registerDriver((HardwareDriver*) &dht11);
 	hwInterface.registerDriver((HardwareDriver*) &rcsw);
 	hwInterface.registerDriver((HardwareDriver*) &motion);
 	hwInterface.registerDriver((HardwareDriver*) &light);
-
-	#ifndef PRODUCTIVE_MEGA328P
-		hwInterface.registerDriver((HardwareDriver*) &mytone);
-		mytone.init(14, 70);
-	#endif
+	//hwInterface.registerDriver((HardwareDriver*) &mytone);
 
 	dispatcher.init(&l3, &hwInterface);
 
 	timer.init();
-
 /*
 	//mySimpleTimer = SimpleTimer::instance();
 
