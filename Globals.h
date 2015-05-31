@@ -9,6 +9,12 @@
 #ifndef GLOBALS_H_
 #define GLOBALS_H_
 
+#define RTC_ENABLE
+#define SDCARD_ENABLE
+//#define WEBSERVER_ENABLE
+//#define SDCARD_ENABLE
+
+
 #include <DebugConfig.h>
 
 #include <networking/Layer3.h>
@@ -35,10 +41,17 @@ SimpleTimer timer;
 #include <interfaces/input/Light.h>
 #include <interfaces/output/MyTone.h>
 
-#define RTC_ENABLE
 #ifdef RTC_ENABLE
 	#include <interfaces/input/RTC.h>
 	RTC rtc;
+
+#endif
+
+#ifdef SDCARD_ENABLE
+	#include <sdcard/SDcard.h>
+	SDcard sdcard;
+
+	SDHardwareRequestListener sdlistener;
 #endif
 
 
@@ -46,9 +59,5 @@ DHT11 dht11;
 RCSwitchTevionFSI07 rcsw;
 MotionDetector motion;
 Light light;
-
-//#define WEBSERVER_ENABLE
-//#define SDCARD_ENABLE
-
 
 #endif /* GLOBALS_H_ */
