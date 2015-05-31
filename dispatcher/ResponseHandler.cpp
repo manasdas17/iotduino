@@ -127,7 +127,7 @@ uint8_t ResponseHandler::getListener(responseListener_t** listenersList, const p
 	#endif
 	uint8_t found = 0;
 	for(uint8_t i = 0; i < LISTENER_NUM; i++) {
-		if((listeners[i].packetType == type || listeners[i].seqNumber == seq) && listeners[i].remote == remote) {
+		if((listeners[i].packetType == type || listeners[i].seqNumber == seq) && (listeners[i].remote == remote || listeners[i].remote == 0)) {
 			listenersList[found] = &listeners[i];
 			found++;
 		}
