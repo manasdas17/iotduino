@@ -14,23 +14,20 @@ boolean ResponseHandler::handleReponseNumbered(const seq_t seq, const packet_typ
 	#endif
 
 	//search for seq listener
-	responseListener_t* listener = getListener(seq, remote);
+	responseListener_t* listenersList[LISTENER_NUM];
+	uint8_t listenersFound = getListener(listenersList, type, seq, remote);
 
-	//search for type listener if none found
-	if(listener == NULL) {
-		listener = getListener(type, remote);
-	}
-
-	if(listener == NULL)
+	if(listenersFound == 0)
 		return false;
 
-	if(type == NACK) {
-		listener->callbackObj->fail(seq, remote);
-		return true;
+	//iterate
+	for(uint8_t i = 0; i < listenersFound; i++) {
+		if(type == NACK) {
+			listenersList[i]->callbackObj->fail(seq, remote);
+		} else {
+			listenersList[i]->callbackObj->doCallback(appPacket, remote, seq);
+		}
 	}
-
-	listener->callbackObj->doCallback(appPacket, remote, seq);
-
 	return true;
 }
 
@@ -117,60 +114,32 @@ void ResponseHandler::maintainListeners() {
 	}
 }
 
-ResponseHandler::responseListener_t* ResponseHandler::getListener(const seq_t seq, const l3_address_t remote) {
+uint8_t ResponseHandler::getListener(responseListener_t** listenersList, const packet_type_application_t type, const seq_t seq, const l3_address_t remote) {
 	#ifdef DEBUG_HANDLER_ENABLE
 		Serial.print(millis());
 		Serial.print(F(": ResponseHandler::getListener() seq="));
 		Serial.print(seq);
+		Serial.print(F(" type="));
+		Serial.println(type);
 		Serial.print(F(" remote="));
 		Serial.println(remote);
 		Serial.flush();
-		#endif
-		for(uint8_t i = 0; i < LISTENER_NUM; i++) {
-			if(listeners[i].seqNumber == seq && listeners[i].remote == remote) {
-				#ifdef DEBUG_HANDLER_ENABLE
-				Serial.print(millis());
-				Serial.println(F(":\tfound"));
-				Serial.flush();
-				#endif
-				return &listeners[i];
-			}
-		}
-
-		#ifdef DEBUG_HANDLER_ENABLE
-		Serial.print(millis());
-		Serial.println(F(": \tnone found."));
-		Serial.flush();
-		#endif
-		return NULL;
-}
-
-ResponseHandler::responseListener_t* ResponseHandler::getListener(const packet_type_application_t type, const l3_address_t remote) {
-	#ifdef DEBUG_HANDLER_ENABLE
-	Serial.print(millis());
-	Serial.print(F(": ResponseHandler::getListener() type="));
-	Serial.print(type);
-	Serial.print(F(" remote="));
-	Serial.println(remote);
-	Serial.flush();
 	#endif
+	uint8_t found = 0;
 	for(uint8_t i = 0; i < LISTENER_NUM; i++) {
-		if(listeners[i].packetType == type && listeners[i].remote == remote) {
-			#ifdef DEBUG_HANDLER_ENABLE
-			Serial.print(millis());
-			Serial.println(F(":\tfound"));
-			Serial.flush();
-			#endif
-			return &listeners[i];
+		if((listeners[i].packetType == type || listeners[i].seqNumber == seq) && listeners[i].remote == remote) {
+			listenersList[found] = &listeners[i];
+			found++;
 		}
 	}
 
 	#ifdef DEBUG_HANDLER_ENABLE
-	Serial.print(millis());
-	Serial.println(F(": \tnone found."));
-	Serial.flush();
+		Serial.print(millis());
+		Serial.println(F(": \tfoundNum="));
+		Serial.print(found);
+		Serial.flush();
 	#endif
-	return NULL;
+	return found;
 }
 
 void ResponseHandler::loop() {

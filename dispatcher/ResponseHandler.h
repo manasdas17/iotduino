@@ -100,17 +100,12 @@ class ResponseHandler {
 
 		/**
 		 * return a listener if available
-		 * @param desired sequence number
-		 * @param desired l3 remote address
+		 * @param listeners array for listener pointers
+		 * @param type packet type
+		 * @param seq number
+		 * @param remote address
 		 */
-		 responseListener_t* getListener(const seq_t seq, const l3_address_t remote);
-
-		/**
-		 * return a listener if available
-		 * @param desired type
-		 * @param desired l3 remote address
-		 */
-		 responseListener_t* getListener(const packet_type_application_t type, const l3_address_t remote);
+		uint8_t getListener(responseListener_t** listeners, const packet_type_application_t type, const seq_t seq, const l3_address_t remote);
 
 		/**
 		 * check callbacks for timeouts; in case of timeout, triggers FAIL() on callback
