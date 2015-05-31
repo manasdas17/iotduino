@@ -21,6 +21,7 @@ extern SDcard sdcard;
  * handler for hardware request responses - writes everything to sdcard.
  */
 class SDHardwareRequestListener : public EventCallbackInterface {
+	public:
 	/**
 	 * @param appLayerPacket information
 	 * @param address remote
