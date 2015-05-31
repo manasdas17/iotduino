@@ -8,12 +8,6 @@
 #include <Globals.h>
 #include <avr/wdt.h>
 
-
-#ifdef WEBSERVER_ENABLE
-	#include <gateway/WebServer.h>
-	WebServer webServer;
-#endif
-
 /**
  * read pin 4..9 inverted
  */
