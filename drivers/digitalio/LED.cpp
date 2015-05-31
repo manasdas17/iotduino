@@ -47,3 +47,8 @@ boolean LED::writeVal( HardwareTypeIdentifier type, HardwareCommandResult* resul
 boolean LED::read() {
 	return false;
 }
+
+HardwareTypeIdentifier* LED::getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
+	arr = DigitalIOGeneric::getImplementedInterfaces(arr, maxLen);
+	return this->addImplementedInterface(arr, maxLen, HWTYPE_led);
+}

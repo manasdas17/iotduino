@@ -83,7 +83,10 @@ class BMP085 : public I2C, public Pressure, public Temperature {
 
 	public:
 		BMP085() {
-			this->address = BMP085_ADDRESS;
+		}
+
+		void init(uint8_t hwaddress) {
+			I2C::init(hwaddress, BMP085_ADDRESS);
 			Wire.begin();
 			bmp085Calibration();
 		}

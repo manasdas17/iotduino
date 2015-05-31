@@ -79,8 +79,12 @@ void InvenSenseMPU6050::getSensorData() {
 }
 
  InvenSenseMPU6050::InvenSenseMPU6050() {
+}
+
+void InvenSenseMPU6050::init(uint8_t hwaddress) {
+	I2C::init(MPU6050_I2C_ADDRESS, hwaddress);
+
 	this->lastReadTimestamp = 0;
-	this->address = MPU6050_I2C_ADDRESS;
 	Wire.begin();
 
 	// default at power-up:
@@ -166,8 +170,7 @@ boolean InvenSenseMPU6050::readVal( HardwareTypeIdentifier type, HardwareCommand
 }
 
 boolean InvenSenseMPU6050::implementsInterface( HardwareTypeIdentifier type ) {
-	if(type == HWType_accelerometer || type == HWType_gyroscope || type == HWType_temprature)
+	if(I2C::implementsInterface(type) || type == HWType_accelerometer || type == HWType_gyroscope || type == HWType_temprature)
 		return true;
 	return false;
 }
-

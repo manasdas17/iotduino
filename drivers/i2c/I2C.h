@@ -18,10 +18,29 @@
 #include <Wire.h>
 
 class I2C : public HardwareDriver {
-	public:
-		uint8_t address;
+	protected:
+	uint8_t i2cAddress;
 
-		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) = 0;
+		virtual void init(uint8_t i2cAddress, uint8_t hwaddress) {
+			this->i2cAddress = i2cAddress;
+			HardwareDriver::init(hwaddress);
+		}
+
+	public:
+		virtual void init(uint8_t hwaddress) = 0;
+
+		virtual boolean implementsInterface( HardwareTypeIdentifier type ) = 0;
+
+		virtual boolean readVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) = 0;
+		virtual boolean writeVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) = 0;
+
+		inline virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
+			return arr;
+		}
+
+		inline virtual uint8_t getI2CAddress() {
+			return i2cAddress;
+		}
 };
 
 #endif  //_I2C_H

@@ -32,10 +32,7 @@ class LED : public DigitalIOGeneric {
 
 		boolean implementsInterface( HardwareTypeIdentifier type );
 
-		HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
-			arr = DigitalIOGeneric::getImplementedInterfaces(arr, maxLen);
-			return this->addImplementedInterface(arr, maxLen, HWTYPE_led);
-		}
+		HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen);
 
 		/**
 		 * @param type

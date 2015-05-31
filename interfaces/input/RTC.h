@@ -5,7 +5,7 @@
 //  @ Project : Untitled
 //  @ File Name : RTC.h
 //  @ Date : 20.10.2014
-//  @ Author : 
+//  @ Author :
 //
 //
 
@@ -51,7 +51,7 @@ class DateTime {
 			}
 			d = days + 1;
 		}
-		
+
 		DateTime (uint16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t min, uint8_t sec) {
 			if (year >= 2000)
 			year -= 2000;
@@ -85,7 +85,7 @@ class DateTime {
 			mm = conv2d(time + 3);
 			ss = conv2d(time + 6);
 		}
-		
+
 		uint16_t year() const       { return 2000 + yOff; }
 		uint8_t month() const       { return m; }
 		uint8_t day() const         { return d; }
@@ -113,7 +113,7 @@ class DateTime {
 
 	protected:
 		uint8_t yOff, m, d, hh, mm, ss;
-		
+
 		static uint8_t conv2d(const char* p) {
 			uint8_t v = 0;
 			if ('0' <= *p && *p <= '9')
@@ -144,19 +144,19 @@ class RTC_Millis {
 
 class RTC : I2C {
     static uint8_t begin(void);
-		
+
 
 	public:
 		const uint8_t daysInMonth [] PROGMEM = { 31,28,31,30,31,30,31,31,30,31,30,31 };
 
 		RTC() {
 			this->address = DS1307_ADDRESS;
-		
+
 			if (isrunning()) {
 				Serial.println("RTC is NOT running!");
 				// following line sets the RTC to the date & time this sketch was compiled
 				adjust(DateTime(__DATE__, __TIME__));
-			}		
+			}
 		}
 
 		// number of days since 2000/01/01, valid for 2001..2099
@@ -178,7 +178,7 @@ class RTC : I2C {
 		static uint8_t bcd2bin (uint8_t val) {
 			return val - 6 * (val >> 4);
 		}
-	
+
 		static uint8_t bin2bcd (uint8_t val) {
 			return val + 6 * (val / 10);
 		}
@@ -229,10 +229,56 @@ class RTC : I2C {
 		uint32_t read() {
 			return this->now().unixtime();
 		}
-		
+
 		void set(uint32_t unixtime) {
 			this->adjust(DateTime(unixtime));
 		}
+
+		virtual boolean implementsInterface(HardwareTypeIdentifier type) {
+			if(type == HWType_rtc)
+				return true;
+			return false;
+		}
+
+		virtual boolean readVal(HardwareTypeIdentifier type, HardwareCommandResult* result) {
+			uint32_t now = this->now();
+
+			result->isRead = 1;
+			result->setUint8ListNum(4);
+
+			//MSB first
+			result->getUint8List()[0] = (now >> 24) & 0xff;
+			result->getUint8List()[1] |= (now >> 16) & 0xff;
+			result->getUint8List()[2] |= (now >> 8) & 0xff;
+			result->getUint8List()[3] |= (now) & 0xff;
+
+			return true;
+		}
+
+		virtual boolean writeVal(HardwareTypeIdentifier type, HardwareCommandResult* result) {
+			if(result->getUint8ListNum() < 4)
+				return false;
+			uint32_t time = 0;
+			//MSB first
+			time |= ((uint32_t) result->getUint8List()[4]) << 24;
+			time |= ((uint32_t) result->getUint8List()[4]) << 16;
+			time |= ((uint32_t) result->getUint8List()[4]) << 8;
+			time |= ((uint32_t) result->getUint8List()[4]);
+
+			adjust(DateTime(time));
+
+			return true;
+		}
+
+		virtual HardwareTypeIdentifier* getImplementedInterfaces(HardwareTypeIdentifier* arr, uint8_t maxLen) {
+			arr = I2C::getImplementedInterfaces(arr, maxLen);
+			return addImplementedInterface(arr, maxLen, HWType_rtc);
+		}
+
+		void init(uint8_t hwaddress) {
+			RTC::init(DS1307_ADDRESS, hwaddress);
+		}
+
 };
 
 #endif  //_RTC_H

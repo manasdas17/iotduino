@@ -13,7 +13,7 @@
 #include "../../interfaces/input/Sonar.h"
 
 uint8_t Sonar::read() {
-	Wire.requestFrom(this->address, 1);
+	Wire.requestFrom(this->i2cAddress, 1);
 	uint8_t val = Wire.read();
 	return (val != 0xff) ? val : 0;
 }
@@ -33,5 +33,10 @@ boolean Sonar::implementsInterface( HardwareTypeIdentifier type ) {
 	if(type == HWType_sonar)
 		return true;
 	return false;
+}
+
+void Sonar::init(uint8_t hwaddress) {
+	I2C::init(0x43, hwaddress);
+	Wire.begin();
 }
 

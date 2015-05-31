@@ -779,7 +779,7 @@ class InvenSenseMPU6050 : public I2C, public Temperature, public Accelerometer, 
 			return this->addImplementedInterface(arr, maxLen, HWType_temprature);
 		}
 
-
+		void init(uint8_t hwaddress);
 };
 
 #endif  //_INVENSENSEMPU6050_H
