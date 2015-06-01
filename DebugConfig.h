@@ -13,15 +13,18 @@
 
 #define RTC_ENABLE
 #define SDCARD_ENABLE
-#define WEBSERVER_ENABLE
+//#define WEBSERVER_ENABLE
 
 #define ENABLE_EVENTS				//program memory heavily depends on used drivers
 #define ENABLE_SUBSCRIPTION_SERVICE //~1100 bytes progam memory
 #define ENABLE_DISCOVERY_SERVICE	//~500 bytes program memory
 
-//#define DEBUG_NETWORK_ENABLE
-//#define DEBUG_HANDLER_ENABLE
-//#define DEBUG_HARDWARE_ENABLE
-//#define DEBUG_SD_ENABLE
+#define DEBUG_NETWORK_ENABLE
+#define DEBUG_HANDLER_ENABLE
+#define DEBUG_HARDWARE_ENABLE
+#define DEBUG_SD_ENABLE
+#define DEBUG_WEBSERVER_ENABLE
+#define DEBUG_SUBSCRIPTION_MGR_ENABLE
+
 
 #endif /* DEBUGCONFIG_H_ */

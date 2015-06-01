@@ -40,8 +40,6 @@ extern Layer3 l3;
 extern PacketDispatcher dispatcher;
 extern PacketFactory pf;
 
-#define DEBUG_WEBSERVER
-
 #define STRING_BUFFER_SIZE 128
 //#define USE_DHCP_FOR_IP_ADDRESS
 
@@ -735,7 +733,7 @@ class WebServer {
 	 * @return success
 	 */
 	boolean closeClient(uint8_t i) {
-		#ifdef DEBUG_WEBSERVER
+		#ifdef DEBUG_WEBSERVER_ENABLE
 		Serial.print(millis());
 		Serial.print(F(": WebServer::closeClient() clientSlot="));
 		Serial.println(i);
@@ -791,7 +789,7 @@ class WebServer {
 
 			//handle conenctions
 			if(clientStatus[i].inUse == true && clientStatus[i].waiting == false) {
-				#ifdef DEBUG_WEBSERVER
+				#ifdef DEBUG_WEBSERVER_ENABLE
 				Serial.print(millis());
 				Serial.print(F(": WebServer::loop() handle clientSlot="));
 				Serial.println(i);

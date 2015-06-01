@@ -135,8 +135,8 @@ uint8_t ResponseHandler::getListener(responseListener_t** listenersList, const p
 
 	#ifdef DEBUG_HANDLER_ENABLE
 		Serial.print(millis());
-		Serial.println(F(": \tfoundNum="));
-		Serial.print(found);
+		Serial.print(F(": \tfoundNum="));
+		Serial.println(found);
 		Serial.flush();
 	#endif
 	return found;

@@ -424,11 +424,15 @@ boolean Layer3::updateNeighbour( l3_address_t destination, l3_address_t nextHop,
 	#endif
 
 	if(destination == localAddress) {
-		Serial.println(F("\tthis is us, no routing update!"));
+		#ifdef DEBUG_NETWORK_ENABLE
+			Serial.println(F("\tthis is us, no routing update!"));
+		#endif
 		return true;
 	}
 	if(hopCount > CONFIG_L3_MAX_HOPCOUNT) {
-		Serial.println(F("\ttoo many hops, discard."));
+		#ifdef DEBUG_NETWORK_ENABLE
+			Serial.println(F("\ttoo many hops, discard."));
+		#endif
 		return true;
 	}
 

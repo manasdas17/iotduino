@@ -372,6 +372,7 @@ void setup() {
 
 	timer.init();
 
+/*
 	#ifdef SDCARD_ENABLE
 		char buf[17];
 		memset(buf, 0, sizeof(buf));
@@ -403,6 +404,7 @@ void setup() {
 		dispatcher.handleNumbered(13, HARDWARE_COMMAND_RES, 123, &appPacket);
 		//sdlistener.doCallback(&appPacket, 17, 1234);
 	#endif
+*/
 
 /*
 	//mySimpleTimer = SimpleTimer::instance();
@@ -471,6 +473,10 @@ void loop() {
 
 	//watchdog reset.
 	wdt_reset();
+
+	#ifdef SDCARD_ENABLE
+		subscriptionManager.loop();
+	#endif
 }
 
 /***

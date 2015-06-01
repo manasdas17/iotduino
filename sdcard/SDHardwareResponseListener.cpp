@@ -28,7 +28,15 @@ void SDHardwareRequestListener::doCallback(packet_application_numbered_cmd_t* ap
 	//                  +--------------+------------+
 	char bytes[40];
 	uint8_t offset = 0;
-	uint32_t now = rtc.read();
+
+	#ifdef RTC_ENABLE
+		uint32_t now = rtc.read();
+	#else
+		uint32_t now = millis();
+		#ifdef SDCARD_ENABLE
+			#warning RTC_ENABLE NOT SET, USING INTERNAL MILLIS FOR TIMESTAMP.
+		#endif
+	#endif
 
 	#ifdef SD_LOGGER_BINARY
 		memcpy(&bytes[0], &now, 4);

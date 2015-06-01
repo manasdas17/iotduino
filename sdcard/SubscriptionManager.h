@@ -115,12 +115,24 @@ class SubscriptionManager {
 			subscription_set_t* tmp = (subscription_set_t*) appLayerPacket->payload;
 			subscription_helper_t* subscriptionInfo = (subscription_helper_t*) &tmp->info;
 
+			#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
+				Serial.print(millis());
+				Serial.println(F(": SubscriptionManager::SubscriptionManagerSubscriptionCallback::doCallback() HARDWARE_SUBSCRIPTION_SET_RES"));
+				Serial.print(F("\tremote="));
+				Serial.print(address);
+				Serial.print(F(" hwtype="));
+				Serial.print(subscriptionInfo->hardwareType);
+				Serial.print(F(" hwaddress="));
+				Serial.println(subscriptionInfo->hardwareAddress);
+				Serial.flush();
+			#endif
+
 			parent->saveSubscription(subscriptionInfo);
 		}
 	};
 
 	/** callback handler for subscriptions */
-	SubscriptionManagerSubscriptionCallback subsciptionCallback;
+	SubscriptionManagerSubscriptionCallback subscriptionCallback;
 	/** callback handler for discovery */
 	SubscriptionManagerDiscoveryCallback discoveryCallback;
 
@@ -147,6 +159,17 @@ class SubscriptionManager {
 		 * @param hwType
 		 */
 		boolean sendSubscriptionRequest(l3_address_t destination, uint8_t hwAddress, HardwareTypeIdentifier hwType) {
+			#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
+				Serial.print(millis());
+				Serial.print(F(": SubscriptionManager::sendSubscriptionRequest() destination="));
+				Serial.print(destination);
+				Serial.print(F(" hwType="));
+				Serial.print(hwType);
+				Serial.print(F(" hwAddress="));
+				Serial.println(hwAddress);
+				Serial.flush();
+			#endif
+
 			Layer3::packet_t p;
 			memset(&p, 0, sizeof(p));
 			seq_t seq = random(1, 0xffff);
@@ -160,6 +183,13 @@ class SubscriptionManager {
 		 * @return success
 		 */
 		boolean sendDiscoveryRequest(l3_address_t node) {
+			#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
+				Serial.print(millis());
+				Serial.print(F(": SubscriptionManager::sendDiscoveryRequest() node="));
+				Serial.println(node);
+				Serial.flush();
+			#endif
+
 			Layer3::packet_t p;
 			memset(&p, 0, sizeof(p));
 			//seq_t seq = pf.generateDiscoveryInfoRequest(&p, node);
@@ -174,12 +204,12 @@ class SubscriptionManager {
 			memset(&activeSubscriptions, 0, sizeof(activeSubscriptions));
 			memset(&lastRefresh, 0, sizeof(lastRefresh));
 
-			subsciptionCallback.init(this);
+			subscriptionCallback.init(this);
 			discoveryCallback.init(this);
 
 			//register listeners by type.
-			dispatcher.getResponseHandler()->registerListenerByPacketType(0, HARDWARE_SUBSCRIPTION_SET_RES, 0, &subsciptionCallback);
-			dispatcher.getResponseHandler()->registerListenerByPacketType(0, HARDWARE_DISCOVERY_RES, 0, &subsciptionCallback);
+			dispatcher.getResponseHandler()->registerListenerByPacketType(0, HARDWARE_SUBSCRIPTION_SET_RES, 0, &subscriptionCallback);
+			dispatcher.getResponseHandler()->registerListenerByPacketType(0, HARDWARE_DISCOVERY_RES, 0, &discoveryCallback);
 
 			lastSubscriptionRequest = 0;
 			lastDiscoveryRequest = 0;
@@ -242,8 +272,7 @@ class SubscriptionManager {
 
 				//we have a node, send request.
 				if(neighbours[nextDiscoveryRequestNeighbourIndex].nodeId > 0) {
-					sendDiscoveryRequest(nextDiscoveryRequestNeighbourIndex);
-
+					sendDiscoveryRequest(neighbours[nextDiscoveryRequestNeighbourIndex].nodeId);
 				}
 
 				//iterate
@@ -258,6 +287,13 @@ class SubscriptionManager {
 		 */
 		void deleteSubscription(uint8_t index) {
 			if(index > 0 && index < MAX_ACTIVE_SUBSCRIPTIONS) {
+				#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
+					Serial.print(millis());
+					Serial.print(F(": SubscriptionManager::deleteSubscription() index="));
+					Serial.println(index);
+					Serial.flush();
+				#endif
+
 				memset(&activeSubscriptions[index], 0, sizeof(subscription_helper_t));
 				lastRefresh[index] = 0;
 			}
@@ -305,6 +341,24 @@ class SubscriptionManager {
 			else if(subscriptionInfo->millisecondsDelay > 0 && subscriptionInfo->onEventType != EVENT_TYPE_DISABLED)
 				return false;
 
+			#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
+				Serial.print(millis());
+				Serial.print(F(": SubscriptionManager::saveSubscription() info=[forNode="));
+				Serial.print(subscriptionInfo->address);
+				Serial.print(F(" hwAddress="));
+				Serial.print(subscriptionInfo->hardwareAddress);
+				Serial.print(F(" hwType="));
+				Serial.print(subscriptionInfo->hardwareType);
+				Serial.print(F(" delay="));
+				Serial.print(subscriptionInfo->millisecondsDelay);
+				Serial.print(F(" event="));
+				Serial.print(subscriptionInfo->onEventType);
+				Serial.print(F(" seq="));
+				Serial.print(subscriptionInfo->sequence);
+				Serial.println(F("]"));
+				Serial.flush();
+			#endif
+
 			//get existing slot
 			int8_t index = getSubscriptionSlot(subscriptionInfo->address, subscriptionInfo->hardwareAddress, (HardwareTypeIdentifier) subscriptionInfo->hardwareType);
 
@@ -320,6 +374,14 @@ class SubscriptionManager {
 			lastRefresh[index] = millis();
 			memcpy(&activeSubscriptions[index], subscriptionInfo, sizeof(subscription_helper_t));
 
+			#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
+				Serial.print(F("\tsaved in slot="));
+				Serial.print(index);
+				Serial.print(F(" timestamp="));
+				Serial.println(lastRefresh[index]);
+				Serial.flush();
+			#endif
+
 			return true;
 		}
 
@@ -329,9 +391,24 @@ class SubscriptionManager {
 		 * @return register
 		 */
 		boolean registerForType(HardwareTypeIdentifier type) {
+			#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
+				Serial.print(millis());
+				Serial.print(F(": SubscriptionManager::registerForType() type="));
+				Serial.print(type);
+				Serial.flush();
+			#endif
+
 			for(uint8_t i = 0; i < REGISTER_FOR_HWTYPES_NUM; i++) {
-				if(REGISTER_FOR_HWTYPES[i] == type)
+				if(REGISTER_FOR_HWTYPES[i] == type) {
+					#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
+						Serial.println(F(" yes."));
+					#endif
 					return true;
+				}
+				#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
+				else
+					Serial.println(F(" nope."));
+				#endif
 			}
 
 			return false;
