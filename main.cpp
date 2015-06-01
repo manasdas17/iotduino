@@ -372,35 +372,35 @@ void setup() {
 	timer.init();
 
 	#ifdef SDCARD_ENABLE
-	char buf[17];
-	memset(buf, 0, sizeof(buf));
-	Serial.print(millis());
-	Serial.print(F(": nodeinfo"));
-	if(sdcard.getNodeInfo(l3.localAddress, (uint8_t*) buf, sizeof(buf))) {
-		buf[16] = '\0';
-		Serial.print(F("=\""));
-		Serial.print(buf);
-		Serial.println(F("\""));
-		} else {
-		Serial.println(F(" not available"));
-	}
+		char buf[17];
+		memset(buf, 0, sizeof(buf));
+		Serial.print(millis());
+		Serial.print(F(": nodeinfo"));
+		if(sdcard.getNodeInfo(l3.localAddress, (uint8_t*) buf, sizeof(buf))) {
+			buf[16] = '\0';
+			Serial.print(F("=\""));
+			Serial.print(buf);
+			Serial.println(F("\""));
+			} else {
+			Serial.println(F(" not available"));
+		}
 
-	dispatcher.getResponseHandler()->registerListenerByPacketType(0, HARDWARE_COMMAND_RES, 0, &sdlistener);
+		dispatcher.getResponseHandler()->registerListenerByPacketType(0, HARDWARE_COMMAND_RES, 0, &sdlistener);
 
-	packet_application_numbered_cmd_t appPacket;
-	memset(&appPacket, 0, sizeof(appPacket));
-	appPacket.packetType = HARDWARE_COMMAND_RES;
-	command_t* hwcmd = (command_t*) appPacket.payload;
-	hwcmd->address = 10;
-	hwcmd->type = HWType_rtc;
-	hwcmd->numUint8 = 4;
-	uint32_t now = rtc.read();
-	hwcmd->uint8list[0] = now >> 24;
-	hwcmd->uint8list[1] = (now >> 16) & 0xff;
-	hwcmd->uint8list[2] = (now >> 8) & 0xff;
-	hwcmd->uint8list[3] = now & 0xff;
-	dispatcher.handleNumbered(13, HARDWARE_COMMAND_RES, 123, &appPacket);
-	//sdlistener.doCallback(&appPacket, 17, 1234);
+		packet_application_numbered_cmd_t appPacket;
+		memset(&appPacket, 0, sizeof(appPacket));
+		appPacket.packetType = HARDWARE_COMMAND_RES;
+		command_t* hwcmd = (command_t*) appPacket.payload;
+		hwcmd->address = 10;
+		hwcmd->type = HWType_rtc;
+		hwcmd->numUint8 = 4;
+		uint32_t now = rtc.read();
+		hwcmd->uint8list[0] = now >> 24;
+		hwcmd->uint8list[1] = (now >> 16) & 0xff;
+		hwcmd->uint8list[2] = (now >> 8) & 0xff;
+		hwcmd->uint8list[3] = now & 0xff;
+		dispatcher.handleNumbered(13, HARDWARE_COMMAND_RES, 123, &appPacket);
+		//sdlistener.doCallback(&appPacket, 17, 1234);
 	#endif
 
 /*
