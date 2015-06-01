@@ -124,7 +124,7 @@ typedef struct subscription_helper_struct {
 	uint32_t millisecondsDelay;				//4b
 	subscription_event_type_t onEventType;	//1b
 	seq_t sequence;							//2b
-} subscription_helper_t;					//sum=13
+} subscription_helper_t;					//sum=11
 
 /** subscription information */
 typedef struct substcripton_info_struct {

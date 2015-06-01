@@ -10,7 +10,6 @@
 #define SDCARD_H_
 
 #include <Arduino.h>
-#include <DebugConfig.h>
 #include <SD/SD.h>
 #include <dispatcher/EventCallbackInterface.h>
 #include <dispatcher/Commands.h>
@@ -65,4 +64,5 @@ class SDcard {
 		 */
 		boolean openFile(char* fileName, FileMode mode);
 };
+
 #endif /* SDCARD_H_ */

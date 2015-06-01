@@ -9,7 +9,6 @@
 #ifndef __SDHARDWARERESPONSELISTENER_H__
 #define __SDHARDWARERESPONSELISTENER_H__
 
-
 #include <Arduino.h>
 #include <sdcard/SDcard.h>
 #include <interfaces/input/RTC.h>

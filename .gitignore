@@ -27,3 +27,4 @@ networking/rf24test/RF24.h
 networking/rf24test/RF24_config.h
 networking/rf24test/nRF24L01.h
 networking/rf24test/printf.h
+iotduino.cppcheck
