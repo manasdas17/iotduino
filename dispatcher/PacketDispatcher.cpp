@@ -38,6 +38,7 @@ boolean PacketDispatcher::handleNumbered(const seq_t seq, const packet_type_appl
 		case ACK:
 		case NACK:
 		case HARDWARE_COMMAND_RES:
+		case HARDWARE_SUBSCRIPTION_SET_RES:
 			return responseHandler.handleReponseNumbered(seq, type, remote, appPacket);
 
 	#ifdef ENABLE_DISCOVERY_SERVICE
