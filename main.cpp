@@ -320,6 +320,7 @@ void setup() {
 
 	#ifdef SDCARD_ENABLE
 		sdcard.init();
+		subscriptionManager.init();
 	#endif
 
 	//init network

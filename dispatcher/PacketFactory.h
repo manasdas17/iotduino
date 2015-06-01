@@ -184,7 +184,6 @@ class PacketFactory {
 			return generateSubscriptionSetGeneric(p, destination, localAddress, hwAddress, hwType, period, EVENT_TYPE_DISABLED, callbackSequence);
 		}
 
-	protected:
 		/**
 		 * @param p l3 packet where data is returned
 		 * @param destination l3 address
@@ -222,6 +221,7 @@ class PacketFactory {
 			return numbered.seqNumber;
 		}
 
+	protected:
 		/**
 		 * @param p l3 packet where data is returned
 		 * @param destination l3 address

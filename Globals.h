@@ -45,6 +45,9 @@ SimpleTimer timer;
 
 	#include <sdcard/SDHardwareResponseListener.h>
 	SDHardwareRequestListener sdlistener;
+
+	#include <sdcard/SubscriptionManager.h>
+	SubscriptionManager subscriptionManager;
 #endif
 
 #ifdef WEBSERVER_ENABLE
