@@ -238,7 +238,7 @@ class RequestContent {
 			index = num;
 
 			if(num >= RequestContentNumKeys)
-				return -1
+				return -1;
 			keys[index] = key;
 			num++;
 		}
@@ -527,9 +527,10 @@ class WebServer {
 	void sendHtmlMenu(uint8_t clientId) {
 		EthernetClient client = EthernetClient(clientId);
 		uint8_t menuPages[] = {PAGE_MAIN, PAGE_NODES};
+		uint8_t menuPagesNum = 2;
 		client.print("<h1>Menu</h1><ul>");
 
-		for(uint8_t i = 0; i < sizeof(menuPages); i++) {
+		for(uint8_t i = 0; i < menuPagesNum; i++) {
 			client.print("<li><a href='");
 			this->printP(clientId, pageAddresses[menuPages[i]]);
 			client.print("'>");
@@ -681,8 +682,8 @@ class WebServer {
 		int i;
 		char c;
 
-		if (nContentLength >= (int) sizeof(content))
-		nContentLength = sizeof(content) - 1;  // Should never happen!
+		if (nContentLength >= (int) sizeof(BUFFER))
+			nContentLength = sizeof(BUFFER) - 1;  // Should never happen!
 
 		for (i = 0; i < nContentLength; ++i)
 		{
@@ -720,7 +721,7 @@ class WebServer {
 			{
 				// read full line and save it in buffer, up to the buffer size
 				c = client.read();
-				if (bufindex < sizeof(readBuffer))
+				if (bufindex < sizeof(BUFFER))
 				readBuffer[bufindex++] = c;
 			}
 			readBuffer[bufindex - 2] = 0;  // Null string terminator overwrites '\r'
@@ -1201,6 +1202,5 @@ class WebServer {
 
 
 };
-
 
 #endif /* WEBSERVER_H_ */
