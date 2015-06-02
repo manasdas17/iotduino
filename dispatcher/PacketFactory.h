@@ -14,31 +14,20 @@
 #include <networking/Packets.h>
 #include <drivers/HardwareID.h>
 
+extern Layer3 l3;
 /**
  * singleton. class for creating application packets.
  * @author Helge
  */
 class PacketFactory {
-	private:
-		Layer3* l3;
 
 	public:
-		/** uses the generic packet creation method from l3, mandatory.
-		 * @param l3
-		 */
-		void setLayer3(Layer3* l3) {
-			this->l3 = l3;
-		}
-
 		/**
 		 * @param p l3 packet where data is returned
 		 * @param destination l3 address
 		 * @return success
 		 */
 		seq_t generateDiscoveryInfoRequest(Layer3::packet_t* p, l3_address_t destination) {
-			if(l3 == NULL)
-				return false;
-
 			//numbered
 			packet_numbered_t numbered;
 			memset(&numbered, 0, sizeof(packet_numbered_t));
@@ -52,7 +41,7 @@ class PacketFactory {
 			packet_application_numbered_discovery_info_t* infoReq = (packet_application_numbered_discovery_info_t*) appCmd->payload;
 			infoReq->numSensors = 0;
 
-			l3->createPacketGeneric(p, destination, PACKET_NUMBERED, &numbered, sizeof(packet_numbered_t));
+			l3.createPacketGeneric(p, destination, PACKET_NUMBERED, &numbered, sizeof(packet_numbered_t));
 			return numbered.seqNumber;
 		}
 
@@ -62,9 +51,6 @@ class PacketFactory {
 		 * @return success
 		 */
 		seq_t generateSubscriptionInfoRquest(Layer3::packet_t* p, l3_address_t destination) {
-			if(l3 == NULL)
-				return false;
-
 			//numbered
 			packet_numbered_t numbered;
 			memset(&numbered, 0, sizeof(packet_numbered_t));
@@ -76,9 +62,9 @@ class PacketFactory {
 
 			appCmd->packetType = HARDWARE_SUBSCRIPTION_INFO;
 			subscription_info_t* subscriptionInfo = (subscription_info_t*) appCmd->payload;
-			subscriptionInfo->forAddress = l3->localAddress;
+			subscriptionInfo->forAddress = l3.localAddress;
 
-			l3->createPacketGeneric(p, destination, PACKET_NUMBERED, &numbered, sizeof(packet_numbered_t));
+			l3.createPacketGeneric(p, destination, PACKET_NUMBERED, &numbered, sizeof(packet_numbered_t));
 			return numbered.seqNumber;
 		}
 
@@ -128,7 +114,7 @@ class PacketFactory {
 		 * @return success
 		 */
 		seq_t generateSubscriptionSetPeriodicForDiscoveryInfo(Layer3::packet_t* p, l3_address_t destination, packet_application_numbered_discovery_info_helper_t* info, uint16_t delay, seq_t callbackSeq) {
-			return generateSubscriptionSetPeriodic(p, destination, l3->localAddress, info->hardwareAddress, (HardwareTypeIdentifier) info->hardwareType, delay, callbackSeq);
+			return generateSubscriptionSetPeriodic(p, destination, l3.localAddress, info->hardwareAddress, (HardwareTypeIdentifier) info->hardwareType, delay, callbackSeq);
 		}
 
 		/**
@@ -142,7 +128,7 @@ class PacketFactory {
 		 */
 		seq_t generateSubscriptionSetEventForDiscoveryInfo(Layer3::packet_t* p, l3_address_t destination, packet_application_numbered_discovery_info_helper_t* info, subscription_event_type_t eventType, seq_t callbackSeq) {
 			if(info->canDetectEvents)
-				return generateSubscriptionSetEvent(p, destination, l3->localAddress, info->hardwareAddress, (HardwareTypeIdentifier) info->hardwareType, eventType, callbackSeq);
+				return generateSubscriptionSetEvent(p, destination, l3.localAddress, info->hardwareAddress, (HardwareTypeIdentifier) info->hardwareType, eventType, callbackSeq);
 			return false;
 		}
 
@@ -196,9 +182,26 @@ class PacketFactory {
 		 * @return success
 		 */
 		seq_t generateSubscriptionSetGeneric(Layer3::packet_t* p, l3_address_t destination, l3_address_t localAddress, uint8_t hwAddress, HardwareTypeIdentifier hwType, uint16_t period, subscription_event_type_t eventType, seq_t callbackSequence) {
-			if(l3 == NULL)
-				return false;
+			subscription_helper_t subscriptionSet;
+			memset(&subscriptionSet, 0, sizeof(subscriptionSet));
 
+			subscriptionSet.address = l3.localAddress;
+			subscriptionSet.hardwareAddress = hwAddress;
+			subscriptionSet.hardwareType = hwType;
+			subscriptionSet.millisecondsDelay = period;
+			subscriptionSet.onEventType = eventType;
+			subscriptionSet.sequence = callbackSequence;
+
+			return generateSubscriptionSetGeneric(p, destination, &subscriptionSet);
+		}
+
+		/**
+		 * generate subscription requerst based on subscription_helper_t object
+		 * @param packet to write in
+		 * @param destination
+		 * @param subscription
+		 */
+		seq_t generateSubscriptionSetGeneric(Layer3::packet_t* p, l3_address_t destination, subscription_helper_t* subscription) {
 			//numbered
 			packet_numbered_t numbered;
 			memset(&numbered, 0, sizeof(packet_numbered_t));
@@ -209,15 +212,12 @@ class PacketFactory {
 			packet_application_numbered_cmd_t* appCmd = (packet_application_numbered_cmd_t*) numbered.payload;
 			appCmd->packetType = HARDWARE_SUBSCRIPTION_SET;
 
+			//subscription
 			subscription_set_t* subscriptionSet = (subscription_set_t*) appCmd->payload;
-			subscriptionSet->info.address = l3->localAddress;
-			subscriptionSet->info.hardwareAddress = hwAddress;
-			subscriptionSet->info.hardwareType = hwType;
-			subscriptionSet->info.millisecondsDelay = period;
-			subscriptionSet->info.onEventType = eventType;
-			subscriptionSet->info.sequence = callbackSequence;
+			void* tmp = &subscriptionSet->info;
+			memcpy(tmp, subscription, sizeof(subscription_helper_t));
 
-			l3->createPacketGeneric(p, destination, PACKET_NUMBERED, &numbered, sizeof(packet_numbered_t));
+			l3.createPacketGeneric(p, destination, PACKET_NUMBERED, &numbered, sizeof(packet_numbered_t));
 			return numbered.seqNumber;
 		}
 
@@ -229,9 +229,6 @@ class PacketFactory {
 		 * @return success
 		 */
 		seq_t generateHardwareCommand(Layer3::packet_t* p, l3_address_t destination, HardwareCommandResult* command) {
-			if(l3 == NULL)
-				return false;
-
 			//numbered
 			packet_numbered_t numbered;
 			memset(&numbered, 0, sizeof(packet_numbered_t));
@@ -246,7 +243,7 @@ class PacketFactory {
 
 			appCmd->packetType = (!command->isReadRequest()) ? HARDWARE_COMMAND_WRITE : HARDWARE_COMMAND_READ;
 
-			l3->createPacketGeneric(p, destination, PACKET_NUMBERED, (void*) &numbered, sizeof(packet_numbered_t));
+			l3.createPacketGeneric(p, destination, PACKET_NUMBERED, (void*) &numbered, sizeof(packet_numbered_t));
 			return numbered.seqNumber;
 		}
 };

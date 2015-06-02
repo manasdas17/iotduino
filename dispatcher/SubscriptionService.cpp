@@ -58,16 +58,16 @@ void SubscriptionService::executeSubscriptions() {
 	if(now - SUBSCRIPTION_CHECK_PERIOD_MILLIS > lastSubscriptionCheckTimestamp && now > SUBSCRIPTION_CHECK_PERIOD_MILLIS) {
 		lastSubscriptionCheckTimestamp = millis();
 
-		#ifdef DEBUG_HANDLER_SUBSCRIPTION_ENABLE
-		Serial.print(millis());
-		Serial.println(F(": SubscriptionService::executeSubscriptions()"));
-		Serial.flush();
-		#endif
+		//#ifdef DEBUG_HANDLER_SUBSCRIPTION_ENABLE
+		//Serial.print(millis());
+		//Serial.println(F(": SubscriptionService::executeSubscriptions()"));
+		//Serial.flush();
+		//#endif
 
 		uint32_t now = millis();
 
 		for(uint8_t i = 0; i < numSubscriptionList; i++) {
-			if(subscriptions[i].address != 0 && now - subscriptionsLastExecution[i] > subscriptions[i].millisecondsDelay) {
+			if(subscriptions[i].address != 0 && now > subscriptions[i].millisecondsDelay && now - subscriptionsLastExecution[i] > subscriptions[i].millisecondsDelay) {
 				//if(subscriptions[i].address != 0 && subscriptions[i].onEvent == 0 && now - subscriptionsLastExecution[i] > subscriptions[i].millisecondsDelay) {
 				subscriptionsLastExecution[i] = now;
 				executeSubscription(&subscriptions[i]);
@@ -216,7 +216,7 @@ boolean SubscriptionService::handleSubscriptionRequest(EventCallbackInterface* c
 	}
 
 	//success
-	appPacket->packetType = ACK;
+	appPacket->packetType = HARDWARE_SUBSCRIPTION_SET_RES;
 	callback->doCallback(appPacket, remote, seq);
 	return true;
 }
@@ -228,11 +228,11 @@ void SubscriptionService::doPollingForSubscriptions() {
 	if(now - SUBSCRIPTION_POLLING_CHECK_PERIOD_MILLIS > lastSubscriptionPollingCheckTimestamp && now > SUBSCRIPTION_POLLING_CHECK_PERIOD_MILLIS) {
 		lastSubscriptionPollingCheckTimestamp = now;
 
-		#ifdef DEBUG_HANDLER_SUBSCRIPTION_ENABLE
-		Serial.print(millis());
-		Serial.println(F(": SubscriptionService::doPollingForSubscriptions()"));
-		Serial.flush();
-		#endif
+		//#ifdef DEBUG_HANDLER_SUBSCRIPTION_ENABLE
+		//Serial.print(millis());
+		//Serial.println(F(": SubscriptionService::doPollingForSubscriptions()"));
+		//Serial.flush();
+		//#endif
 
 
 		for(uint8_t i = 0; i < getSubscriptionListSize(); i++) {

@@ -14,10 +14,10 @@ const char* fileNameNodeInfo = {"NODEINFO.TXT"};
 
 boolean SDcard::openFile(char* fileName, FileMode mode) {
 	#ifdef DEBUG_SD_ENABLE
-	Serial.print(F("openeing "));
-	Serial.print(fileName);
-	Serial.print(F(" mode="));
-	Serial.println(mode);
+		Serial.print(F("openeing "));
+		Serial.print(fileName);
+		Serial.print(F(" mode="));
+		Serial.println(mode);
 	#endif
 	myFile = SD.open(fileName, mode);
 

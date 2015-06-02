@@ -14,7 +14,8 @@ boolean HardwareInterface::registerDriver( HardwareDriver* mydriver ) {
 
 	#ifdef DEBUG_HARDWARE_ENABLE
 		Serial.print(millis());
-		Serial.println(F(": HardwareInterface::registerDriver()"));
+		Serial.print(F(": HardwareInterface::registerDriver() hwaddress="));
+		Serial.println(mydriver->getAddress());
 		Serial.flush();
 	#endif
 

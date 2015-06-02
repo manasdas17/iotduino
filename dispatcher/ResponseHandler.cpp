@@ -7,7 +7,28 @@ boolean ResponseHandler::handleReponseNumbered(const seq_t seq, const packet_typ
 		Serial.print(F("\tseq="));
 		Serial.print(seq);
 		Serial.print(F(" type="));
-		Serial.print(type);
+		switch(type) {
+			case HARDWARE_COMMAND_RES:
+			Serial.print(F("HARDWARE_COMMAND_RES"));
+			break;
+			case HARDWARE_DISCOVERY_RES:
+			Serial.print(F("HARDWARE_DISCOVERY_RES"));
+			break;
+			case HARDWARE_SUBSCRIPTION_SET_RES:
+			Serial.print(F("HARDWARE_SUBSCRIPTION_SET_RES"));
+			break;
+			case HARDWARE_SUBSCRIPTION_INFO_RES:
+			Serial.print(F("HARDWARE_SUBSCRIPTION_INFO_RES"));
+			break;
+			case ACK:
+			Serial.print(F("ACK"));
+			break;
+			case NACK:
+			Serial.print(F("NACK"));
+			break;
+			default:
+			Serial.print(F("UNKNOWN"));
+		}
 		Serial.print(F(" remote="));
 		Serial.println(remote);
 		Serial.flush();
@@ -120,7 +141,7 @@ uint8_t ResponseHandler::getListener(responseListener_t** listenersList, const p
 		Serial.print(F(": ResponseHandler::getListener() seq="));
 		Serial.print(seq);
 		Serial.print(F(" type="));
-		Serial.println(type);
+		Serial.print(type);
 		Serial.print(F(" remote="));
 		Serial.println(remote);
 		Serial.flush();
@@ -134,8 +155,7 @@ uint8_t ResponseHandler::getListener(responseListener_t** listenersList, const p
 	}
 
 	#ifdef DEBUG_HANDLER_RESPONSE_ENABLE
-		Serial.print(millis());
-		Serial.print(F(": \tfoundNum="));
+		Serial.print(F("\tfoundNum="));
 		Serial.println(found);
 		Serial.flush();
 	#endif

@@ -18,6 +18,17 @@ void SDHardwareRequestListener::doCallback(packet_application_numbered_cmd_t* ap
 	//command
 	command_t* cmd = (command_t*) appLayerPacket->payload;
 
+	#ifdef DEBUG_SD_ENABLE
+		Serial.print(millis());
+		Serial.println(F(": SDHardwareRequestListener::doCallback received HARDWARE_COMMAND_RES"));
+		Serial.print(F("\tfrom="));
+		Serial.print(address);
+		Serial.print(F(" hwType="));
+		Serial.print(cmd->type);
+		Serial.print(F(" hwAddress="));
+		Serial.println(cmd->address);
+	#endif
+
 	//filename according to "{HexRemoteAddress}_{HexHardwareType}_{HexHardwareAddress}.LOG"
 	//e.g. A7_08_14.LOG
 	char filename[13];
