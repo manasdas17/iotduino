@@ -328,8 +328,6 @@ void setup() {
 	l2.init(&l3, PIN_CE, PIN_CSN, address_local);
 	l3.setLayer2(&l2);
 
-	pf.setLayer3(&l3);
-
 	dht11.init(2, 20);
 	rcsw.init(A6, 21);
 	motion.init(A4, 50);

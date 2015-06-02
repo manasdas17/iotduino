@@ -21,13 +21,20 @@ extern Layer3 l3;
 
 
 #define MAX_ACTIVE_SUBSCRIPTIONS 50
-#define SUBSCRIPTION_REFRESH_MILLIS (5*60*1000UL) //every 5 minutes
+/** delay for subscription events */
 #define SUBSCRIPTION_DEFAULT_PERIOD_MILLIS (60*1000UL)
-#define SUBSCRIPTION_REQUEST_DELAY_MILLIS (100)
-#define SUBSCRIPTION_TIMEOUT_MILLIS (15*60*1000UL) //timeout after 15 minutes
 
+/** delay for refreshing subscriptions */
+#define SUBSCRIPTION_REFRESH_MILLIS (1*40*1000UL) //every 5 minutes
+/** delay for sending subscription requests */
+#define SUBSCRIPTION_REQUEST_DELAY_MILLIS (100)
+/** delay after a subscription has timed out */
+#define SUBSCRIPTION_TIMEOUT_MILLIS (1*60*1000UL) //timeout after 15 minutes
+
+/** delay between discovery requests */
 #define DISCOVERY_REQUEST_DELAY_MILLIS (1000)
-#define DISCOVERY_REQUEST_PERIOD_MILLIS (15*60*1000UL) //every 15 minutes
+/** delay between scanning neighbourtable and trigger discovery */
+#define DISCOVERY_REQUEST_PERIOD_MILLIS (1*20*1000UL) //every 15 minutes
 
 #define REGISTER_FOR_HWTYPES_NUM 17
 const HardwareTypeIdentifier REGISTER_FOR_HWTYPES[] = {
@@ -76,13 +83,7 @@ class SubscriptionManager {
 
 			for(uint8_t i = 0; i < discoveryInfo->numSensors; i++) {
 				if(parent->registerForType((HardwareTypeIdentifier) discoveryInfo->infos[i].hardwareType)) {
-					//did we already register?
-					uint8_t index = parent->getSubscriptionSlot(address, discoveryInfo->infos[i].hardwareAddress, (HardwareTypeIdentifier) discoveryInfo->infos[i].hardwareType);
-					if(index == -1) {
-						//nope, do it with next refresh run.
-						memcpy(&parent->activeSubscriptions[index], &discoveryInfo->infos[i], sizeof(packet_application_numbered_discovery_info_helper_t));
-						parent->lastRefresh[index] = 0;
-					}
+					parent->createSubscription(address, discoveryInfo->infos[i].hardwareAddress, (HardwareTypeIdentifier) discoveryInfo->infos[i].hardwareType);
 				}
 			}
 		}
@@ -111,23 +112,26 @@ class SubscriptionManager {
 			if(appLayerPacket->packetType != HARDWARE_SUBSCRIPTION_SET_RES)
 				return;
 
-			//may be unsafe, we only have info about ACK
 			subscription_set_t* tmp = (subscription_set_t*) appLayerPacket->payload;
 			subscription_helper_t* subscriptionInfo = (subscription_helper_t*) &tmp->info;
+			int8_t index = parent->getSubscriptionSlot(address, subscriptionInfo->hardwareAddress, (HardwareTypeIdentifier) subscriptionInfo->hardwareType);
 
-			#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
-				Serial.print(millis());
-				Serial.println(F(": SubscriptionManager::SubscriptionManagerSubscriptionCallback::doCallback() HARDWARE_SUBSCRIPTION_SET_RES"));
-				Serial.print(F("\tremote="));
-				Serial.print(address);
-				Serial.print(F(" hwtype="));
-				Serial.print(subscriptionInfo->hardwareType);
-				Serial.print(F(" hwaddress="));
-				Serial.println(subscriptionInfo->hardwareAddress);
-				Serial.flush();
-			#endif
+			if(index != -1) {
+				parent->active[index] = true;
+				#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
+					Serial.print(millis());
+					Serial.println(F(": SubscriptionManager::SubscriptionManagerSubscriptionCallback::doCallback() HARDWARE_SUBSCRIPTION_SET_RES"));
+					Serial.print(F("\tremote="));
+					Serial.print(address);
+					Serial.print(F(" hwtype="));
+					Serial.print(subscriptionInfo->hardwareType);
+					Serial.print(F(" hwaddress="));
+					Serial.print(subscriptionInfo->hardwareAddress);
+					Serial.println(F(" refreshed."));
+					Serial.flush();
+				#endif
+			}
 
-			parent->saveSubscription(subscriptionInfo);
 		}
 	};
 
@@ -141,39 +145,43 @@ class SubscriptionManager {
 	uint32_t lastSubscriptionRequest;
 	/** last discovery request that has been sent */
 	uint32_t lastDiscoveryRequest;
+	/** last full iteration for discovery */
+	uint32_t lastDiscoveryRequestFullRun;
+
 	/** next neighbourtable index to discover */
 	uint8_t nextDiscoveryRequestNeighbourIndex;
 
 	public:
 		/** active subscriptions */
 		subscription_helper_t activeSubscriptions[MAX_ACTIVE_SUBSCRIPTIONS]; //each 11b -> 550b
+		l3_address_t activeSubscriptionNodeIDs[MAX_ACTIVE_SUBSCRIPTIONS]; //each 2b
+		boolean active[MAX_ACTIVE_SUBSCRIPTIONS];
 		/** last refresh of this subscription */
 		uint32_t lastRefresh[MAX_ACTIVE_SUBSCRIPTIONS]; //each 4b -> 200b
 
 		/**
 		 * send a subscription request
-		 * <code>period=SUBSCRIPTION_DEFAULT_PERIOD_MILLIS</code>
-		 * <code>event=EVENT_TYPE_CHANGE</code>
-		 * @param destination
-		 * @param hwAddress
-		 * @param hwType
+		 * @param i
+		 * @return success
 		 */
-		boolean sendSubscriptionRequest(l3_address_t destination, uint8_t hwAddress, HardwareTypeIdentifier hwType) {
+		boolean sendSubscriptionRequest(uint8_t i) {
 			#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
 				Serial.print(millis());
 				Serial.print(F(": SubscriptionManager::sendSubscriptionRequest() destination="));
-				Serial.print(destination);
+				Serial.print(activeSubscriptionNodeIDs[i]);
 				Serial.print(F(" hwType="));
-				Serial.print(hwType);
+				Serial.print(activeSubscriptions[i].hardwareType);
 				Serial.print(F(" hwAddress="));
-				Serial.println(hwAddress);
+				Serial.println(activeSubscriptions[i].hardwareAddress);
 				Serial.flush();
 			#endif
 
+			//packet
 			Layer3::packet_t p;
-			memset(&p, 0, sizeof(p));
-			seq_t seq = random(1, 0xffff);
-			pf.generateSubscriptionSetGeneric(&p, destination, l3.localAddress, hwAddress, hwType, SUBSCRIPTION_DEFAULT_PERIOD_MILLIS, EVENT_TYPE_CHANGE, seq);
+			pf.generateSubscriptionSetGeneric(&p, activeSubscriptionNodeIDs[i], &activeSubscriptions[i]);
+
+			lastRefresh[i] = millis();
+			active[i] = 0;
 			return l3.sendPacket(p);
 		}
 
@@ -202,7 +210,9 @@ class SubscriptionManager {
 		 */
 		void init() {
 			memset(&activeSubscriptions, 0, sizeof(activeSubscriptions));
+			memset(&activeSubscriptionNodeIDs, 0, sizeof(activeSubscriptionNodeIDs));
 			memset(&lastRefresh, 0, sizeof(lastRefresh));
+			memset(&active, 0, sizeof(active));
 
 			subscriptionCallback.init(this);
 			discoveryCallback.init(this);
@@ -212,7 +222,9 @@ class SubscriptionManager {
 			dispatcher.getResponseHandler()->registerListenerByPacketType(0, HARDWARE_DISCOVERY_RES, 0, &discoveryCallback);
 
 			lastSubscriptionRequest = 0;
+
 			lastDiscoveryRequest = 0;
+			lastDiscoveryRequestFullRun = 0;
 			nextDiscoveryRequestNeighbourIndex = 0;
 		}
 
@@ -236,7 +248,7 @@ class SubscriptionManager {
 				for(uint8_t i = 0; i < MAX_ACTIVE_SUBSCRIPTIONS; i++) {
 					if(activeSubscriptions[i].address > 0) {
 						//timed out?
-						if(now - lastRefresh[i] > SUBSCRIPTION_TIMEOUT_MILLIS) {
+						if(now - lastRefresh[i] > SUBSCRIPTION_TIMEOUT_MILLIS && active[i] == false) {
 							deleteSubscription(i);
 							continue;
 						}
@@ -244,10 +256,7 @@ class SubscriptionManager {
 						//need to refresh?
 						if(now - lastRefresh[i] > SUBSCRIPTION_REFRESH_MILLIS) {
 							//refresh.
-							sendSubscriptionRequest(
-								activeSubscriptions[i].address,
-								activeSubscriptions[i].hardwareAddress,
-								(HardwareTypeIdentifier) activeSubscriptions[i].hardwareType);
+							sendSubscriptionRequest(i);
 
 							//set timestamp
 							lastSubscriptionRequest = now;
@@ -263,21 +272,45 @@ class SubscriptionManager {
 		 * trigger discovery.
 		 */
 		void maintainDiscoveries() {
+			neighbourData* neighbours = l3.getNeighbours();
+			if(neighbours == NULL)
+				return;
 			uint32_t now = millis();
+
 			//delay the sending.
-			if(now > DISCOVERY_REQUEST_DELAY_MILLIS && now - DISCOVERY_REQUEST_DELAY_MILLIS > lastDiscoveryRequest) {
-				neighbourData* neighbours = l3.getNeighbours();
-				if(neighbours == NULL)
-					return;
+			if(	now > DISCOVERY_REQUEST_DELAY_MILLIS && now - DISCOVERY_REQUEST_DELAY_MILLIS > lastDiscoveryRequest
+				&& now > DISCOVERY_REQUEST_PERIOD_MILLIS && now - DISCOVERY_REQUEST_PERIOD_MILLIS > lastDiscoveryRequestFullRun) {
 
 				//we have a node, send request.
 				if(neighbours[nextDiscoveryRequestNeighbourIndex].nodeId > 0) {
+					#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
+						Serial.print(millis());
+						Serial.println(F(": SubscriptionManager::maintainDiscoveries()"));
+
+						Serial.print(F("\tnow="));
+						Serial.print(now);
+						Serial.print(F(" lastDicoveryRequest="));
+						Serial.print(lastDiscoveryRequest);
+						Serial.print(F(" lastDiscoveryRequestFullRun="));
+						Serial.println(lastDiscoveryRequestFullRun);
+
+						Serial.print(F("\tsending discovery request to neighbourIndex="));
+						Serial.print(nextDiscoveryRequestNeighbourIndex);
+						Serial.print(F(" nodeId="));
+						Serial.println(neighbours[nextDiscoveryRequestNeighbourIndex].nodeId);
+						Serial.flush();
+					#endif
+
 					sendDiscoveryRequest(neighbours[nextDiscoveryRequestNeighbourIndex].nodeId);
+					lastDiscoveryRequest = now;
 				}
 
 				//iterate
 				nextDiscoveryRequestNeighbourIndex++;
-				nextDiscoveryRequestNeighbourIndex %= CONFIG_L3_NUM_NEIGHBOURS;
+				if(nextDiscoveryRequestNeighbourIndex == CONFIG_L3_NUM_NEIGHBOURS - 1) {
+					nextDiscoveryRequestNeighbourIndex = 0;
+					lastDiscoveryRequestFullRun = now;
+				}
 			}
 		}
 
@@ -296,6 +329,7 @@ class SubscriptionManager {
 
 				memset(&activeSubscriptions[index], 0, sizeof(subscription_helper_t));
 				lastRefresh[index] = 0;
+				activeSubscriptionNodeIDs[index] = 0;
 			}
 		}
 
@@ -314,13 +348,15 @@ class SubscriptionManager {
 
 		/**
 		 * get existing subscription index
-		 * @param subscription
+		 * @param destination
+		 * @param hardwareAddres
+		 * @param hardwareType
 		 * @return index
 		 */
 		int8_t getSubscriptionSlot(l3_address_t address, uint8_t hardwareAddress, HardwareTypeIdentifier hardwareType) {
 			for(uint8_t i = 0; i < MAX_ACTIVE_SUBSCRIPTIONS; i++) {
 				//check ident subscription via nodeAddress, hwAddress and hwType
-				if(activeSubscriptions[i].address == address && activeSubscriptions[i].hardwareAddress == hardwareAddress && activeSubscriptions[i].hardwareType == hardwareType) {
+				if(activeSubscriptionNodeIDs[i] == address && activeSubscriptions[i].hardwareAddress == hardwareAddress && activeSubscriptions[i].hardwareType == hardwareType) {
 					return i;
 				}
 			}
@@ -330,55 +366,68 @@ class SubscriptionManager {
 
 		/**
 		 * register active subscription and update timestamp
-		 * @param subscriptionInfo
+		 * @param destination
+		 * @param hwAddress
+		 * @param hwType
 		 * @return success
 		 */
-		boolean saveSubscription(subscription_helper_t* subscriptionInfo) {
-			//sanity check
-			if(subscriptionInfo == NULL)
-				return false;
-			//valid subscription?
-			else if(subscriptionInfo->millisecondsDelay > 0 && subscriptionInfo->onEventType != EVENT_TYPE_DISABLED)
-				return false;
-
+		boolean createSubscription(l3_address_t address, uint8_t hardwareAddress, HardwareTypeIdentifier hardwareType) {
 			#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
 				Serial.print(millis());
-				Serial.print(F(": SubscriptionManager::saveSubscription() info=[forNode="));
-				Serial.print(subscriptionInfo->address);
-				Serial.print(F(" hwAddress="));
-				Serial.print(subscriptionInfo->hardwareAddress);
-				Serial.print(F(" hwType="));
-				Serial.print(subscriptionInfo->hardwareType);
-				Serial.print(F(" delay="));
-				Serial.print(subscriptionInfo->millisecondsDelay);
-				Serial.print(F(" event="));
-				Serial.print(subscriptionInfo->onEventType);
-				Serial.print(F(" seq="));
-				Serial.print(subscriptionInfo->sequence);
-				Serial.println(F("]"));
+				Serial.print(F(": SubscriptionManager::createSubscription()"));
 				Serial.flush();
 			#endif
 
-			//get existing slot
-			int8_t index = getSubscriptionSlot(subscriptionInfo->address, subscriptionInfo->hardwareAddress, (HardwareTypeIdentifier) subscriptionInfo->hardwareType);
+			//return in case we already have a subscription
+			int8_t index = getSubscriptionSlot(address, hardwareAddress, hardwareType);
+			if(index != -1) {
+				#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
+					Serial.print(F(" already exists@index="));
+					Serial.println(index);
+				#endif
+				return false;
+			}
 
 			//get new slot
-			if(index == -1 )
-				index = getSubscriptionSlot();
+			index = getSubscriptionSlot();
 
-			//failed.
-			if(index == -1)
+			//failed?
+			if(index == -1) {
+				#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
+					Serial.println(F(" list full."));
+				#endif
 				return false;
+			}
 
-			//save
-			lastRefresh[index] = millis();
-			memcpy(&activeSubscriptions[index], subscriptionInfo, sizeof(subscription_helper_t));
+			//save subscription
+			seq_t seq = random(1, 0xffff);
+			lastRefresh[index] = 0;
+			activeSubscriptionNodeIDs[index] = address;
+
+			activeSubscriptions[index].address = l3.localAddress;
+			activeSubscriptions[index].hardwareAddress = hardwareAddress;
+			activeSubscriptions[index].hardwareType = hardwareType;
+			activeSubscriptions[index].millisecondsDelay = SUBSCRIPTION_DEFAULT_PERIOD_MILLIS;
+			activeSubscriptions[index].onEventType = EVENT_TYPE_CHANGE;
+			activeSubscriptions[index].sequence = seq;
 
 			#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
-				Serial.print(F("\tsaved in slot="));
-				Serial.print(index);
-				Serial.print(F(" timestamp="));
-				Serial.println(lastRefresh[index]);
+				Serial.print(F(" saved in slot="));
+				Serial.println(index);
+				Serial.print(F("\tforAddress="));
+				Serial.print(l3.localAddress);
+				Serial.print(F(" remote="));
+				Serial.print(address);
+				Serial.print(F(" hwAddress="));
+				Serial.print(hardwareAddress);
+				Serial.print(F(" hwType="));
+				Serial.print(hardwareType);
+				Serial.print(F(" delay="));
+				Serial.print(SUBSCRIPTION_DEFAULT_PERIOD_MILLIS);
+				Serial.print(F(" event="));
+				Serial.print(EVENT_TYPE_CHANGE);
+				Serial.print(F(" seq="));
+				Serial.println(seq);
 				Serial.flush();
 			#endif
 
@@ -405,11 +454,12 @@ class SubscriptionManager {
 					#endif
 					return true;
 				}
-				#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
-				else
-					Serial.println(F(" nope."));
-				#endif
 			}
+
+			#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
+				Serial.println(F(" nope."));
+				Serial.flush();
+			#endif
 
 			return false;
 		}
