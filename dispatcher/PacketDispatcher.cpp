@@ -20,7 +20,7 @@ boolean PacketDispatcher::handleUnNumbered(const packet_type_application_t type,
 }
 
 boolean PacketDispatcher::handleNumbered(const seq_t seq, const packet_type_application_t type, const l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
-	#ifdef DEBUG_HANDLER_ENABLE
+	#ifdef DEBUG_HANDLER_DISPATCHER_ENABLE
 		Serial.print(millis());
 		Serial.print(F(": PacketDispatcher::handleNumbered() type="));
 		Serial.println(type);
@@ -79,7 +79,7 @@ boolean PacketDispatcher::handleNumberedFromNetwork(Layer3::packet_t packet) {
 }
 
 void PacketDispatcher::loop() {
-	//#ifdef DEBUG_HANDLER_ENABLE
+	//#ifdef DEBUG_HANDLER_DISPATCHER_ENABLE
 		//Serial.print(millis());
 		//Serial.println(F(": PacketDispatcher::loop()"));
 		//Serial.flush();
@@ -90,7 +90,7 @@ void PacketDispatcher::loop() {
 		Layer3::packet_t packet;
 		networking->receiveQueuePop(&packet);
 
-		#ifdef DEBUG_HANDLER_ENABLE
+		#ifdef DEBUG_HANDLER_DISPATCHER_ENABLE
 			Serial.print(millis());
 			Serial.print(F(":\treceived packetType="));
 			Serial.println(packet.data.type);

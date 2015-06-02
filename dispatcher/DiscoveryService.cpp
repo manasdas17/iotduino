@@ -53,7 +53,7 @@ uint8_t DiscoveryService::getDriverInterfacesAll(packet_application_numbered_dis
 }
 
 boolean DiscoveryService::handleInfoRequest(EventCallbackInterface* callback, seq_t seq, packet_type_application_t type, l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
-	#ifdef DEBUG_HANDLER_ENABLE
+	#ifdef DEBUG_HANDLER_DISCOVERY_ENABLE
 		Serial.print(millis());
 		Serial.println(F(": DiscoveryService::handleInfoRequest()"));
 		Serial.flush();

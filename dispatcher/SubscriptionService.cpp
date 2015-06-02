@@ -58,7 +58,7 @@ void SubscriptionService::executeSubscriptions() {
 	if(now - SUBSCRIPTION_CHECK_PERIOD_MILLIS > lastSubscriptionCheckTimestamp && now > SUBSCRIPTION_CHECK_PERIOD_MILLIS) {
 		lastSubscriptionCheckTimestamp = millis();
 
-		#ifdef DEBUG_HANDLER_ENABLE
+		#ifdef DEBUG_HANDLER_SUBSCRIPTION_ENABLE
 		Serial.print(millis());
 		Serial.println(F(": SubscriptionService::executeSubscriptions()"));
 		Serial.flush();
@@ -228,7 +228,7 @@ void SubscriptionService::doPollingForSubscriptions() {
 	if(now - SUBSCRIPTION_POLLING_CHECK_PERIOD_MILLIS > lastSubscriptionPollingCheckTimestamp && now > SUBSCRIPTION_POLLING_CHECK_PERIOD_MILLIS) {
 		lastSubscriptionPollingCheckTimestamp = now;
 
-		#ifdef DEBUG_HANDLER_ENABLE
+		#ifdef DEBUG_HANDLER_SUBSCRIPTION_ENABLE
 		Serial.print(millis());
 		Serial.println(F(": SubscriptionService::doPollingForSubscriptions()"));
 		Serial.flush();
@@ -253,7 +253,7 @@ void SubscriptionService::doPollingForSubscriptions() {
 				&& millis() - drv->getLastEventTimestamp() < SUBSCRIPTION_POLLING_CHECK_PERIOD_MILLIS
 				&& drv->lastEventMatchesEventType(subscriptions[i].onEventType))
 				{
-					#ifdef DEBUG_HANDLER_ENABLE
+					#ifdef DEBUG_HANDLER_SUBSCRIPTION_ENABLE
 					Serial.print(F("\tevent found, trigger subscription execution, matchingType="));
 					Serial.println(subscriptions[i].onEventType);
 					Serial.flush();

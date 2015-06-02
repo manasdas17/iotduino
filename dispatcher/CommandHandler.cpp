@@ -15,7 +15,7 @@ boolean CommandHandler::handleHardwareCommand(packet_application_numbered_cmd_t*
 	HardwareCommandResult cmd = HardwareCommandResult(); //todo, we use such kind of object for returning results anyway, however this takes place in the hwinterface
 	cmd.deSerialize((command_t*) appPacket->payload);
 
-	#ifdef DEBUG_HANDLER_ENABLE
+	#ifdef DEBUG_HANDLER_COMMAND_ENABLE
 		Serial.print(F("\tcmd=["));
 		Serial.print(F("hwAdrress="));
 		Serial.print(cmd.getAddress());
@@ -28,7 +28,7 @@ boolean CommandHandler::handleHardwareCommand(packet_application_numbered_cmd_t*
 	#endif
 
 	boolean result = hardwareInterface->executeCommand(&cmd);
-	#ifdef DEBUG_HANDLER_ENABLE
+	#ifdef DEBUG_HANDLER_COMMAND_ENABLE
 		Serial.print(millis());
 		Serial.print(F(": &result="));
 		Serial.print((uint16_t) &cmd, HEX);
@@ -60,7 +60,7 @@ boolean CommandHandler::handleHardwareCommand(packet_application_numbered_cmd_t*
 }
 
 boolean CommandHandler::handleNumbered(EventCallbackInterface* callback, const seq_t seq, const packet_type_application_t type, const l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
-	#ifdef DEBUG_HANDLER_ENABLE
+	#ifdef DEBUG_HANDLER_COMMAND_ENABLE
 		Serial.print(millis());
 		Serial.print(F(": CommandHandler::handleNumbered() from="));
 		Serial.print(remote);

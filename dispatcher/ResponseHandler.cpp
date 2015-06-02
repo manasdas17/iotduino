@@ -1,7 +1,7 @@
 #include "ResponseHandler.h"
 
 boolean ResponseHandler::handleReponseNumbered(const seq_t seq, const packet_type_application_t type, const l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
-	#ifdef DEBUG_HANDLER_ENABLE
+	#ifdef DEBUG_HANDLER_RESPONSE_ENABLE
 		Serial.print(millis());
 		Serial.println(F(": ResponseHandler::handleResponseNumbered()"));
 		Serial.print(F("\tseq="));
@@ -39,7 +39,7 @@ boolean ResponseHandler::registerListenerByPacketType(const uint32_t timeout, pa
 }
 
 boolean ResponseHandler::registerListener(const uint32_t timeout, const seq_t seqNumber, const packet_type_application_t type, const l3_address_t remoteAddress, EventCallbackInterface* callbackObject) {
-	#ifdef DEBUG_HANDLER_ENABLE
+	#ifdef DEBUG_HANDLER_RESPONSE_ENABLE
 		Serial.print(millis());
 		Serial.print(F(": ResponseHandler::registerListener() remote="));
 		Serial.print(remoteAddress);
@@ -91,7 +91,7 @@ void ResponseHandler::maintainListeners() {
 		lastCheckedTimestampMillis = now;
 
 
-		#ifdef DEBUG_HANDLER_ENABLE
+		#ifdef DEBUG_HANDLER_RESPONSE_ENABLE
 		Serial.print(millis());
 		Serial.println(F(": ResponseHandler::maintainListeners()"));
 		Serial.flush();
@@ -99,7 +99,7 @@ void ResponseHandler::maintainListeners() {
 
 		for(uint8_t i = 0; i < LISTENER_NUM; i++) {
 			if(listeners[i].timestamp > 0 && listeners[i].timestamp < millis()) {
-				#ifdef DEBUG_HANDLER_ENABLE
+				#ifdef DEBUG_HANDLER_RESPONSE_ENABLE
 					Serial.print(millis());
 					Serial.print(F(": remove due to timeout: seq="));
 					Serial.print(listeners[i].seqNumber);
@@ -115,7 +115,7 @@ void ResponseHandler::maintainListeners() {
 }
 
 uint8_t ResponseHandler::getListener(responseListener_t** listenersList, const packet_type_application_t type, const seq_t seq, const l3_address_t remote) {
-	#ifdef DEBUG_HANDLER_ENABLE
+	#ifdef DEBUG_HANDLER_RESPONSE_ENABLE
 		Serial.print(millis());
 		Serial.print(F(": ResponseHandler::getListener() seq="));
 		Serial.print(seq);
@@ -133,7 +133,7 @@ uint8_t ResponseHandler::getListener(responseListener_t** listenersList, const p
 		}
 	}
 
-	#ifdef DEBUG_HANDLER_ENABLE
+	#ifdef DEBUG_HANDLER_RESPONSE_ENABLE
 		Serial.print(millis());
 		Serial.print(F(": \tfoundNum="));
 		Serial.println(found);
