@@ -10,16 +10,37 @@
 //
 #include <sdcard/SDcard.h>
 
-const char* fileNameNodeInfo = {"NODEINFO.TXT"};
-
-boolean SDcard::openFile(char* fileName, FileMode mode) {
+boolean SDcard::openFile(const char* fileName, FileMode mode) {
+	if(myFile && currentOpenedFile == fileName && currentOpenedMode == mode) {
+		#ifdef DEBUG_SD_ENABLE
+			Serial.print(millis());
+			Serial.print(F(": SDcard::openFile() openeing "));
+			Serial.print(fileName);
+			Serial.print(F(" mode="));
+			Serial.println(mode);
+			Serial.println(F("\talready open."));
+			Serial.flush();
+		#endif
+		return true;
+	}
 	#ifdef DEBUG_SD_ENABLE
-		Serial.print(F("openeing "));
+		Serial.print(millis());
+		Serial.print(F(": SDcard::openFile() opening "));
 		Serial.print(fileName);
 		Serial.print(F(" mode="));
 		Serial.println(mode);
+		Serial.flush();
 	#endif
+
+	if(myFile)
+		myFile.close();
+
 	myFile = SD.open(fileName, mode);
+
+	if(myFile) {
+		currentOpenedFile = (void*) fileName;
+		currentOpenedMode = mode;
+	}
 
 	return myFile;
 }
@@ -28,16 +49,11 @@ uint8_t SDcard::getNodeInfo(uint8_t nodeId, uint8_t* buf, uint8_t bufSize) {
 	if(bufSize < NODE_INFO_SIZE)
 		return false;
 
-	myFile.close();
-
-	if(!SD.exists((char*) fileNameNodeInfo)) {
-		Serial.print(millis());
-		Serial.println(F(": file does not exist."));
+	if(!openFile(fileNameNodeInfo, READ)) {
 		return 0;
 	}
 
-	myFile = SD.open(fileNameNodeInfo, READ);
-	uint32_t pos = ((uint32_t) (nodeId-1)) * NODE_INFO_SIZE;
+	uint32_t pos = nodeId * NODE_INFO_SIZE;
 	if(!myFile.seek(pos)) {
 		return false;
 	}
@@ -45,10 +61,10 @@ uint8_t SDcard::getNodeInfo(uint8_t nodeId, uint8_t* buf, uint8_t bufSize) {
 	return myFile.readBytes(buf, NODE_INFO_SIZE);
 }
 
-boolean SDcard::appendToFile(char* fileName, uint8_t* buf, uint8_t bufSize) {
+boolean SDcard::appendToFile(const char* fileName, uint8_t* buf, uint8_t bufSize) {
 	openFile(fileName, WRITE);
 	boolean success = myFile.write(buf, bufSize);
-	myFile.close();
+	myFile.flush();
 
 	return success;
 }
@@ -66,9 +82,40 @@ boolean SDcard::init() {
 		Serial.println(F(": sd init done"));
 	#endif
 
+	currentOpenedFile = NULL;
+	currentOpenedMode = 0xff;
+
+	prepareDiscoveryFile();
 	return true;
 }
 
+void SDcard::prepareDiscoveryFile() {
+	#ifdef DEBUG_SD_ENABLE
+		Serial.print(millis());
+		Serial.print(F(": SDcard::prepareDiscoveryFile() fileName="));
+		Serial.println(fileNameDiscoveryInfo);
+	#endif
+
+	//prepare discovery swap
+ 	openFile(fileNameDiscoveryInfo, WRITE);
+	if(myFile) {
+		uint16_t bytes = 0;
+		uint8_t val = 0;
+		while(myFile.size() < SD_DISCOVERY_FILESIZE) {
+			bytes += myFile.write(&val, 1);
+		}
+		myFile.flush();
+
+		#ifdef DEBUG_SD_ENABLE
+			if(bytes > 0) {
+				Serial.print(F("\textented by "));
+				Serial.print(bytes);
+				Serial.println(F(" bytes"));
+				Serial.flush();
+			}
+		#endif
+	}
+}
  SDcard::SDcard() {
 
 }
