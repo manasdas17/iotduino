@@ -370,6 +370,31 @@ void setup() {
 
 	timer.init();
 
+	/*
+	SDcard::SD_nodeDiscoveryInfoTableEntry_t infos[2];
+	infos[0].hardwareAddress = 0xAA;
+	infos[0].hardwareType = 0xBB;
+	infos[0].rtcTimestamp = 0xCC;
+	infos[1].hardwareAddress = 0xDD;
+	infos[1].hardwareType = 0xEE;
+	infos[1].rtcTimestamp = 0xFF;
+	sdcard.saveDiscoveryInfos(1, infos, 2);
+
+	SDcard::SD_nodeDiscoveryInfoTableEntry_t discovery[SD_DISCOVERY_NUM_INFOS_PER_NODE];
+	sdcard.getDiscoveryInfosForNode(1, discovery, SD_DISCOVERY_NUM_INFOS_PER_NODE);
+	Serial.print(discovery[0].hardwareAddress);
+	Serial.print(F(" "));
+	Serial.print(discovery[0].hardwareType);
+	Serial.print(F(" "));
+	Serial.println(discovery[0].rtcTimestamp);
+	Serial.print(discovery[1].hardwareAddress);
+	Serial.print(F(" "));
+	Serial.print(discovery[1].hardwareType);
+	Serial.print(F(" "));
+	Serial.println(discovery[1].rtcTimestamp);
+	Serial.flush();
+	*/
+
 /*
 	#ifdef SDCARD_ENABLE
 		char buf[17];

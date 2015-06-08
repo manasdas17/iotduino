@@ -14,10 +14,12 @@
 #include <dispatcher/PacketDispatcher.h>
 #include <dispatcher/PacketFactory.h>
 #include <networking/Layer3.h>
+#include <sdcard/SDcard.h>
 
 extern PacketDispatcher dispatcher;
 extern PacketFactory pf;
 extern Layer3 l3;
+extern SDcard sdcard;
 
 
 #define MAX_ACTIVE_SUBSCRIPTIONS 50
