@@ -36,11 +36,14 @@
 #include <dispatcher/PacketDispatcher.h>
 #include <drivers/HardwareID.h>
 
+#include <webserver/DiscoveryListener.h>
+#include <webserver/HardwareResultListener.h>
+#include <webserver/RequestContent.h>
+
 extern Layer3 l3;
 extern PacketDispatcher dispatcher;
 extern PacketFactory pf;
 
-#define STRING_BUFFER_SIZE 128
 //#define USE_DHCP_FOR_IP_ADDRESS
 
 
@@ -52,263 +55,6 @@ byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 	//ip
 	byte ip[] = { 192, 168, 0, 177 };
 #endif
-
-
-/**
- * generic webserver listener class - includes a state.
- */
-class webserverListener : public EventCallbackInterface {
-	public:
-	enum STATE {START, AWAITING_ANSWER, FINISHED, FAILED};
-	STATE state;
-};
-
-/**
- * listener class for discovery results
- */
-class discoveryListener : public webserverListener {
-	public:
-
-	/** # infos */
-	int8_t totalInfos;
-	/** # infos we have received yet */
-	uint8_t gottenInfos;
-	/** remote */
-	l3_address_t remote;
-
-	/** actual infos */
-	packet_application_numbered_discovery_info_helper_t sensorInfos[INTERFACES_BUF_SIZE];
-
-	/**
-	 * object init
-	 * @param remote
-	 */
-	void init(l3_address_t remote) {
-		this->state = START;
-		this->totalInfos = -1;
-		this->gottenInfos = 0;
-		this->remote = remote;
-		memset(sensorInfos, 0, sizeof(sensorInfos));
-	}
-
-	/**
-	 * callback on response - store info and change state to finished
-	 * @param appLayerPacket
-	 * @param address remote
-	 * @param seq
-	 */
-	virtual void doCallback(packet_application_numbered_cmd_t* appLayerPacket, l3_address_t address, seq_t seq) {
-		if(address != remote || appLayerPacket == NULL || appLayerPacket->packetType != HARDWARE_DISCOVERY_RES)
-			return;
-
-		packet_application_numbered_discovery_info_t* info = (packet_application_numbered_discovery_info_t*) appLayerPacket->payload;
-		//how many infos do we expect?
-		if(totalInfos == -1) {
-			if(info->numTotalSensors > INTERFACES_BUF_SIZE) {
-				state = FAILED;
-				return;
-			}
-
-			state = AWAITING_ANSWER;
-			totalInfos = info->numTotalSensors;
-		}
-
-		//copy
-		memcpy(&sensorInfos[gottenInfos], info->infos, info->numSensors * sizeof(packet_application_numbered_discovery_info_helper_t));
-		gottenInfos += info->numSensors;
-
-		if(gottenInfos == totalInfos) {
-			state = FINISHED;
-		}
-	}
-
-	/**
-	 * update state
-	 * @param seq
-	 * @param remote
-	 */
-	virtual void fail(seq_t seq, l3_address_t remote) {
-		state = FAILED;
-	}
-};
-
-/**
- * listener class for hardware results
- */
-class hardwareRequestListener : public webserverListener {
-	public:
-	/** storage for cmd */
-	command_t cmd;
-
-	/** remote address */
-	l3_address_t remote;
-	/** hw type */
-	HardwareTypeIdentifier hwtype;
-	/** hw address */
-	uint8_t hwaddress;
-
-	/**
-	 * initialise object
-	 * @param remote
-	 * @param hwtype
-	 * @param hwaddress
-	 */
-	void init (l3_address_t remote, HardwareTypeIdentifier hwtype, uint8_t hwaddress) {
-		this->remote = remote;
-		this->state = AWAITING_ANSWER;
-		this->hwtype = hwtype;
-		this->hwaddress = hwaddress;
-
-		memset(&cmd, 0, sizeof(cmd));
-	}
-
-	/**
-	 * callback on response - store info and change state to finished
-	 * @param appLayerPacket
-	 * @param address remote
-	 * @param seq
-	 */
-	virtual void doCallback(packet_application_numbered_cmd_t* appLayerPacket, l3_address_t address, seq_t seq) {
-		if(address != remote || appLayerPacket == NULL || appLayerPacket->packetType != HARDWARE_COMMAND_RES)
-			return;
-
-		command_t* info = (command_t*) appLayerPacket->payload;
-
-		this->cmd = *info;
-
-		state = FINISHED;
-	}
-
-	/**
-	 * update state
-	 * @param seq
-	 * @param remote
-	 */
-	virtual void fail(seq_t seq, l3_address_t remote) {
-		state = FAILED;
-	}
-};
-
-/**
- * simple map.
- */
-class RequestContent {
-	/** max number of keys*/
-	#define RequestContentNumKeys 10
-
-	public:
-
-	/** keys */
-	String keys[RequestContentNumKeys];
-	/** vals */
-	String values[RequestContentNumKeys];
-	/** num used */
-	uint8_t num;
-
-	/** initialise object */
-	RequestContent() {
-		num = 0;
-		memset(keys, 0, sizeof(keys));
-		memset(values, 0, sizeof(values));
-	}
-
-	inline uint8_t getNum() {
-		return num;
-	}
-
-	inline String* getKeys() {
-		return keys;
-	}
-
-	inline String* getValues() {
-		return values;
-	}
-
-	/**
-	 * @pram key
-	 * @pram value
-	 * @return index -1 if full
-	 */
-	int8_t putKey(String key, String value) {
-		int8_t index = hasKey(key);
-
-		if(index == -1) {
-			index = num;
-
-			if(num >= RequestContentNumKeys)
-				return -1;
-			keys[index] = key;
-			num++;
-		}
-
-		values[index] = value;
-		return index;
-	}
-
-	int8_t hasKey(PGM_P key) {
-		char buf[32];
-		strcpy_P(buf, key);
-
-		return hasKey(String(buf));
-	}
-
-	int8_t hasKey(String key) {
-		key.toLowerCase();
-		for(uint8_t i = 0; i < num; i++) {
-			if(keys[i].compareTo(key) == 0)
-				return i;
-		}
-
-		return -1;
-	}
-
-	String* getValue(PGM_P key) {
-		int8_t index = hasKey(key);
-		if(index == -1)
-			return NULL;
-
-		return &values[index];
-
-	}
-
-	String* getValue(String key) {
-		int8_t index = hasKey(key);
-
-		if(index == -1)
-			return NULL;
-
-		return &values[index];
-	}
-
-	/**
-	 * parse a x-www-form-urlencoded string
-	 * @param requestContent
-	 */
-	void parse(String requestContent) {
-		num = 0;
-
-		char buf[STRING_BUFFER_SIZE];
-		requestContent.toCharArray(buf, STRING_BUFFER_SIZE);
-		char* tok = strtok(buf, "&");
-		while(tok != NULL) {
-			String kvPair = String(tok);
-
-			String v = "";
-			String k = "";
-			if(kvPair.indexOf("=") != -1) {
-				k = kvPair.substring(0, kvPair.indexOf("="));
-				v = kvPair.substring(kvPair.indexOf("=")+1);
-			} else {
-				k = kvPair;
-			}
-
-			putKey(k, v);
-
-			tok = strtok(NULL, "&");
-		}
-	}
-
-};
 
 const char pageAddressMain[] PROGMEM = {"/"};
 const char pageAddressGetSensorInfo[] PROGMEM = {"/getSensorInfo"};
@@ -393,6 +139,9 @@ class WebServer {
 
 	#define TIMEOUT_MILLIS (2*1000)
 
+	#ifndef STRING_BUFFER_SIZE
+		#define STRING_BUFFER_SIZE 128
+	#endif
 	typedef char BUFFER[STRING_BUFFER_SIZE];
 
 	typedef struct clientInstances_struct {
@@ -428,6 +177,10 @@ class WebServer {
 		Ethernet.begin(mac, ip);
 		#endif
 		server.begin();
+
+		listenerHardwareRequest.init(0, HWType_UNKNOWN, 0, webserverListener::START);
+		listenerDiscovery.init(0, webserverListener::START);
+
 	}
 
 	// Http header token delimiters
@@ -949,7 +702,7 @@ class WebServer {
 
 		Layer3::packet_t p;
 		pf.generateDiscoveryInfoRequest(&p, idInt);
-		listenerDiscovery.init(idInt);
+		listenerDiscovery.init(idInt, webserverListener::AWAITING_ANSWER);
 
 		clientStatus[clientId].callback = &listenerDiscovery;
 
@@ -1025,6 +778,7 @@ class WebServer {
 
 		sendHtmlFooter(clientId);
 
+		listener->init(0, webserverListener::START);
 		closeClient(clientId);
 	}
 
@@ -1118,7 +872,7 @@ class WebServer {
 
 		Layer3::packet_t p;
 		seq_t sequence = pf.generateHardwareCommandRead(&p, idInt, hwaddress, (HardwareTypeIdentifier) hwtype);
-		listenerHardwareRequest.init(idInt, (HardwareTypeIdentifier) hwtype, hwaddress);
+		listenerHardwareRequest.init(idInt, (HardwareTypeIdentifier) hwtype, hwaddress, webserverListener::AWAITING_ANSWER);
 
 		clientStatus[clientId].callback = &listenerHardwareRequest;
 
@@ -1195,6 +949,8 @@ class WebServer {
 		client.println(F("</pre></code>"));
 
 		sendHtmlFooter(clientId);
+		listener->init(0, HWType_UNKNOWN, 0, webserverListener::START);
+
 		closeClient(clientId);
 	}
 
