@@ -10,11 +10,7 @@
 #define __SDHARDWARERESPONSELISTENER_H__
 
 #include <Arduino.h>
-#include <sdcard/SDcard.h>
-#include <interfaces/input/RTC.h>
-
-extern RTC rtc;
-extern SDcard sdcard;
+#include <dispatcher/EventCallbackInterface.h>
 
 /**
  * handler for hardware request responses - writes everything to sdcard.

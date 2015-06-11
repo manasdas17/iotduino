@@ -45,7 +45,7 @@ boolean SDcard::openFile(const char* fileName, FileMode mode) {
 	return myFile;
 }
 
-uint8_t SDcard::getNodeInfo(uint8_t nodeId, uint8_t* buf, uint8_t bufSize) {
+uint8_t SDcard::getNodeInfoString(uint8_t nodeId, uint8_t* buf, uint8_t bufSize) {
 	if(bufSize < NODE_INFO_SIZE)
 		return false;
 

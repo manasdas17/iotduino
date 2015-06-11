@@ -47,6 +47,7 @@ class SDcard {
 		/**  */
 		typedef struct SD_nodeInfoTableEntryStruct {
 			uint8_t nodeId;
+			uint32_t lastDiscoveryRequest;
 		} SD_nodeInfoTableEntry_t;
 
 		/**  */
@@ -65,7 +66,7 @@ class SDcard {
 			seq_t sequence;
 			uint32_t rtcLastkeepalive;
 			uint32_t rtcLastRequest;
-			uint8_t activated;
+			uint8_t active;
 		} SD_subscriptionInfoTableEntry_t;
 
 		/** working object */
@@ -375,7 +376,7 @@ class SDcard {
 		 *  ...
 		 * Node 255: 0x00000ff0..0x000000fff[broadcast]
 		 */
-		uint8_t getNodeInfo(uint8_t nodeId, uint8_t* buf, uint8_t bufSize);
+		uint8_t getNodeInfoString(uint8_t nodeId, uint8_t* buf, uint8_t bufSize);
 
 		inline uint32_t getNodeInfoAddress(uint8_t nodeId) {
 			return nodeId * sizeof(SD_nodeInfoTableEntry_t);
