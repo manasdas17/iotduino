@@ -41,6 +41,11 @@ boolean Layer3::sendPacket( packet_t &packet )
 
 	//broascast? - does not need any available destination.
 	if(packet.data.destination != CONFIG_L3_ADDRESS_BROADCAST) {
+		//loop?
+		if(packet.data.destination == localAddress) {
+			return this->receive(&packet);
+		}
+
 		//get neighbour
 		neighbourData* neighbour = getNeighbour(packet.data.destination);
 
