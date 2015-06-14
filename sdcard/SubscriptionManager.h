@@ -149,8 +149,10 @@ class SubscriptionManager {
 				//store
 				sdcard.saveDiscoveryInfos(listenerDiscovery.remote, buf, listenerDiscovery.gottenInfos);
 				listenerDiscovery.init(0, webserverListener::START);
+				dispatcher.getResponseHandler()->unregisterListener(&listenerDiscovery);
 			} else if(listenerDiscovery.state == webserverListener::FAILED) {
 				listenerDiscovery.init(0, webserverListener::START);
+				dispatcher.getResponseHandler()->unregisterListener(&listenerDiscovery);
 			}
 		}
 
@@ -191,7 +193,7 @@ class SubscriptionManager {
 
 					//register listener by type.
 					listenerDiscovery.init(remote, webserverListener::AWAITING_ANSWER);
-					dispatcher.getResponseHandler()->registerListenerByPacketType(DISCOVERY_TIMEOUT, HARDWARE_DISCOVERY_RES, remote, &listenerDiscovery);
+					dispatcher.getResponseHandler()->registerListenerByPacketType(millis() + DISCOVERY_TIMEOUT, HARDWARE_DISCOVERY_RES, remote, &listenerDiscovery);
 
 					//send request
 					sendDiscoveryRequest(remote);
