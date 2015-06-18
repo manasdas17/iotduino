@@ -32,14 +32,7 @@ class hardwareRequestListener : public webserverListener {
 	 * @param hwtype
 	 * @param hwaddress
 	 */
-	void init (l3_address_t remote, HardwareTypeIdentifier hwtype, uint8_t hwaddress, webserverListener::STATE state) {
-		this->remote = remote;
-		this->state = state;
-		this->hwtype = hwtype;
-		this->hwaddress = hwaddress;
-
-		memset(&cmd, 0, sizeof(cmd));
-	}
+	void init(l3_address_t remote, HardwareTypeIdentifier hwtype, uint8_t hwaddress, webserverListener::STATE state);
 
 	/**
 	 * callback on response - store info and change state to finished
@@ -47,25 +40,14 @@ class hardwareRequestListener : public webserverListener {
 	 * @param address remote
 	 * @param seq
 	 */
-	virtual void doCallback(packet_application_numbered_cmd_t* appLayerPacket, l3_address_t address, seq_t seq) {
-		if(address != remote || appLayerPacket == NULL || appLayerPacket->packetType != HARDWARE_COMMAND_RES)
-			return;
-
-		command_t* info = (command_t*) appLayerPacket->payload;
-
-		this->cmd = *info;
-
-		state = FINISHED;
-	}
+	virtual void doCallback(packet_application_numbered_cmd_t* appLayerPacket, l3_address_t address, seq_t seq);
 
 	/**
 	 * update state
 	 * @param seq
 	 * @param remote
 	 */
-	virtual void fail(seq_t seq, l3_address_t remote) {
-		state = FAILED;
-	}
+	virtual void fail(seq_t seq, l3_address_t remote);
 };
 
 #endif /* HARDWARERESULTLISTENER_H_ */
