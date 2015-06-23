@@ -36,6 +36,8 @@
 #include <dispatcher/PacketDispatcher.h>
 #include <drivers/HardwareID.h>
 
+#include <sdcard/SDcard.h>
+
 #include <webserver/DiscoveryListener.h>
 #include <webserver/HardwareResultListener.h>
 #include <webserver/RequestContent.h>
@@ -43,6 +45,7 @@
 extern Layer3 l3;
 extern PacketDispatcher dispatcher;
 extern PacketFactory pf;
+extern SDcard sdcard;
 
 //#define USE_DHCP_FOR_IP_ADDRESS
 
@@ -298,7 +301,9 @@ class WebServer {
 	 */
 	void sendHtmlFooter(uint8_t clientId) {
 		EthernetClient client = EthernetClient(clientId);
-		client.println(F("<br/><br/><hr/><br/><span style='text-align: right; font-style: italic;'><a href='http://iotduino.de'>iotduino</a> webserver.</span></body></html>"));
+		client.print(F("<br/><br/><hr/><br/><span style='text-align: right; font-style: italic;'><a href='http://iotduino.de'>iotduino</a> webserver. "));
+		printDate(client, now());
+		client.println(F("</span></body></html>"));
 	}
 
 
@@ -559,8 +564,8 @@ class WebServer {
 	void handleFinishedCallback(uint8_t clientId) {
 		if(clientStatus[clientId].requestType == PAGE_REQUEST_SENSOR) {
 			doPageRequestSensor2(clientId);
-		} else if(clientStatus[clientId].requestType == PAGE_GETSENSORINFO) {
-			doPageSensorInfo2(clientId);
+		//} else if(clientStatus[clientId].requestType == PAGE_GETSENSORINFO) {
+			//doPageSensorInfo2(clientId);
 		} else {
 			//unknown request
 			sendHttp500WithBody(clientId);
@@ -600,6 +605,8 @@ class WebServer {
 		client.println(F(".bg2 { background-color: #efefef; }"));
 		client.println(F(".bg1:hover { background-color: #FFD8D8; }"));
 		client.println(F(".bg2:hover { background-color: #FFD8D8; }"));
+		client.println(F(".warning { color: red; }"));
+		client.println(F(".ok { color: green; }"));
 		client.println(F("hr { border:none; height: 1px; background-color: black; }"));
 	}
 
@@ -608,12 +615,7 @@ class WebServer {
 	 * @param clientId
 	 */
 	void doPageNodes(uint8_t clientId) {
-		neighbourData* neighbours = l3.getNeighbours();
 
-		if(neighbours == NULL) {
-			sendHttp500WithBody(clientId);
-			return;
-		}
 
 		sendHttpOk(clientId);
 		sendHtmlHeader(clientId, pageTitles[PAGE_MAIN]);
@@ -625,24 +627,68 @@ class WebServer {
 		client.println(F("<h1>Nodes</h1>"));
 
 		//table
-		client.println(F("<table><tr><th>ID</th><th>nextHop</th><th>#hops</th><th>age</th><th>discover</th></tr>"));
-		uint8_t numNeighbours = 0;
-		uint32_t now = millis();
-		for(uint8_t i = 0; i < CONFIG_L3_NUM_NEIGHBOURS; i++) {
-			if(neighbours[i].nodeId != 0) {
-				numNeighbours++;
+		client.println(F("<table><tr><th>ID</th><th>NodeInfo</th><th>lastDiscovery</th><th>active</th><th>nextHop</th><th>#hops</th><th>age</th><th>info</th></tr>"));
+		uint8_t numNodes = 0;
+		uint32_t nowSystem = millis();
+		uint32_t rtcTime = now();
+
+		//data to display per node
+		char nodeInfoString[NODE_INFO_SIZE];
+		boolean neighbourActive;
+		uint32_t neighbourLastKeepAlive;
+		uint8_t neighbourHops;
+		uint8_t neighbourNextHop;
+
+		SDcard::SD_nodeInfoTableEntry_t infoTable;
+		////SDcard::SD_nodeDiscoveryInfoTableEntry_t discoveryInfo[SD_DISCOVERY_NUM_INFOS_PER_NODE];
+		//ietrate possible nodes
+		for(uint8_t i = 1; i < SD_DISCOVERY_NUM_NODES; i++) {
+			//get string info
+			sdcard.getNodeInfoString(i, (uint8_t*) nodeInfoString, NODE_INFO_SIZE);
+
+			//reset data
+			neighbourActive = 0;
+			neighbourLastKeepAlive = 0;
+			neighbourHops = -1;
+			neighbourNextHop = 0;
+			//get route info
+			getRouteInfoForNode(i, neighbourActive, neighbourLastKeepAlive, neighbourHops, neighbourNextHop);
+
+			//node info
+			sdcard.getNodeInfo(i, &infoTable);
+
+			//////discovery info
+			////if(infoTable.nodeId != 0) {
+				////sdcard.getDiscoveryInfosForNode(i, discoveryInfo, SD_DISCOVERY_NUM_INFOS_PER_NODE);
+			////} else {
+				////memset(discoveryInfo, 0, sizeof(discoveryInfo));
+			////}
+
+			//print node info?
+			if(neighbourActive == 1 || infoTable.nodeId != 0) {
+				numNodes++;
 
 				//node info
 				client.print(F("<tr"));
-				sendHtmlBgColorAlternate(client, i);
+				sendHtmlBgColorAlternate(client, numNodes);
 				client.print(F("><td>"));
-				client.print(neighbours[i].nodeId);
+				client.print(i);
 				client.print(F("</td><td>"));
-				client.print(neighbours[i].hopNextNodeId);
+				client.print(nodeInfoString);
 				client.print(F("</td><td>"));
-				client.print(neighbours[i].hopCount);
+
+				uint32_t t = infoTable.lastDiscoveryRequest;
+				printDate(client, t);
+
+
 				client.print(F("</td><td>"));
-				client.print((now - neighbours[i].timestamp) / 1000);
+				client.print(neighbourActive);
+				client.print(F("</td><td>"));
+				client.print(neighbourNextHop);
+				client.print(F("</td><td>"));
+				client.print(neighbourHops);
+				client.print(F("</td><td>"));
+				client.print((nowSystem - neighbourLastKeepAlive) / 1000);
 				client.print(F("s</td>"));
 				//discover
 				client.print(F("<td><a href='"));
@@ -650,7 +696,7 @@ class WebServer {
 				client.print(F("?"));
 				printP(clientId, variableRemote);
 				client.print(F("="));
-				client.print(neighbours[i].nodeId);
+				client.print(i);
 				client.println(F("'>x</a>"));
 				client.println(F("</td>"));
 				//tr end
@@ -659,13 +705,68 @@ class WebServer {
 		}
 
 		//num entries
-		client.print(F("<tr><th colspan='5'>"));
-		client.print(numNeighbours);
+		client.print(F("<tr><th colspan='8'>"));
+		client.print(numNodes);
 		client.println(F(" entries</th></tr></table>"));
 
 		//footer
 		sendHtmlFooter(client);
 	}
+
+
+	void trailing0(EthernetClient* client, uint8_t a) {
+		if(a < 10) client->print(F("0"));
+	}
+
+	void printDate(EthernetClient &client, uint32_t t) {
+		client.print(year(t));
+		client.print(F("-"));
+		trailing0(&client, month(t));
+		client.print(month(t));
+		client.print(F("-"));
+		trailing0(&client, day(t));
+		client.print(day(t));
+		client.print(F(" "));
+		trailing0(&client, hour(t));
+		client.print(hour(t));
+		client.print(F(":"));
+		trailing0(&client, minute(t));
+		client.print(minute(t));
+		client.print(F(":"));
+		trailing0(&client, second(t));
+		client.print(second(t));
+	}
+
+/**
+ * get route infos for a node if available
+ * @param nodeId
+ * @param neighbourActive
+ * @param neighbourLastKeepAlive
+ * @param neighbourHops
+ * @param neighbourNextHop
+ * @return success
+ */
+boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &neighbourLastKeepAlive, uint8_t &neighbourHops, uint8_t &neighbourNextHop) {
+	neighbourData* neighbours = l3.getNeighbours();
+	for(uint8_t j = 0; j < CONFIG_L3_NUM_NEIGHBOURS; j++) {
+		if(neighbours[j].nodeId == nodeId) {
+			neighbourActive = 1;
+			neighbourLastKeepAlive = neighbours[j].timestamp;
+			neighbourHops = neighbours[j].hopCount;
+			neighbourNextHop = neighbours[j].hopNextNodeId;
+			return true;
+		}
+	}
+
+	if(nodeId == l3.localAddress) {
+		//this is us!
+		neighbourActive = 1;
+		neighbourLastKeepAlive = millis();
+		neighbourHops = 0;
+		neighbourNextHop = l3.localAddress;
+	}
+	return false;
+}
 
 	/**
 	 * helper for alternating background color str
@@ -681,12 +782,58 @@ class WebServer {
 		client.print(F(" class='bg2'"));
 	}
 
+	///**
+	 //* initiating sensor discovery for a node
+	 //* @param clientId
+	 //* @param req
+	 //*/
+	//void doPageSensorInfo(uint8_t clientId, RequestContent* req) {
+		//if(req == NULL) {
+			//sendHttp500WithBody(clientId);
+			//return;
+		//}
+//
+		//String* id = req->getValue(variableRemote);
+		//uint8_t idInt = id->toInt();
+//
+		//if(id == NULL) {
+			//sendHttp500WithBody(clientId);
+			//return;
+		//}
+//
+		//Layer3::packet_t p;
+		//pf.generateDiscoveryInfoRequest(&p, idInt);
+		//listenerDiscovery.init(idInt, webserverListener::AWAITING_ANSWER);
+//
+		//clientStatus[clientId].callback = &listenerDiscovery;
+//
+		//boolean success = dispatcher.getResponseHandler()->registerListenerByPacketType(millis()+TIMEOUT_MILLIS, HARDWARE_DISCOVERY_RES, idInt, &listenerDiscovery);
+//
+//
+		//if(success) {
+			//success = l3.sendPacket(p);
+		//}
+		//if(!success) {
+			//sendHttp500WithBody(clientId);
+			//dispatcher.getResponseHandler()->unregisterListener(&listenerDiscovery);
+			//return;
+		//}
+	//}
+
 	/**
-	 * initiating sensor discovery for a node
+	 * discovery has finished - print result
 	 * @param clientId
-	 * @param req
 	 */
-	void doPageSensorInfo(uint8_t clientId, RequestContent* req) {
+	void doPageSensorInfo2(uint8_t clientId, RequestContent* req) {
+		//yay!
+		EthernetClient client = EthernetClient(clientId);
+		//discoveryListener* listener = (discoveryListener*) clientStatus[clientId].callback;
+//
+		//if(listener == NULL) {
+			//sendHttp500WithBody(clientId);
+			//return;
+		//}
+
 		if(req == NULL) {
 			sendHttp500WithBody(clientId);
 			return;
@@ -700,85 +847,141 @@ class WebServer {
 			return;
 		}
 
-		Layer3::packet_t p;
-		pf.generateDiscoveryInfoRequest(&p, idInt);
-		listenerDiscovery.init(idInt, webserverListener::AWAITING_ANSWER);
-
-		clientStatus[clientId].callback = &listenerDiscovery;
-
-		boolean success = dispatcher.getResponseHandler()->registerListenerByPacketType(millis()+TIMEOUT_MILLIS, HARDWARE_DISCOVERY_RES, idInt, &listenerDiscovery);
-
-
-		if(success) {
-			success = l3.sendPacket(p);
-		}
-		if(!success) {
-			sendHttp500WithBody(clientId);
-			dispatcher.getResponseHandler()->unregisterListener(&listenerDiscovery);
-			return;
-		}
-	}
-
-	/**
-	 * discovery has finished - print result
-	 * @param clientId
-	 */
-	void doPageSensorInfo2(uint8_t clientId) {
-		//yay!
-		EthernetClient client = EthernetClient(clientId);
-		discoveryListener* listener = (discoveryListener*) clientStatus[clientId].callback;
-
-		if(listener == NULL) {
-			sendHttp500WithBody(clientId);
-			return;
-		}
-
 		sendHttpOk(clientId);
 		sendHtmlHeader(clientId, pageTitles[PAGE_GETSENSORINFO]);
 		sendHtmlMenu(clientId);
+
+		//general info
+		char nodeInfoString[NODE_INFO_SIZE];
+		sdcard.getNodeInfoString(idInt, (uint8_t*) nodeInfoString, NODE_INFO_SIZE);
+
+		SDcard::SD_nodeInfoTableEntry_t infoTable;
+		sdcard.getNodeInfo(idInt, &infoTable);
+
+		boolean neighbourActive = 0;
+		uint32_t neighbourLastKeepAlive = 0;
+		uint8_t neighbourHops = -1;
+		uint8_t neighbourNextHop = 0;
+		getRouteInfoForNode(idInt, neighbourActive, neighbourLastKeepAlive, neighbourHops, neighbourNextHop);
+
+
 		client.print(F("<h1>Sensor Info id="));
-		client.print(listener->remote);
-		client.println(F("</h1>"));
+		client.print(idInt);
+		client.print(F(" ("));
+		if(strlen(nodeInfoString) > 0) {
+			client.print(nodeInfoString);
+		} else {
+			client.print(F("<i>NA</i>"));
+		}
+		client.println(F(")</h1>"));
 
-		client.println(F("<table><tr><th>HardwareAddress</th><th>HardwareType</th><th>HasEvents</th><th>RequestInfo</th></tr>"));
-		for(uint8_t i = 0; i < listener->gottenInfos; i++) {
-			client.print(F("<tr"));
-			sendHtmlBgColorAlternate(client, i);
-			client.print(F("><td>"));
-			client.print(listener->sensorInfos[i].hardwareAddress);
-			client.print(F("</td><td>"));
+		client.print(F("<p>"));
 
-			uint8_t tmp = listener->sensorInfos[i].hardwareType;
-			if(tmp > sizeof(hardwareTypeStrings)) tmp = 0;
-			printP(clientId, hardwareTypeStrings[tmp]);
+		if(neighbourActive == 0) {
+			client.print(F("<span class='warning'>"));
+		} else {
+			client.print(F("<span class='ok'>"));
+		}
+		client.print(F("active="));
+		client.print(neighbourActive);
+		client.print(F("</span>"));
 
-			client.print(F("</td><td>"));
-			client.print(listener->sensorInfos[i].canDetectEvents);
-			client.print(F("<td><a href='"));
-			printP(clientId, pageAddresses[PAGE_REQUEST_SENSOR]);
-			client.print(F("?"));
-			printP(clientId, variableRemote);
-			client.print(F("="));
-			client.print(listener->remote);
-			client.print(F("&"));
-			printP(clientId, variableHwAddress);
-			client.print(F("="));
-			client.print(listener->sensorInfos[i].hardwareAddress);
-			client.print(F("&"));
-			printP(clientId, variableHwType);
-			client.print(F("="));
-			client.print(listener->sensorInfos[i].hardwareType);
-			client.print(F("'>x</a>"));
-			client.print(F("</td>"));
-			client.println(F("</tr>"));
+		client.print(F("<br/>nextHop="));
+		client.print(neighbourNextHop);
+		client.print(F("<br/>hops="));
+		client.print(neighbourHops);
+		client.print(F("<br/>lastKeepAliveAge="));
+		client.print((millis() - neighbourLastKeepAlive) / 1000);
+		client.print(F("s</p>"));
+
+		SDcard::SD_nodeDiscoveryInfoTableEntry_t discoveryInfo[SD_DISCOVERY_NUM_INFOS_PER_NODE];
+		sdcard.getDiscoveryInfosForNode(idInt, discoveryInfo, SD_DISCOVERY_NUM_INFOS_PER_NODE);
+		client.println(F("<table><tr><th>HardwareAddress</th><th>HardwareType</th><th>LastUpdated</th><th>requestSensor</th></tr>"));
+		uint8_t numInfos = 0;
+		for(uint8_t i = 0; i < SD_DISCOVERY_NUM_INFOS_PER_NODE; i++) {
+			if(discoveryInfo[i].hardwareAddress > 0 && discoveryInfo[i].hardwareType > 0) {
+				client.print(F("<tr>"));
+				client.print(F("<td>"));
+				client.print(discoveryInfo[i].hardwareAddress);
+				client.print(F("</td>"));
+				client.print(F("<td>"));
+
+				printP(clientId, hardwareTypeStrings[discoveryInfo[i].hardwareType]);
+
+				client.print(F("</td>"));
+				client.print(F("<td>"));
+				printDate(client, discoveryInfo[i].rtcTimestamp);
+				client.print(F("</td>"));
+
+				client.print(F("<td><a href='"));
+				printP(clientId, pageAddresses[PAGE_REQUEST_SENSOR]);
+				client.print(F("?"));
+				printP(clientId, variableRemote);
+				client.print(F("="));
+				client.print(idInt);
+				client.print(F("&"));
+				printP(clientId, variableHwAddress);
+				client.print(F("="));
+				client.print(discoveryInfo[i].hardwareAddress);
+				client.print(F("&"));
+				printP(clientId, variableHwType);
+				client.print(F("="));
+				client.print(discoveryInfo[i].hardwareType);
+				client.print(F("'>x</a>"));
+				client.print(F("</td>"));
+
+				client.print(F("</tr>"));
+
+				numInfos++;
+			}
 		}
 		client.print(F("<tr><th colspan='4'>"));
-		client.print(listener->gottenInfos);
+		client.print(numInfos);
 		client.println(F(" entries</th></tr></table>"));
+
+
+
+
+		////discovery info
+		//client.println(F("<table><tr><th>HardwareAddress</th><th>HardwareType</th><th>HasEvents</th><th>RequestInfo</th></tr>"));
+		//for(uint8_t i = 0; i < listener->gottenInfos; i++) {
+			//client.print(F("<tr"));
+			//sendHtmlBgColorAlternate(client, i);
+			//client.print(F("><td>"));
+			//client.print(listener->sensorInfos[i].hardwareAddress);
+			//client.print(F("</td><td>"));
+//
+			//uint8_t tmp = listener->sensorInfos[i].hardwareType;
+			//if(tmp > sizeof(hardwareTypeStrings)) tmp = 0;
+			//printP(clientId, hardwareTypeStrings[tmp]);
+//
+			//client.print(F("</td><td>"));
+			//client.print(listener->sensorInfos[i].canDetectEvents);
+			//client.print(F("<td><a href='"));
+			//printP(clientId, pageAddresses[PAGE_REQUEST_SENSOR]);
+			//client.print(F("?"));
+			//printP(clientId, variableRemote);
+			//client.print(F("="));
+			//client.print(listener->remote);
+			//client.print(F("&"));
+			//printP(clientId, variableHwAddress);
+			//client.print(F("="));
+			//client.print(listener->sensorInfos[i].hardwareAddress);
+			//client.print(F("&"));
+			//printP(clientId, variableHwType);
+			//client.print(F("="));
+			//client.print(listener->sensorInfos[i].hardwareType);
+			//client.print(F("'>x</a>"));
+			//client.print(F("</td>"));
+			//client.println(F("</tr>"));
+		//}
+		//client.print(F("<tr><th colspan='4'>"));
+		//client.print(listener->gottenInfos);
+		//client.println(F(" entries</th></tr></table>"));
 
 		sendHtmlFooter(clientId);
 
-		listener->init(0, webserverListener::START);
+		//listener->init(0, webserverListener::START);
 		closeClient(clientId);
 	}
 
@@ -819,10 +1022,11 @@ class WebServer {
 		} else if(strcmp_P(uriChars, pageAddresses[PAGE_CSS]) == 0) {
 			doPageCss(clientId);
 		} else if(strcmp_P(uriChars, pageAddresses[PAGE_GETSENSORINFO]) == 0) {
-			doPageSensorInfo(clientId, &req);
-			clientStatus[clientId].requestType = PAGE_GETSENSORINFO;
-			clientStatus[clientId].waiting = true;
-			clientStatus[clientId].timestamp = millis();
+			//doPageSensorInfo(clientId, &req);
+			//clientStatus[clientId].requestType = PAGE_GETSENSORINFO;
+			//clientStatus[clientId].waiting = true;
+			//clientStatus[clientId].timestamp = millis();
+			doPageSensorInfo2(clientId, &req);
 		} else if(strcmp_P(uriChars, pageAddresses[PAGE_REQUEST_SENSOR]) == 0) {
 			doPageRequestSensor(clientId, &req);
 			clientStatus[clientId].requestType = PAGE_REQUEST_SENSOR;
