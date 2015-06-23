@@ -171,6 +171,12 @@ class SubscriptionManager {
 				&& now > DISCOVERY_REQUEST_PERIOD_MILLIS && now - DISCOVERY_REQUEST_PERIOD_MILLIS > lastDiscoveryRequestFullRun) {
 
 				l3_address_t remote = neighbours[nextDiscoveryRequestNeighbourIndex].nodeId;
+
+				//loopback?
+				if(nextDiscoveryRequestNeighbourIndex == CONFIG_L3_NUM_NEIGHBOURS) {
+					remote = l3.localAddress;
+				}
+
 				//we have a node, send request.
 				if(remote > 0) {
 					#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
@@ -202,7 +208,7 @@ class SubscriptionManager {
 
 				//iterate
 				nextDiscoveryRequestNeighbourIndex++;
-				if(nextDiscoveryRequestNeighbourIndex >= CONFIG_L3_NUM_NEIGHBOURS - 1) {
+				if(nextDiscoveryRequestNeighbourIndex > CONFIG_L3_NUM_NEIGHBOURS) {
 					nextDiscoveryRequestNeighbourIndex = 0;
 					lastDiscoveryRequestFullRun = now;
 				}
