@@ -275,7 +275,7 @@ boolean Layer3::receive( void* payload )
 	boolean success = receiveQueuePush(packet);
 
 	//is this a numbered packet? - send ACK if required.
-	if(packet->data.type == PACKET_NUMBERED) {
+	if(packet->data.type == PACKET_NUMBERED && packet->data.source != localAddress) {
 		success &= sendAck(packet);
 	}
 
