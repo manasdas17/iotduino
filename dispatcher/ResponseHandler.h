@@ -50,7 +50,7 @@ class ResponseHandler {
 
 		/**
 		 * register a new listener for a specific remote address and sequence number with callback
-		 * @param timeout
+		 * @param timeout 0=no timeout; absolute(!) internal clock timestamp for timeout
 		 * @param sequence
 		 * @param l3 remote address
 		 * @param callback object
@@ -60,7 +60,7 @@ class ResponseHandler {
 
 		/**
 		 * register a new listener for a specific remote address and sequence number with callback
-		 * @param timeout 0=no timeout
+		 * @param timeout 0=no timeout; absolute(!) internal clock timestamp for timeout
 		 * @param sequence
 		 * @param type of packet
 		 * @param callback object
@@ -89,7 +89,7 @@ class ResponseHandler {
 	protected:
 		/**
 		 * register a new listener for a specific remote address and sequence number with callback
-		 * @param timeout
+		 * @param timeout absolute(!) internal clock timestamp for timeout
 		 * @param sequence
 		 * @param type
 		 * @param l3 remote address
