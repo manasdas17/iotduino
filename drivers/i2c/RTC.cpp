@@ -199,16 +199,16 @@ boolean RTC::writeVal(HardwareTypeIdentifier type, HardwareCommandResult* result
 }
 
 boolean RTC::readVal(HardwareTypeIdentifier type, HardwareCommandResult* result) {
-	uint32_t now = get();
+	uint32_t timeNow = now();
 
 	result->setReadRequest(1);
 	result->setUint8ListNum(4);
 
 	//MSB first
-	result->getUint8List()[0] = (now >> 24) & 0xff;
-	result->getUint8List()[1] |= (now >> 16) & 0xff;
-	result->getUint8List()[2] |= (now >> 8) & 0xff;
-	result->getUint8List()[3] |= (now) & 0xff;
+	result->getUint8List()[0] = (timeNow >> 24) & 0xff;
+	result->getUint8List()[1] |= (timeNow >> 16) & 0xff;
+	result->getUint8List()[2] |= (timeNow >> 8) & 0xff;
+	result->getUint8List()[3] |= (timeNow) & 0xff;
 
 	return true;
 }
