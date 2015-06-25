@@ -11,18 +11,6 @@
 #include <sdcard/SDcard.h>
 
 boolean SDcard::openFile(const char* fileName, FileMode mode) {
-	if(myFile && currentOpenedFile == fileName && currentOpenedMode == mode) {
-		#ifdef DEBUG_SD_ENABLE
-			Serial.print(millis());
-			Serial.print(F(": SDcard::openFile() openeing "));
-			Serial.print(fileName);
-			Serial.print(F(" mode="));
-			Serial.println(mode);
-			Serial.println(F("\talready open."));
-			Serial.flush();
-		#endif
-		return true;
-	}
 	#ifdef DEBUG_SD_ENABLE
 		Serial.print(millis());
 		Serial.print(F(": SDcard::openFile() opening "));
@@ -32,41 +20,26 @@ boolean SDcard::openFile(const char* fileName, FileMode mode) {
 		Serial.flush();
 	#endif
 
-	if(myFile)
-		myFile.close();
-
-	myFile = SD.open(fileName, mode);
-
-	if(myFile) {
-		currentOpenedFile = (void*) fileName;
-		currentOpenedMode = mode;
+	if(strcmp(fileName, fileNameDiscoveryInfo)) {
+		myFileDiscovery = SD.open(fileNameDiscoveryInfo, WRITE);
+		return myFileDiscovery;
+	} else if(strcmp(fileName, fileNameNodeInfo)) {
+		myFileInfo = SD.open(fileNameNodeInfo, WRITE);
+		return myFileInfo;
 	}
 
-	return myFile;
 }
 
 uint8_t SDcard::getNodeInfoString(uint8_t nodeId, uint8_t* buf, uint8_t bufSize) {
 	if(bufSize < NODE_INFO_SIZE)
 		return false;
 
-	if(!openFile(fileNameNodeInfo, READ)) {
-		return 0;
-	}
-
 	uint32_t pos = nodeId * NODE_INFO_SIZE;
-	if(!myFile.seek(pos)) {
+	if(!myFileDiscovery.seek(pos)) {
 		return false;
 	}
 
-	return myFile.readBytes(buf, NODE_INFO_SIZE);
-}
-
-boolean SDcard::appendToFile(const char* fileName, uint8_t* buf, uint8_t bufSize) {
-	openFile(fileName, WRITE);
-	boolean success = myFile.write(buf, bufSize);
-	myFile.flush();
-
-	return success;
+	return myFileDiscovery.readBytes(buf, NODE_INFO_SIZE);
 }
 
 boolean SDcard::init() {
@@ -82,10 +55,11 @@ boolean SDcard::init() {
 		Serial.println(F(": sd init done"));
 	#endif
 
-	currentOpenedFile = NULL;
-	currentOpenedMode = 0xff;
-
 	prepareDiscoveryFile();
+
+	openFile(fileNameDiscoveryInfo, WRITE);
+	openFile(fileNameNodeInfo, WRITE);
+
 	return true;
 }
 
@@ -97,14 +71,13 @@ void SDcard::prepareDiscoveryFile() {
 	#endif
 
 	//prepare discovery swap
- 	openFile(fileNameDiscoveryInfo, WRITE);
-	if(myFile) {
+	if(myFileDiscovery) {
 		uint16_t bytes = 0;
 		uint8_t val = 0;
-		while(myFile.size() < SD_DISCOVERY_FILESIZE) {
-			bytes += myFile.write(&val, 1);
+		while(myFileDiscovery.size() < SD_DISCOVERY_FILESIZE) {
+			bytes += myFileDiscovery.write(&val, 1);
 		}
-		myFile.flush();
+		myFileDiscovery.flush();
 
 		#ifdef DEBUG_SD_ENABLE
 			if(bytes > 0) {
@@ -118,4 +91,12 @@ void SDcard::prepareDiscoveryFile() {
 }
  SDcard::SDcard() {
 
+}
+
+boolean SDcard::appendToFile(const char* fileName, uint8_t* buf, uint8_t bufSize) {
+	File tmp = SD.open(fileName, WRITE);
+	boolean success = tmp.write(buf, bufSize);
+	tmp.flush();
+
+	return success;
 }

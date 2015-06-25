@@ -70,11 +70,8 @@ class SDcard {
 		} SD_subscriptionInfoTableEntry_t;
 
 		/** working object */
-		File myFile;
-		/** pointer to currently opened file description */
-		void* currentOpenedFile;
-		/** mode of currently opened file */
-		uint8_t currentOpenedMode;
+		File myFileInfo;
+		File myFileDiscovery;
 
 	public:
 		/** modes */
@@ -252,10 +249,9 @@ class SDcard {
 		 * @return success
 		 */
 		boolean discoveryWriteToSD(uint32_t pos, void* buf, size_t len) {
-			openFile(fileNameDiscoveryInfo, SDcard::WRITE);
-			if(seek(pos)) {
-				uint32_t bytes = myFile.write((uint8_t*) buf, len);
-				myFile.flush();
+			if(seekDiscovery(pos)) {
+				uint32_t bytes = myFileDiscovery.write((uint8_t*) buf, len);
+				myFileDiscovery.flush();
 
 				#ifdef DEBUG_SD_ENABLE
 					Serial.print(millis());
@@ -297,9 +293,8 @@ class SDcard {
 			if(nodeId >= SD_DISCOVERY_NUM_NODES || numEntries < SD_DISCOVERY_NUM_SUBSCRIPTIONS_PER_NODE || buf == NULL)
 				return false;
 			//read
-			openFile(fileNameDiscoveryInfo, SDcard::READ);
-			seek(getSubscriptionsInfosAddressForNode(nodeId));
-			return myFile.readBytes((uint8_t*) buf, numEntries * SD_DISCOVERY_NUM_SUBSCRIPTIONS_PER_NODE * sizeof(SD_subscriptionInfoTableEntry_t));
+			seekDiscovery(getSubscriptionsInfosAddressForNode(nodeId));
+			return myFileDiscovery.readBytes((uint8_t*) buf, numEntries * SD_DISCOVERY_NUM_SUBSCRIPTIONS_PER_NODE * sizeof(SD_subscriptionInfoTableEntry_t));
 		}
 
 		/**
@@ -321,14 +316,10 @@ class SDcard {
 			if(nodeId >= SD_DISCOVERY_NUM_NODES || numEntries < SD_DISCOVERY_NUM_INFOS_PER_NODE || buf == NULL)
 				return false;
 			//read
-			openFile(fileNameDiscoveryInfo, SDcard::READ);
-			if(!myFile)
+			if(!seekDiscovery(getDiscoveryInfosAddressForNode(nodeId)))
 				return false;
 
-			if(!seek(getDiscoveryInfosAddressForNode(nodeId)))
-				return false;
-
-			return myFile.readBytes((uint8_t*) buf, SD_DISCOVERY_NUM_INFOS_PER_NODE * sizeof(SD_nodeDiscoveryInfoTableEntry_t));
+			return myFileDiscovery.readBytes((uint8_t*) buf, SD_DISCOVERY_NUM_INFOS_PER_NODE * sizeof(SD_nodeDiscoveryInfoTableEntry_t));
 		}
 
 		inline uint32_t getDiscoveryInfosAddressForNode(uint8_t nodeId) {
@@ -345,9 +336,8 @@ class SDcard {
 			if(nodeId >= SD_DISCOVERY_NUM_NODES || buf == NULL)
 				return false;
 			//read
-			openFile(fileNameDiscoveryInfo, SDcard::READ);
-			seek(getNodeInfoAddress(nodeId));
-			return myFile.readBytes((uint8_t*) buf, sizeof(SD_nodeInfoTableEntry_t));
+			seekDiscovery(getNodeInfoAddress(nodeId));
+			return myFileDiscovery.readBytes((uint8_t*) buf, sizeof(SD_nodeInfoTableEntry_t));
 		}
 
 		/** empty constructor*/
@@ -358,15 +348,6 @@ class SDcard {
 		 * @return success
 		 */
 		boolean init();
-
-		/**
-		 * append data to file
-		 * @param fileName
-		 * @param buf
-		 * @param len
-		 * @return success
-		 */
-		boolean appendToFile(const char* fileName, uint8_t* buf, uint8_t bufSize);
 
 		/**
 		 * get node info from file.
@@ -386,10 +367,20 @@ class SDcard {
 		 * @param pos
 		 * @success
 		 */
-		boolean seek(uint32_t pos) {
-			if(!myFile)
+		boolean seekDiscovery(uint32_t pos) {
+			if(!myFileDiscovery)
 				return false;
-			return myFile.seek(pos);
+			return myFileDiscovery.seek(pos);
+		}
+
+		/**
+		 * @param pos
+		 * @success
+		 */
+		boolean seekInfo(uint32_t pos) {
+			if(!myFileInfo)
+				return false;
+			return myFileInfo.seek(pos);
 		}
 
 	//protected:
@@ -405,5 +396,7 @@ class SDcard {
 		 * prepare discovery file - possibly extend it to the necessary size
 		 */
 		void prepareDiscoveryFile();
+
+		boolean appendToFile(const char* fileName, uint8_t* buf, uint8_t bufSize);
 };
 #endif /* SDCARD_H_ */
