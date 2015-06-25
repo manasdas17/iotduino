@@ -256,10 +256,18 @@ class WebServer {
 	 * @param clientId
 	 */
 	void sendHttpOk(uint8_t clientId) {
+		sendHttpOk(clientId, 0);
+	}
+
+	void sendHttpOk(uint8_t clientId, uint32_t cacheTime) {
 		EthernetClient client = EthernetClient(clientId);
 		client.println(F("HTTP/1.1 200 OK"));
 		client.println(F("Content-Type: text/html"));
 		client.println(F("Connection: close"));  // the connection will be closed after completion of the response
+		if(cacheTime > 0) {
+			client.print(F("Cache-Control: no-transform,public,max-age="));
+			client.println(cacheTime);
+		}
 		client.println();
 	}
 
@@ -592,7 +600,7 @@ class WebServer {
 	 * @param clientId
 	 */
 	void doPageCss(uint8_t clientId) {
-		sendHttpOk(clientId);
+		sendHttpOk(clientId, 300);
 		EthernetClient client = EthernetClient(clientId);
 		client.println(F("a, a:link, a:visited { color: #5F5F5F; text-decoration: underline; font-weight: normal; }"));
 		client.println(F("a:active { font-weight: bold; }"));
