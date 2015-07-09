@@ -31,6 +31,7 @@
 #include <Ethernet/Ethernet.h>
 #include <avr/pgmspace.h>
 #include <dispatcher/EventCallbackInterface.h>
+#include <avr/wdt.h>
 
 #include <networking/Layer3.h>
 #include <dispatcher/PacketDispatcher.h>
@@ -651,6 +652,7 @@ class WebServer {
 		////SDcard::SD_nodeDiscoveryInfoTableEntry_t discoveryInfo[SD_DISCOVERY_NUM_INFOS_PER_NODE];
 		//ietrate possible nodes
 		for(uint8_t i = 1; i < SD_DISCOVERY_NUM_NODES; i++) {
+			wdt_reset();
 			//get string info
 			sdcard.getNodeInfoString(i, (uint8_t*) nodeInfoString, NODE_INFO_SIZE);
 
