@@ -68,7 +68,7 @@ void RequestContent::parse(String requestContent) {
 	char buf[STRING_BUFFER_SIZE];
 	requestContent.toCharArray(buf, STRING_BUFFER_SIZE);
 	char* tok = strtok(buf, "&");
-	while(tok != NULL) {
+	while(tok != NULL && num < RequestContentNumKeys) {
 		String kvPair = String(tok);
 
 		String v = "";

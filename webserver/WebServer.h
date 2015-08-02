@@ -247,7 +247,7 @@ class WebServer {
 		//client.println(F("Content-Length: 19"));
 		client.println(F("Connection: close"));  // the connection will be closed after completion of the response
 		client.println();
-		client.println(F("500 Internal error."));
+		client.println(F("500 Internal error. <a href='/'>return to main.</a>"));
 
 		closeClient(clientId);
 	}
@@ -639,7 +639,7 @@ class WebServer {
 		client.println(F("<table><tr><th>ID</th><th>NodeInfo</th><th>lastDiscovery</th><th>active</th><th>nextHop</th><th>#hops</th><th>age</th><th>info</th></tr>"));
 		uint8_t numNodes = 0;
 		uint32_t nowSystem = millis();
-		uint32_t rtcTime = now();
+		//uint32_t rtcTime = now();
 
 		//data to display per node
 		char nodeInfoString[NODE_INFO_SIZE];
@@ -653,6 +653,7 @@ class WebServer {
 		//ietrate possible nodes
 		for(uint8_t i = 1; i < SD_DISCOVERY_NUM_NODES; i++) {
 			wdt_reset();
+
 			//get string info
 			sdcard.getNodeInfoString(i, (uint8_t*) nodeInfoString, NODE_INFO_SIZE);
 
@@ -680,7 +681,7 @@ class WebServer {
 
 				//node info
 				client.print(F("<tr"));
-				sendHtmlBgColorAlternate(client, numNodes);
+				sendHtmlBgColorAlternate(clientId, numNodes);
 				client.print(F("><td>"));
 				client.print(i);
 				client.print(F("</td><td>"));
@@ -956,7 +957,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		//client.println(F("<table><tr><th>HardwareAddress</th><th>HardwareType</th><th>HasEvents</th><th>RequestInfo</th></tr>"));
 		//for(uint8_t i = 0; i < listener->gottenInfos; i++) {
 			//client.print(F("<tr"));
-			//sendHtmlBgColorAlternate(client, i);
+			//sendHtmlBgColorAlternate(clientId, i);
 			//client.print(F("><td>"));
 			//client.print(listener->sensorInfos[i].hardwareAddress);
 			//client.print(F("</td><td>"));
@@ -1019,6 +1020,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 			Serial.print(req.getKeys()[i]);
 			Serial.print(F("="));
 			Serial.println(req.getValues()[i]);
+			Serial.flush();
 		}
 		#endif
 
