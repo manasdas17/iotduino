@@ -276,11 +276,16 @@ class WebServer {
 	 * html head
 	 * @param clientId
 	 */
-	void sendHtmlHeader(uint8_t clientId, PGM_P title) {
+	void sendHtmlHeader(uint8_t clientId, PGM_P title, boolean refresh = true) {
 		EthernetClient client = EthernetClient(clientId);
 		client.print(F("<html><header><link rel='stylesheet' href='css' type='text/css'><title>"));
 		printP(clientId, title);
-		client.println(F("</title></header><body>"));
+		client.print(F("</title>"));
+
+		if(refresh)
+			client.print(F("<meta http-equiv='refresh' content='300'>"));
+
+		client.println(F("</header><body>"));
 	}
 
 	/**
@@ -1113,7 +1118,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		hardwareRequestListener* listener = (hardwareRequestListener*) clientStatus[clientId].callback;
 
 		sendHttpOk(clientId);
-		sendHtmlHeader(clientId, pageTitles[PAGE_REQUEST_SENSOR]);
+		sendHtmlHeader(clientId, pageTitles[PAGE_REQUEST_SENSOR], false);
 		sendHtmlMenu(clientId);
 		client.print(F("<h1>Sensor Info id="));
 		client.print(listener->remote);
