@@ -504,11 +504,11 @@ class WebServer {
 	 * @param socketNumber
 	 * @return success
 	 */
-	boolean closeClient(uint8_t i) {
+	boolean closeClient(uint8_t clientId) {
 		#ifdef DEBUG_WEBSERVER_ENABLE
 		Serial.print(millis());
 		Serial.print(F(": WebServer::closeClient() clientSlot="));
-		Serial.println(i);
+		Serial.println(clientId);
 		#endif
 
 		/*
@@ -523,14 +523,14 @@ class WebServer {
 			return false;
 		}*/
 
-		delay(1);
-		EthernetClient(i).stop();
-		clientStatus[i].inUse = false;
-		clientStatus[i].requestType = PAGE_NONE;
-		clientStatus[i].waiting = false;
+		delay(10);
+		EthernetClient(clientId).stop();
+		clientStatus[clientId].inUse = false;
+		clientStatus[clientId].requestType = PAGE_NONE;
+		clientStatus[clientId].waiting = false;
 
-		if(clientStatus[i].callback != NULL) {
-			dispatcher.getResponseHandler()->unregisterListener(clientStatus[i].callback);
+		if(clientStatus[clientId].callback != NULL && dispatcher.getResponseHandler() != NULL) {
+			dispatcher.getResponseHandler()->unregisterListener(clientStatus[clientId].callback);
 		}
 
 		return true;
@@ -540,10 +540,13 @@ class WebServer {
 	 * main loop.
 	 */
 	void loop() {
-		server.available();
+		EthernetClient client = server.available();
 
-		//iterate clients
-		for(uint8_t i = 0; i < CLIENT_INSTANCES_NUM; i++) {
+		if(client._sock < CLIENT_INSTANCES_NUM) {
+			uint8_t i = client._sock;
+
+		////iterate clients
+		//for(uint8_t i = 0; i < CLIENT_INSTANCES_NUM; i++) {
 			//new connections
 			if(clientStatus[i].inUse == false && EthernetClient(i).available()) {
 				clientStatus[i].inUse = true;
@@ -553,7 +556,7 @@ class WebServer {
 			if(clientStatus[i].waiting == true) {
 				if(clientStatus[i].callback != NULL && clientStatus[i].callback->state == webserverListener::FINISHED) {
 					handleFinishedCallback(i);
-				} else if(clientStatus[i].callback != NULL && (clientStatus[i].callback->state == webserverListener::FAILED || millis() - clientStatus[i].timestamp > TIMEOUT_MILLIS)) {
+				} else if(clientStatus[i].callback != NULL && clientStatus[i].callback != NULL && (clientStatus[i].callback->state == webserverListener::FAILED || millis() - clientStatus[i].timestamp > TIMEOUT_MILLIS)) {
 					//no answer.
 					sendHttp500WithBody(i);
 				}
@@ -568,8 +571,9 @@ class WebServer {
 				#endif
 				doClientHandling(i);
 			}
-		}
+//		}
 	}
+}
 
 	/**
 	 * callback has finished, now execute this (usually actual page creation)
@@ -694,7 +698,7 @@ class WebServer {
 				client.print(F("</td><td>"));
 
 				uint32_t t = infoTable.lastDiscoveryRequest;
-				printDate(client, t);
+				printDate(clientId, t);
 
 
 				client.print(F("</td><td>"));
@@ -726,30 +730,34 @@ class WebServer {
 		client.println(F(" entries</th></tr></table>"));
 
 		//footer
-		sendHtmlFooter(client);
+		sendHtmlFooter(clientId);
 	}
 
 
-	void trailing0(EthernetClient* client, uint8_t a) {
-		if(a < 10) client->print(F("0"));
+	void trailing0(uint8_t clientId, uint8_t a) {
+		if(a < 10) {
+			EthernetClient client = EthernetClient(clientId);
+			client.print(F("0"));
+		}
 	}
 
-	void printDate(EthernetClient &client, uint32_t t) {
+	void printDate(uint8_t clientId, uint32_t t) {
+		EthernetClient client = EthernetClient(clientId);
 		client.print(year(t));
 		client.print(F("-"));
-		trailing0(&client, month(t));
+		trailing0(clientId, month(t));
 		client.print(month(t));
 		client.print(F("-"));
-		trailing0(&client, day(t));
+		trailing0(clientId, day(t));
 		client.print(day(t));
 		client.print(F(" "));
-		trailing0(&client, hour(t));
+		trailing0(clientId, hour(t));
 		client.print(hour(t));
 		client.print(F(":"));
-		trailing0(&client, minute(t));
+		trailing0(clientId, minute(t));
 		client.print(minute(t));
 		client.print(F(":"));
-		trailing0(&client, second(t));
+		trailing0(clientId, second(t));
 		client.print(second(t));
 	}
 
@@ -798,44 +806,6 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		client.print(F(" class='bg2'"));
 	}
 
-	///**
-	 //* initiating sensor discovery for a node
-	 //* @param clientId
-	 //* @param req
-	 //*/
-	//void doPageSensorInfo(uint8_t clientId, RequestContent* req) {
-		//if(req == NULL) {
-			//sendHttp500WithBody(clientId);
-			//return;
-		//}
-//
-		//String* id = req->getValue(variableRemote);
-		//uint8_t idInt = id->toInt();
-//
-		//if(id == NULL) {
-			//sendHttp500WithBody(clientId);
-			//return;
-		//}
-//
-		//Layer3::packet_t p;
-		//pf.generateDiscoveryInfoRequest(&p, idInt);
-		//listenerDiscovery.init(idInt, webserverListener::AWAITING_ANSWER);
-//
-		//clientStatus[clientId].callback = &listenerDiscovery;
-//
-		//boolean success = dispatcher.getResponseHandler()->registerListenerByPacketType(millis()+TIMEOUT_MILLIS, HARDWARE_DISCOVERY_RES, idInt, &listenerDiscovery);
-//
-//
-		//if(success) {
-			//success = l3.sendPacket(p);
-		//}
-		//if(!success) {
-			//sendHttp500WithBody(clientId);
-			//dispatcher.getResponseHandler()->unregisterListener(&listenerDiscovery);
-			//return;
-		//}
-	//}
-
 	/**
 	 * discovery has finished - print result
 	 * @param clientId
@@ -843,12 +813,6 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 	void doPageSensorInfo2(uint8_t clientId, RequestContent* req) {
 		//yay!
 		EthernetClient client = EthernetClient(clientId);
-		//discoveryListener* listener = (discoveryListener*) clientStatus[clientId].callback;
-//
-		//if(listener == NULL) {
-			//sendHttp500WithBody(clientId);
-			//return;
-		//}
 
 		if(req == NULL) {
 			sendHttp500WithBody(clientId);
@@ -926,7 +890,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 
 				client.print(F("</td>"));
 				client.print(F("<td>"));
-				printDate(client, discoveryInfo[i].rtcTimestamp);
+				printDate(clientId, discoveryInfo[i].rtcTimestamp);
 				client.print(F("</td>"));
 
 				client.print(F("<td><a href='"));
@@ -955,46 +919,6 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		client.print(numInfos);
 		client.println(F(" entries</th></tr></table>"));
 
-
-
-
-		////discovery info
-		//client.println(F("<table><tr><th>HardwareAddress</th><th>HardwareType</th><th>HasEvents</th><th>RequestInfo</th></tr>"));
-		//for(uint8_t i = 0; i < listener->gottenInfos; i++) {
-			//client.print(F("<tr"));
-			//sendHtmlBgColorAlternate(clientId, i);
-			//client.print(F("><td>"));
-			//client.print(listener->sensorInfos[i].hardwareAddress);
-			//client.print(F("</td><td>"));
-//
-			//uint8_t tmp = listener->sensorInfos[i].hardwareType;
-			//if(tmp > sizeof(hardwareTypeStrings)) tmp = 0;
-			//printP(clientId, hardwareTypeStrings[tmp]);
-//
-			//client.print(F("</td><td>"));
-			//client.print(listener->sensorInfos[i].canDetectEvents);
-			//client.print(F("<td><a href='"));
-			//printP(clientId, pageAddresses[PAGE_REQUEST_SENSOR]);
-			//client.print(F("?"));
-			//printP(clientId, variableRemote);
-			//client.print(F("="));
-			//client.print(listener->remote);
-			//client.print(F("&"));
-			//printP(clientId, variableHwAddress);
-			//client.print(F("="));
-			//client.print(listener->sensorInfos[i].hardwareAddress);
-			//client.print(F("&"));
-			//printP(clientId, variableHwType);
-			//client.print(F("="));
-			//client.print(listener->sensorInfos[i].hardwareType);
-			//client.print(F("'>x</a>"));
-			//client.print(F("</td>"));
-			//client.println(F("</tr>"));
-		//}
-		//client.print(F("<tr><th colspan='4'>"));
-		//client.print(listener->gottenInfos);
-		//client.println(F(" entries</th></tr></table>"));
-
 		sendHtmlFooter(clientId);
 
 		//listener->init(0, webserverListener::START);
@@ -1015,11 +939,11 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		MethodType eMethod = readHttpRequest(clientId, &uri, &req);
 
 		#ifdef DEBUG
-		Serial.print("Read Request type: ");
+		Serial.print(F("\tRead Request type: "));
 		Serial.print(eMethod);
-		Serial.print(" Uri: ");
+		Serial.print(F(" Uri: "));
 		Serial.print(uri);
-		Serial.println(" content: ");
+		Serial.println(F(" content: "));
 		for(uint8_t i = 0; i < req.getNum(); i++) {
 			Serial.print(F("\t"));
 			Serial.print(req.getKeys()[i]);
