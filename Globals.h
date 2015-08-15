@@ -43,8 +43,10 @@ SimpleTimer timer;
 	#include <sdcard/SDcard.h>
 	SDcard sdcard;
 
-	#include <sdcard/SDHardwareResponseListener.h>
-	SDHardwareRequestListener sdlistener;
+	#ifdef SDCARD_LOGGER_ENABLE
+		#include <sdcard/SDHardwareResponseListener.h>
+		SDHardwareRequestListener sdlistener;
+	#endif
 
 	#include <sdcard/SubscriptionManager.h>
 	SubscriptionManager subscriptionManager;

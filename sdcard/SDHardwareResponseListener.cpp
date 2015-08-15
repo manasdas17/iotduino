@@ -56,7 +56,13 @@ void SDHardwareRequestListener::doCallback(packet_application_numbered_cmd_t* ap
 
 	#ifdef SD_LOGGER_BINARY
 		memcpy(&bytes[0], &now, 4);
+		offset += 4;
 		memcpy(&bytes[4], cmd->uint8list, sizeUInt8List);
+		offset += sizeUInt8List;
+		#ifdef DEBUG_SD_ENABLE
+			Serial.print(millis());
+			Serial.println(F(": sensor data listener storing binary."));
+		#endif
 	#else
 		//if(cmd->numUint8 > 0) {
 			//sprintf(bytes, "%10lu", now);
@@ -69,11 +75,14 @@ void SDHardwareRequestListener::doCallback(packet_application_numbered_cmd_t* ap
 		//} else if(cmd->numInt16 > 0) {
 		//} else {
 			////no data.
+			#ifdef DEBUG_SD_ENABLE
+				Serial.print(millis());
+				Serial.print(F(": sensor data listener not binary, nothing to write."));
+			#endif
 			return;
 		//}
 	#endif
 
 	//write if possible.
 	sdcard.appendToFile(filename, (uint8_t*) bytes, offset);
-	#undef size
 }

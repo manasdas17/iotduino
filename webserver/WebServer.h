@@ -65,19 +65,35 @@ const char pageAddressGetSensorInfo[] PROGMEM = {"/getSensorInfo"};
 const char pageNodes[] PROGMEM = {"/nodes"};
 const char pageCss[] PROGMEM = {"/css"};
 const char pageRequestSensor[] PROGMEM = {"/sensor"};
-PGM_P pageAddresses[] = {NULL, pageAddressMain, pageAddressGetSensorInfo, pageNodes, pageCss, pageRequestSensor};
+const char pageWriteSensor[] PROGMEM = {"/sensorWrite"};
+PGM_P pageAddresses[] = {NULL, pageAddressMain, pageAddressGetSensorInfo, pageNodes, pageCss, pageRequestSensor, pageWriteSensor};
 
 const char pageTitleMain[] PROGMEM = {"Start"};
 const char pageTitleGetSensorInfo[] PROGMEM = {"Sensor Info"};
 const char pageTitleNodes[] PROGMEM = {"Nodes"};
 const char pageTitleRequestSensor[] PROGMEM = {"Rquested Sensor Information"};
+const char pageTitleWriteSensor[] PROGMEM = {"Write to Sensor"};
 
-PGM_P pageTitles[] = {NULL, pageTitleMain, pageTitleGetSensorInfo, pageTitleNodes, NULL, pageTitleRequestSensor};
-enum PAGES {PAGE_NONE, PAGE_MAIN, PAGE_GETSENSORINFO, PAGE_NODES, PAGE_CSS, PAGE_REQUEST_SENSOR};
+PGM_P pageTitles[] = {NULL, pageTitleMain, pageTitleGetSensorInfo, pageTitleNodes, NULL, pageTitleRequestSensor, pageTitleWriteSensor};
+enum PAGES {PAGE_NONE, PAGE_MAIN, PAGE_GETSENSORINFO, PAGE_NODES, PAGE_CSS, PAGE_REQUEST_SENSOR, PAGE_WRITE_SENSOR};
 
 const char variableRemote[] PROGMEM = {"remote"};
 const char variableHwAddress[] PROGMEM = {"hwaddress"};
 const char variableHwType[] PROGMEM = {"hwtype"};
+const char variableVal[] PROGMEM = {"val"};
+const char variableListType[] PROGMEN = {"listtype"};
+const char variableListNum[] PROGMEN = {"listnum"};
+
+const char linkNameX[] PROGMEM = {"x"};
+const char linkNameOn[] PROGMEM = {"on"};
+const char linkNameOff[] PROGMEM = {"off"};
+const char linkNameToggle[] PROGMEM = {"toggle"};
+
+const char linkCmdListTypeUint8[] PROGMEM = {"u8"};
+const char linkCmdListTypeUint16[] PROGMEM = {"u16"};
+const char linkCmdListTypeInt8[] PROGMEM = {"i8"};
+const char linkCmdListTypeInt16[] PROGMEM = {"i6"};
+
 
 /** hw type strs */
 const char strHWType_UNKNOWN[] PROGMEM = {"UNKNOWN"};
@@ -643,9 +659,9 @@ class WebServer {
 		client.println(F("a:active { font-weight: bold; }"));
 		client.println(F("a:hover { text-decoration: none; background-color: #FFD8D8; }"));
 		client.println(F("table, th, td, body { font-family: Arial; font-size: 9pt; }"));
-		client.println(F("table { border: none; vertical-align: top; padding: 1px; background-position: center; width: 800px}"));
-		client.println(F("td { padding: 0px; font-size: 9pt; border-bottom: 1px dotted; }"));
-		client.println(F("th { font-size: 10pt; font-weight: bold; border-bottom: 2px solid; padding: 0px; }"));
+		client.println(F("table { border: 1px lightgray dashed; vertical-align: top; padding: 4px; background-position: center; width: 800px; border-spacing: 2px; -webkit-border-horizontal-spacing: 5px; -webkit-border-vertical-spacing: 2px;}"));
+		client.println(F("td { font-size: 9pt; border-bottom: 1px dotted; }"));
+		client.println(F("th { font-size: 10pt; font-weight: bold; border-bottom: 2px solid }"));
 		client.println(F(".bg1 { background-color: #fafafa; }"));
 		client.println(F(".bg2 { background-color: #efefef; }"));
 		client.println(F(".bg1:hover { background-color: #FFD8D8; }"));
@@ -653,6 +669,12 @@ class WebServer {
 		client.println(F(".warning { color: red; }"));
 		client.println(F(".ok { color: green; }"));
 		client.println(F("hr { border:none; height: 1px; background-color: black; }"));
+		client.println(F("input { font-size: 9pt; height: 20px; margin: 0; padding: 0px; background-color: white; border: 1px solid darkgray; }"));
+		client.println(F("input[type='submit'] { width: 40px; }"));
+		client.println(F("input[type='text'] { width: 40px }"));
+		client.println(F(".centered { text-align: center; }"));
+		client.println(F(".righted { text-align: right; }"));
+		client.println(F(".inline { border: none; }"));
 		client.flush();
 	}
 
@@ -723,23 +745,23 @@ class WebServer {
 				//node info
 				client.print(F("<tr"));
 				sendHtmlBgColorAlternate(clientId, numNodes);
-				client.print(F("><td>"));
+				client.print(F("><td class='righted'>"));
 				client.print(i);
 				client.print(F("</td><td>"));
 				client.print(nodeInfoString);
-				client.print(F("</td><td>"));
+				client.print(F("</td><td class='righted'>"));
 
 				uint32_t t = infoTable.lastDiscoveryRequest;
 				printDate(clientId, t);
 
 
-				client.print(F("</td><td>"));
+				client.print(F("</td><td class='righted'>"));
 				client.print(neighbourActive);
-				client.print(F("</td><td>"));
+				client.print(F("</td><td class='righted'>"));
 				client.print(neighbourNextHop);
-				client.print(F("</td><td>"));
+				client.print(F("</td><td class='righted'>"));
 				client.print(neighbourHops);
-				client.print(F("</td><td>"));
+				client.print(F("</td><td class='righted'>"));
 				if(i != l3.localAddress) {
 					if(neighbourLastKeepAlive > 0) {
 						client.print((nowSystem - neighbourLastKeepAlive) / 1000);
@@ -751,7 +773,7 @@ class WebServer {
 					client.print(F(" <i>loopback</i>"));
 				}
 				//discover
-				client.print(F("</td><td><a href='"));
+				client.print(F("</td><td class='centered'><a href='"));
 				printP(clientId, pageAddresses[PAGE_GETSENSORINFO]);
 				client.print(F("?"));
 				printP(clientId, variableRemote);
@@ -846,6 +868,140 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		client.print(F(" class='bg2'"));
 	}
 
+	static boolean hwIsReadable(HardwareTypeIdentifier type) {
+		switch(type) {
+			case HWType_rcswitch:
+			case HWType_tone:
+				return false;
+			default:
+				return true;
+		}
+	}
+
+	void printExecutableLinks(uint8_t clientId, l3_address_t remote, HardwareTypeIdentifier type, uint8_t address) {
+		EthernetClient client = EthernetClient(clientId);
+
+		//conversion buffers
+		char buf1[3];
+		itoa(remote, buf1, 10);
+		char buf2[3];
+		itoa(address, buf2, 10);
+		char buf3[3];
+		itoa(type, buf3, 10);
+
+		//						0				1					2					3					4					5
+		//						remote id		hw address			hw type				var to write		listtype			listtypenum
+		const char* keys[6] = {variableRemote,	variableHwAddress,	variableHwType,		variableVal,		variableListType,	variableListNum};
+		const char* vals[6] = {buf1,			buf2,				buf3};
+
+		switch(type) {
+			case HWType_relay:
+			case HWType_DIGITAL:
+				//off
+				vals[3] = "0";
+				vals[4] = linkCmdListTypeUint8;
+				vals[5] = "1";
+				printLink(clientId, pageAddresses[PAGE_WRITE_SENSOR], keys, vals, linkNameOff, 3);
+				client.print(F(" &middot; "));
+				//on
+				vals[3] = "1";
+				vals[4] = linkCmdListTypeUint8;
+				vals[5] = "1";
+				printLink(clientId, pageAddresses[PAGE_WRITE_SENSOR], keys, vals, linkNameOn, 4);
+				return;
+			case HWType_rcswitch:
+				char bufTmp[2];
+				client.print(F("<table class='inline' style='width: 99%'"));
+				client.print(F("<tr><td class='centered'>1</td><td class='centered'>2</td><td class='centered'>3</td><td class='centered'>4</td><td class='centered'>all</td></tr>"));
+				client.print(F("<tr>"));
+				vals[4] = linkCmdListTypeUint8;
+				vals[5] = "2";
+				for(uint8_t i = 0; i < 5; i++) {
+					client.print(F("<td class='inline centered'>"));
+					itoa(10*(i+1)+1, bufTmp, 10);
+					vals[3] = bufTmp;
+					printLink(clientId, pageAddresses[PAGE_WRITE_SENSOR], keys, vals, linkNameOff, 4);
+
+					client.print(F(" &middot; "));
+
+					itoa(10*(i+1)+0, bufTmp, 10);
+					vals[3] = bufTmp;
+					printLink(clientId, pageAddresses[PAGE_WRITE_SENSOR], keys, vals, linkNameOn, 4);
+					client.print(F("</td>"));
+				}
+				client.print(F("</tr>"));
+				client.print(F("</table>"));
+				return;
+			case HWType_ANALOG:
+			case HWType_rtc:
+			case HWType_tone:
+				client.print(F("<form action='"));
+				printP(clientId, pageAddresses[PAGE_WRITE_SENSOR]);
+				client.print(F("' method='get'>"));
+
+				client.print(F("<input type='hidden' name='"));
+				printP(clientId, variableHwAddress);
+				client.print(F("' value='"));
+				client.print(address);
+				client.print(F("'>"));
+
+				client.print(F("val(msbf):<input type='hidden' name='"));
+				printP(clientId, variableHwType);
+				client.print(F("' value='"));
+				client.print(type);
+				client.print(F("' style='width: 200px'>"));
+
+				client.print(F("<input type='hidden' name='"));
+				printP(clientId, variableRemote);
+				client.print(F("' value='"));
+				client.print(remote);
+				client.print(F("'>"));
+
+				client.print(F("<input type='text' name='"));
+				printP(clientId, variableVal);
+				client.print(F("'/>"));
+				client.print(F(" <input type='submit'><br/>"));
+
+
+				client.print(F(" u8:<input type='radio' name='"));
+				printP(clientId, variableListType);
+				client.print(F("' value='"));
+				printP(clientId, linkCmdListTypeUint8);
+				client.print(F("'/>"));
+
+				client.print(F(" u8:<input type='radio' name='"));
+				printP(clientId, variableListType);
+				client.print(F("' value='"));
+				printP(clientId, linkCmdListTypeUint16);
+				client.print(F("'/>"));
+
+				client.print(F("</form>"));
+				return;
+			default:
+				client.print('-');
+		}
+	}
+
+	void printLink(uint8_t clientId, const char* baseUrl, const char** keys, const char** vals, const char* name, uint8_t num) {
+		EthernetClient client = EthernetClient(clientId);
+
+		client.print(F("<a href='"));
+		printP(clientId, baseUrl);
+		client.print('?');
+
+		for(uint8_t i = 0; i < num; i++) {
+			if(i > 0)
+				client.print('&');
+			printP(clientId, keys[i]);
+			client.print('=');
+			client.print(vals[i]);
+		}
+
+		client.print(F("'>"));
+		printP(clientId, name);
+		client.print(F("</a>"));
+	}
+
 	/**
 	 * discovery has finished - print result
 	 * @param clientId
@@ -922,46 +1078,57 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 
 		SDcard::SD_nodeDiscoveryInfoTableEntry_t discoveryInfo[SD_DISCOVERY_NUM_INFOS_PER_NODE];
 		sdcard.getDiscoveryInfosForNode(idInt, discoveryInfo, SD_DISCOVERY_NUM_INFOS_PER_NODE);
-		client.println(F("<table><tr><th>HardwareAddress</th><th>HardwareType</th><th>LastUpdated</th><th>requestSensor</th></tr>"));
+		client.println(F("<table><tr><th>HardwareAddress</th><th>HardwareType</th><th>LastUpdated</th><th>requestSensor</th><th>writeSensor</th></tr>"));
 		uint8_t numInfos = 0;
+		//conversion buffers
+		char buf1[3];
+		char buf2[3];
+		char buf3[3];
+		uint8_t num = 0;
 		for(uint8_t i = 0; i < SD_DISCOVERY_NUM_INFOS_PER_NODE; i++) {
 			if(discoveryInfo[i].hardwareAddress > 0 && discoveryInfo[i].hardwareType > 0) {
-				client.print(F("<tr>"));
-				client.print(F("<td>"));
+				//table
+				client.print(F("<tr "));
+				sendHtmlBgColorAlternate(clientId, num);
+				client.print(F(">"));
+				num++;
+
+				client.print(F("<td class='righted'>"));
 				client.print(discoveryInfo[i].hardwareAddress);
 				client.print(F("</td>"));
-				client.print(F("<td>"));
 
+				client.print(F("<td>"));
 				printP(clientId, hardwareTypeStrings[discoveryInfo[i].hardwareType]);
-
 				client.print(F("</td>"));
-				client.print(F("<td>"));
+
+				client.print(F("<td class='righted'>"));
 				printDate(clientId, discoveryInfo[i].rtcTimestamp);
 				client.print(F("</td>"));
 
-				client.print(F("<td><a href='"));
-				printP(clientId, pageAddresses[PAGE_REQUEST_SENSOR]);
-				client.print(F("?"));
-				printP(clientId, variableRemote);
-				client.print(F("="));
-				client.print(idInt);
-				client.print(F("&"));
-				printP(clientId, variableHwAddress);
-				client.print(F("="));
-				client.print(discoveryInfo[i].hardwareAddress);
-				client.print(F("&"));
-				printP(clientId, variableHwType);
-				client.print(F("="));
-				client.print(discoveryInfo[i].hardwareType);
-				client.print(F("'>x</a>"));
+				client.print(F("<td class='centered'>"));
+				if(hwIsReadable((HardwareTypeIdentifier) discoveryInfo[i].hardwareType)) {
+					itoa(idInt, buf1, 10);
+					itoa(discoveryInfo[i].hardwareAddress, buf2, 10);
+					itoa(discoveryInfo[i].hardwareType, buf3, 10);
+					const char* keys[3] = {variableRemote, variableHwAddress, variableHwType};
+					const char* vals[3] = {buf1, buf2, buf3};
+					printLink(clientId, pageAddresses[PAGE_REQUEST_SENSOR], keys, vals, linkNameX, 3);
+				} else {
+					client.print(F("-"));
+				}
+				client.print(F("</td>"));
+
+				client.print(F("<td class='centered'>"));
+				printExecutableLinks(clientId, idInt, (HardwareTypeIdentifier) discoveryInfo[i].hardwareType, discoveryInfo[i].hardwareAddress);
 				client.print(F("</td>"));
 
 				client.print(F("</tr>"));
+				client.print(F("</form>"));
 
 				numInfos++;
 			}
 		}
-		client.print(F("<tr><th colspan='4'>"));
+		client.print(F("<tr><th colspan='5'>"));
 		client.print(numInfos);
 		client.println(F(" entries</th></tr></table>"));
 
@@ -1029,7 +1196,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		}
 
 		#ifdef DEBUG
-		Serial.print(F("\tpage sent out. checking for connection close."));
+		Serial.println(F("\tpage sent out. checking for connection close."));
 		#endif
 
 		if(!clientStatus[clientId].waiting) {
@@ -1037,6 +1204,67 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 			Serial.println(F("\tnot waiting, do close."));
 			#endif
 			closeClient(clientId);
+		}
+	}
+
+	/**
+	 * initiate sensor write
+	 * @param clientId
+	 * @param req
+	 * TODO! ****************************************************************************************************************************************************************
+	 */
+	void doPageWriteSensor(uint8_t clientId, RequestContent* req) {
+		#ifdef DEBUG
+		Serial.print(millis());
+		Serial.print(F(": doPageWriteSensor() on clientId="));
+		Serial.println(clientId);
+		#endif
+
+		String* id = req->getValue(variableRemote);
+		if(id == NULL) {
+			sendHttp500WithBody(clientId);
+			return;
+		}
+		int8_t idInt = id->toInt();
+
+		String* hwAddressStr = req->getValue(variableHwAddress);
+		if(hwAddressStr == NULL) {
+			sendHttp500WithBody(clientId);
+			return;
+		}
+		int8_t hwaddress = hwAddressStr->toInt();
+
+		String* hwtypeStr = req->getValue(variableHwType);
+		if(hwtypeStr == NULL) {
+			sendHttp500WithBody(clientId);
+			return;
+		}
+		int8_t hwtype = hwtypeStr->toInt();
+
+		if(idInt == -1 || hwaddress == -1 || hwtype == -1) {
+			sendHttp500WithBody(clientId);
+			closeClient(clientId);
+			return;
+		}
+
+		Layer3::packet_t p;
+		HardwareCommandResult cmd;
+		cmd.setAddress(hwaddress);
+		cmd.setHardwareType((HardwareTypeIdentifier) hwtype);
+		seq_t sequence = pf.generateHardwareCommandWrite(&p, idInt, &cmd);
+		listenerHardwareRequest.init(idInt, (HardwareTypeIdentifier) hwtype, hwaddress, webserverListener::AWAITING_ANSWER);
+
+		clientStatus[clientId].callback = &listenerHardwareRequest;
+
+		boolean success = dispatcher.getResponseHandler()->registerListenerBySeq(millis()+TIMEOUT_MILLIS, sequence, idInt, &listenerHardwareRequest);
+
+		success &= l3.sendPacket(p);
+
+		if(!success) {
+			sendHttp500WithBody(clientId);
+			closeClient(clientId);
+			dispatcher.getResponseHandler()->unregisterListener(&listenerHardwareRequest);
+			return;
 		}
 	}
 

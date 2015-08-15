@@ -163,6 +163,11 @@ class SubscriptionManager {
 				listenerDiscovery.init(0, webserverListener::START);
 				dispatcher.getResponseHandler()->unregisterListener(&listenerDiscovery);
 			} else if(listenerDiscovery.state == webserverListener::FAILED) {
+					#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
+					Serial.print(millis());
+					Serial.print(F(": discovery failed for node="));
+					Serial.println(listenerDiscovery.remote);
+					#endif
 				listenerDiscovery.init(0, webserverListener::START);
 				dispatcher.getResponseHandler()->unregisterListener(&listenerDiscovery);
 			}

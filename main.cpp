@@ -368,6 +368,10 @@ void setup() {
 
 	dispatcher.init(&l3, &hwInterface);
 
+	#ifdef SDCARD_LOGGER_ENABLE
+		dispatcher.getResponseHandler()->registerListenerByPacketType(0, HARDWARE_COMMAND_RES, 0, &sdlistener);
+	#endif
+
 	timer.init();
 
 	/*

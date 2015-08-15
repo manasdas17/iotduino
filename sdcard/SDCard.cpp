@@ -95,6 +95,9 @@ void SDcard::prepareDiscoveryFile() {
 
 boolean SDcard::appendToFile(const char* fileName, uint8_t* buf, uint8_t bufSize) {
 	File tmp = SD.open(fileName, WRITE);
+	if(!tmp)
+		return false;
+
 	boolean success = tmp.write(buf, bufSize);
 	tmp.flush();
 

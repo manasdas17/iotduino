@@ -98,6 +98,7 @@ class HardwareInterface {
 		 * @param address
 		 */
 		boolean hasHardwareDriver(const HardwareTypeIdentifier type, const uint8_t address) const;
+
 };
 
 #endif //__HARDWAREINTERFACE_H__
