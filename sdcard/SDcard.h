@@ -332,12 +332,23 @@ class SDcard {
 		 * @param buf data object
 		 * @return success
 		 */
-		boolean getNodeInfo(uint8_t nodeId, SD_nodeInfoTableEntry_t* buf) {
+		boolean getDiscoveryNodeInfo(uint8_t nodeId, SD_nodeInfoTableEntry_t* buf) {
 			if(nodeId >= SD_DISCOVERY_NUM_NODES || buf == NULL)
 				return false;
 			//read
-			seekDiscovery(getNodeInfoAddress(nodeId));
-			return myFileDiscovery.readBytes((uint8_t*) buf, sizeof(SD_nodeInfoTableEntry_t));
+			if(!seekDiscovery(getNodeDiscoveryInfoAddress(nodeId))) {
+				#ifdef DEBUG_SD_ENABLE
+					Serial.print(millis());
+					Serial.print(F(" getDiscoveryNodeInfo() seek for node="));
+					Serial.print(nodeId);
+					Serial.println(F(" failed."));
+				#endif
+				return false;
+			}
+
+			boolean ret = false;
+			ret = myFileDiscovery.readBytes((uint8_t*) buf, sizeof(SD_nodeInfoTableEntry_t));
+			return ret;
 		}
 
 		/** empty constructor*/
@@ -359,7 +370,7 @@ class SDcard {
 		 */
 		uint8_t getNodeInfoString(uint8_t nodeId, uint8_t* buf, uint8_t bufSize);
 
-		inline uint32_t getNodeInfoAddress(uint8_t nodeId) {
+		inline uint32_t getNodeDiscoveryInfoAddress(uint8_t nodeId) {
 			return nodeId * sizeof(SD_nodeInfoTableEntry_t);
 		}
 

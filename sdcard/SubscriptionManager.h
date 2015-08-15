@@ -10,6 +10,7 @@
 #define __SUBSCRIPTIONMANAGER_H__
 
 #include <Arduino.h>
+#include <avr/wdt.h>
 #include <dispatcher/EventCallbackInterface.h>
 #include <dispatcher/PacketDispatcher.h>
 #include <dispatcher/PacketFactory.h>
@@ -78,7 +79,7 @@ class SubscriptionManager {
 
 			//save request time
 			SDcard::SD_nodeInfoTableEntry_t infoObj;
-			if(!sdcard.getNodeInfo(node, &infoObj)) {
+			if(!sdcard.getDiscoveryNodeInfo(node, &infoObj)) {
 				#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
 					Serial.println(F("\tgetInfo failed."));
 				#endif
@@ -291,17 +292,36 @@ class SubscriptionManager {
 		void readKnownNodesFromSD() {
 			uint8_t index = 0;
 			SDcard::SD_nodeInfoTableEntry_t info;
+
+			#if DEBUG
+			Serial.print(millis());
+			Serial.print(F(": reading nodeInfo"));
+			#endif
 			for(uint8_t i = 0; i < SD_DISCOVERY_NUM_NODES; i++) {
+				#if DEBUG
+					if(i%10==0)
+						Serial.print('.');
+				#endif
+
+				wdt_reset();
+
 				info.nodeId = 0;
-				sdcard.getNodeInfo(i, &info);
+				sdcard.getDiscoveryNodeInfo(i, &info);
 
 				if(info.nodeId != 0) {
+					#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
+						Serial.println();
+						Serial.print(F("\tNodeId="));
+						Serial.print(i);
+						Serial.print(F(" lastDiscovery="));
+						Serial.println(info.lastDiscoveryRequest);
+					#endif
 					knownNodes[index] = i;
 					index++;
 				}
 			}
-
 			#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
+				Serial.println();
 				Serial.print(millis());
 				Serial.print(F(": readKnownNodesFromSD() foundNum="));
 				Serial.println(index);

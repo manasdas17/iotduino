@@ -20,10 +20,10 @@ boolean SDcard::openFile(const char* fileName, FileMode mode) {
 		Serial.flush();
 	#endif
 
-	if(strcmp(fileName, fileNameDiscoveryInfo)) {
+	if(!strcmp(fileName, fileNameDiscoveryInfo)) {
 		myFileDiscovery = SD.open(fileNameDiscoveryInfo, WRITE);
 		return myFileDiscovery;
-	} else if(strcmp(fileName, fileNameNodeInfo)) {
+	} else if(!strcmp(fileName, fileNameNodeInfo)) {
 		myFileInfo = SD.open(fileNameNodeInfo, WRITE);
 		return myFileInfo;
 	}
@@ -35,11 +35,11 @@ uint8_t SDcard::getNodeInfoString(uint8_t nodeId, uint8_t* buf, uint8_t bufSize)
 		return false;
 
 	uint32_t pos = nodeId * NODE_INFO_SIZE;
-	if(!myFileDiscovery.seek(pos)) {
+	if(!myFileInfo.seek(pos)) {
 		return false;
 	}
 
-	return myFileDiscovery.readBytes(buf, NODE_INFO_SIZE);
+	return myFileInfo.readBytes(buf, NODE_INFO_SIZE);
 }
 
 boolean SDcard::init() {
