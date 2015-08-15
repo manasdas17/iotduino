@@ -308,7 +308,7 @@ class WebServer {
 			client.print("</a></li>");
 		}
 
-		client.print("</ul><br/><hr/><br/>");
+		client.print("</ul><br/><hr/><br/><a href='javascript:window.history.back();'>&laquo; back</a> &middot; <a href='javascript:location.reload();'>reload</a> &middot; <a href='javascript:window.history.forward();'>forward &raquo;</a><br/>");
 		client.flush();
 	}
 
@@ -668,7 +668,7 @@ class WebServer {
 		#endif
 
 		sendHttpOk(clientId);
-		sendHtmlHeader(clientId, pageTitles[PAGE_MAIN]);
+		sendHtmlHeader(clientId, pageTitles[PAGE_NODES]);
 		sendHtmlMenu(clientId);
 
 		EthernetClient client = EthernetClient(clientId);
@@ -677,7 +677,7 @@ class WebServer {
 		client.println(F("<h1>Nodes</h1>"));
 
 		//table
-		client.println(F("<table><tr><th>ID</th><th>NodeInfo</th><th>lastDiscovery</th><th>active</th><th>nextHop</th><th>#hops</th><th>route age</th><th>info</th></tr>"));
+		client.println(F("<table><tr><th>ID</th><th>NodeInfo</th><th>lastDiscovery</th><th>active</th><th>nextHop</th><th>#hops</th><th>routeAge</th><th>info</th></tr>"));
 		uint8_t numNodes = 0;
 		uint32_t nowSystem = millis();
 		//uint32_t rtcTime = now();
@@ -741,13 +741,17 @@ class WebServer {
 				client.print(neighbourHops);
 				client.print(F("</td><td>"));
 				if(i != l3.localAddress) {
-					client.print((nowSystem - neighbourLastKeepAlive) / 1000);
-					client.print(F("s</td>"));
+					if(neighbourLastKeepAlive > 0) {
+						client.print((nowSystem - neighbourLastKeepAlive) / 1000);
+						client.print(F("s"));
+					} else {
+						client.print(F("<i>no route to host</i>"));
+					}
 				} else {
 					client.print(F(" <i>loopback</i>"));
 				}
 				//discover
-				client.print(F("<td><a href='"));
+				client.print(F("</td><td><a href='"));
 				printP(clientId, pageAddresses[PAGE_GETSENSORINFO]);
 				client.print(F("?"));
 				printP(clientId, variableRemote);
@@ -1030,7 +1034,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 
 		if(!clientStatus[clientId].waiting) {
 			#ifdef DEBUG
-			Serial.print(F("\tnot waiting, do close."));
+			Serial.println(F("\tnot waiting, do close."));
 			#endif
 			closeClient(clientId);
 		}
