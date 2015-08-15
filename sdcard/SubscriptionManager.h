@@ -36,7 +36,7 @@ extern SDcard sdcard;
 //#define SUBSCRIPTION_TIMEOUT_MILLIS (1*60*1000UL) //timeout after 15 minutes
 
 /** delay between discovery requests */
-#define DISCOVERY_REQUEST_DELAY_MILLIS (500)
+#define DISCOVERY_REQUEST_DELAY_MILLIS (2000)
 /** delay between scanning neighbourtable and trigger discovery */
 #define DISCOVERY_REQUEST_PERIOD_MILLIS (1*20*1000UL) //every 15 minutes
 
@@ -77,37 +77,6 @@ class SubscriptionManager {
 			//seq_t seq = pf.generateDiscoveryInfoRequest(&p, node);
 			pf.generateDiscoveryInfoRequest(&p, node);
 
-			//save request time
-			SDcard::SD_nodeInfoTableEntry_t infoObj;
-			if(!sdcard.getDiscoveryNodeInfo(node, &infoObj)) {
-				#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
-					Serial.println(F("\tgetInfo failed."));
-				#endif
-				return false;
-			}
-			if(infoObj.nodeId != node) {
-				#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
-					Serial.println(F("\tunknown node, adding."));
-				#endif
-				infoObj.nodeId = node;
-			}
-			infoObj.lastDiscoveryRequest = now();
-
-			if(!sdcard.saveNodeInfo(node, &infoObj)) {
-				#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
-					Serial.println(F("\tsaving failed."));
-				#endif
-				return false;
-			}
-
-			//delete current info
-			if(!sdcard.deleteDiscoveryInfos(node)) {
-				#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
-					Serial.println(F("\tdeletion failed."));
-				#endif
-				return false;
-			}
-
 			return l3.sendPacket(p);
 		}
 
@@ -138,17 +107,59 @@ class SubscriptionManager {
 		void maintainListeners() {
 			if(listenerDiscovery.state == webserverListener::FINISHED) {
 				//init buffer for sd storage
-				SDcard::SD_nodeDiscoveryInfoTableEntry_t buf[listenerDiscovery.gottenInfos];
+				SDcard::SD_nodeDiscoveryInfoTableEntry_t buf[SD_DISCOVERY_NUM_INFOS_PER_NODE];
+				memset(buf, 0, sizeof(buf));
 
 				//put data into buffer
 				for(uint8_t i = 0; i < listenerDiscovery.gottenInfos; i++) {
 					buf[i].hardwareAddress = listenerDiscovery.sensorInfos[i].hardwareAddress;
 					buf[i].hardwareType = listenerDiscovery.sensorInfos[i].hardwareType;
-					buf[i].rtcTimestamp = now();
+					//buf[i].rtcTimestamp = now();
+					buf[i].rtcTimestamp = 0;
 				}
 
-				//store
-				sdcard.saveDiscoveryInfos(listenerDiscovery.remote, buf, listenerDiscovery.gottenInfos);
+				//store node info
+				SDcard::SD_nodeInfoTableEntry_t infoObj;
+				memset(&infoObj, 0, sizeof(infoObj));
+				if(!sdcard.getDiscoveryNodeInfo(listenerDiscovery.remote, &infoObj)) {
+					#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
+					Serial.println(F("\tgetInfo failed."));
+					#endif
+				}
+				if(infoObj.nodeId != listenerDiscovery.remote) {
+					#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
+					Serial.println(F("\tunknown node, adding."));
+					#endif
+					infoObj.nodeId = listenerDiscovery.remote;
+				}
+				infoObj.lastDiscoveryRequest = now();
+
+				//store info object
+				if(!sdcard.saveNodeInfo(listenerDiscovery.remote, &infoObj)) {
+					#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
+					Serial.println(F("\tsaving failed."));
+					#endif
+				}
+
+				//store discovery info in case of new data.
+				#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
+				Serial.println(F("\tgetting old info"));
+				#endif
+				SDcard::SD_nodeDiscoveryInfoTableEntry_t oldInfo[SD_DISCOVERY_NUM_INFOS_PER_NODE];
+				sdcard.getDiscoveryInfosForNode(listenerDiscovery.remote, oldInfo, SD_DISCOVERY_NUM_INFOS_PER_NODE);
+
+				if(memcmp(oldInfo, buf, sizeof(buf)) != 0) {
+					//not equal for the new info buffer data
+					#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
+					Serial.println(F("\tnew information, update."));
+					#endif
+					sdcard.saveDiscoveryInfos(listenerDiscovery.remote, buf, SD_DISCOVERY_NUM_INFOS_PER_NODE);
+				} else {
+					#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
+					Serial.println(F("\tnothing new."));
+					#endif
+				}
+
 				listenerDiscovery.init(0, webserverListener::START);
 				dispatcher.getResponseHandler()->unregisterListener(&listenerDiscovery);
 			} else if(listenerDiscovery.state == webserverListener::FAILED) {
