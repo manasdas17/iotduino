@@ -677,7 +677,7 @@ class WebServer {
 		client.println(F("<h1>Nodes</h1>"));
 
 		//table
-		client.println(F("<table><tr><th>ID</th><th>NodeInfo</th><th>lastDiscovery</th><th>active</th><th>nextHop</th><th>#hops</th><th>age</th><th>info</th></tr>"));
+		client.println(F("<table><tr><th>ID</th><th>NodeInfo</th><th>lastDiscovery</th><th>active</th><th>nextHop</th><th>#hops</th><th>route age</th><th>info</th></tr>"));
 		uint8_t numNodes = 0;
 		uint32_t nowSystem = millis();
 		//uint32_t rtcTime = now();
@@ -707,7 +707,7 @@ class WebServer {
 			getRouteInfoForNode(i, neighbourActive, neighbourLastKeepAlive, neighbourHops, neighbourNextHop);
 
 			//node info
-			sdcard.getNodeInfo(i, &infoTable);
+			sdcard.getDiscoveryNodeInfo(i, &infoTable);
 
 			//////discovery info
 			////if(infoTable.nodeId != 0) {
@@ -740,8 +740,12 @@ class WebServer {
 				client.print(F("</td><td>"));
 				client.print(neighbourHops);
 				client.print(F("</td><td>"));
-				client.print((nowSystem - neighbourLastKeepAlive) / 1000);
-				client.print(F("s</td>"));
+				if(i != l3.localAddress) {
+					client.print((nowSystem - neighbourLastKeepAlive) / 1000);
+					client.print(F("s</td>"));
+				} else {
+					client.print(F(" <i>loopback</i>"));
+				}
 				//discover
 				client.print(F("<td><a href='"));
 				printP(clientId, pageAddresses[PAGE_GETSENSORINFO]);
@@ -874,7 +878,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		sdcard.getNodeInfoString(idInt, (uint8_t*) nodeInfoString, NODE_INFO_SIZE);
 
 		SDcard::SD_nodeInfoTableEntry_t infoTable;
-		sdcard.getNodeInfo(idInt, &infoTable);
+		sdcard.getDiscoveryNodeInfo(idInt, &infoTable);
 
 		boolean neighbourActive = 0;
 		uint32_t neighbourLastKeepAlive = 0;
