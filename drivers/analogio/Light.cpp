@@ -14,7 +14,8 @@ boolean Light::implementsInterface( HardwareTypeIdentifier type ) {
 }
 
 boolean Light::readVal( HardwareTypeIdentifier type, HardwareCommandResult* result ) {
-	if(type == HWType_light && result != NULL)
+	//if(type == HWType_light && result != NULL)
+	if(implementsInterface(type))
 		return AnalogIOGeneric::readVal(type, result);
 	return false;
 }
