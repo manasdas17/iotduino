@@ -270,6 +270,7 @@ class WebServer {
 			client.println(cacheTime);
 		}
 		client.println();
+		client.flush();
 	}
 
 	/**
@@ -286,6 +287,7 @@ class WebServer {
 			client.print(F("<meta http-equiv='refresh' content='300'>"));
 
 		client.println(F("</header><body>"));
+		client.flush();
 	}
 
 	/**
@@ -307,6 +309,7 @@ class WebServer {
 		}
 
 		client.print("</ul><br/><hr/><br/>");
+		client.flush();
 	}
 
 	/**
@@ -316,8 +319,9 @@ class WebServer {
 	void sendHtmlFooter(uint8_t clientId) {
 		EthernetClient client = EthernetClient(clientId);
 		client.print(F("<br/><br/><hr/><br/><span style='text-align: right; font-style: italic;'><a href='http://iotduino.de'>iotduino</a> webserver. "));
-		printDate(client, now());
+		printDate(clientId, now());
 		client.println(F("</span></body></html>"));
+		client.flush();
 	}
 
 
@@ -523,7 +527,7 @@ class WebServer {
 			return false;
 		}*/
 
-		delay(10);
+		delay(1);
 		EthernetClient(clientId).stop();
 		clientStatus[clientId].inUse = false;
 		clientStatus[clientId].requestType = PAGE_NONE;
@@ -540,13 +544,10 @@ class WebServer {
 	 * main loop.
 	 */
 	void loop() {
-		EthernetClient client = server.available();
-
-		if(client._sock < CLIENT_INSTANCES_NUM) {
-			uint8_t i = client._sock;
+		server.available();
 
 		////iterate clients
-		//for(uint8_t i = 0; i < CLIENT_INSTANCES_NUM; i++) {
+		for(uint8_t i = 0; i < CLIENT_INSTANCES_NUM; i++) {
 			//new connections
 			if(clientStatus[i].inUse == false && EthernetClient(i).available()) {
 				clientStatus[i].inUse = true;
@@ -571,7 +572,6 @@ class WebServer {
 				#endif
 				doClientHandling(i);
 			}
-//		}
 	}
 }
 
@@ -596,12 +596,34 @@ class WebServer {
 	 * @param clientId
 	 */
 	void doPageStart(uint8_t clientId) {
+		#ifdef DEBUG
+		Serial.print(millis());
+		Serial.print(F(": doPageStart() on clientId="));
+		Serial.println(clientId);
+		#endif
+
 		EthernetClient client = EthernetClient(clientId);
+
+		#ifdef DEBUG
+		Serial.println(F("\tdoHttpHeaderOK"));
+		#endif
 		sendHttpOk(clientId);
+
+		#ifdef DEBUG
+		Serial.println(F("\tdoHtmlHeader"));
+		#endif
 		sendHtmlHeader(clientId, pageTitles[PAGE_MAIN]);
+
+		#ifdef DEBUG
+		Serial.println(F("\tdoHtmlMenu"));
+		#endif
 		sendHtmlMenu(clientId);
 		client.println(F("<h1>Oh Hai!</h1>"));
 		client.println(F("Welcome to the <a href='http://iotduino.de'>iotduino</a> gateway system."));
+
+		#ifdef DEBUG
+		Serial.println(F("\tdoHtmlFooter"));
+		#endif
 		sendHtmlFooter(clientId);
 	}
 
@@ -610,7 +632,12 @@ class WebServer {
 	 * @param clientId
 	 */
 	void doPageCss(uint8_t clientId) {
-		sendHttpOk(clientId, 300);
+		#ifdef DEBUG
+		Serial.print(millis());
+		Serial.print(F(": doPageCss() on clientId="));
+		Serial.println(clientId);
+		#endif
+				sendHttpOk(clientId, 300);
 		EthernetClient client = EthernetClient(clientId);
 		client.println(F("a, a:link, a:visited { color: #5F5F5F; text-decoration: underline; font-weight: normal; }"));
 		client.println(F("a:active { font-weight: bold; }"));
@@ -626,6 +653,7 @@ class WebServer {
 		client.println(F(".warning { color: red; }"));
 		client.println(F(".ok { color: green; }"));
 		client.println(F("hr { border:none; height: 1px; background-color: black; }"));
+		client.flush();
 	}
 
 	/**
@@ -633,7 +661,11 @@ class WebServer {
 	 * @param clientId
 	 */
 	void doPageNodes(uint8_t clientId) {
-
+		#ifdef DEBUG
+		Serial.print(millis());
+		Serial.print(F(": doPageNodes() on clientId="));
+		Serial.println(clientId);
+		#endif
 
 		sendHttpOk(clientId);
 		sendHtmlHeader(clientId, pageTitles[PAGE_MAIN]);
@@ -811,6 +843,12 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 	 * @param clientId
 	 */
 	void doPageSensorInfo2(uint8_t clientId, RequestContent* req) {
+		#ifdef DEBUG
+		Serial.print(millis());
+		Serial.print(F(": doPageSensorInfo2() on clientId="));
+		Serial.println(clientId);
+		#endif
+
 		//yay!
 		EthernetClient client = EthernetClient(clientId);
 
@@ -930,6 +968,11 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 	 * @param clientId
 	 */
 	void doClientHandling(uint8_t clientId) {
+		#ifdef DEBUG
+		Serial.print(millis());
+		Serial.print(F(": doClientHandling() on clientId="));
+		Serial.println(clientId);
+		#endif
 
 		// now client is connected to arduino we need to extract the
 		// following fields from the HTTP request.
@@ -977,7 +1020,14 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 			sendHttp404WithBody(clientId);
 		}
 
+		#ifdef DEBUG
+		Serial.print(F("\tpage sent out. checking for connection close."));
+		#endif
+
 		if(!clientStatus[clientId].waiting) {
+			#ifdef DEBUG
+			Serial.print(F("\tnot waiting, do close."));
+			#endif
 			closeClient(clientId);
 		}
 	}
@@ -988,6 +1038,12 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 	 * @param req
 	 */
 	void doPageRequestSensor(uint8_t clientId, RequestContent* req) {
+		#ifdef DEBUG
+		Serial.print(millis());
+		Serial.print(F(": doPageRequestSensor() on clientId="));
+		Serial.println(clientId);
+		#endif
+
 		String* id = req->getValue(variableRemote);
 		if(id == NULL) {
 			sendHttp500WithBody(clientId);
@@ -1038,6 +1094,12 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 	 * @param clientId
 	 */
 	void doPageRequestSensor2(uint8_t clientId) {
+		#ifdef DEBUG
+		Serial.print(millis());
+		Serial.print(F(": doPageRequestSensor2() on clientId="));
+		Serial.println(clientId);
+		#endif
+
 		EthernetClient client = EthernetClient(clientId);
 		hardwareRequestListener* listener = (hardwareRequestListener*) clientStatus[clientId].callback;
 
