@@ -81,18 +81,20 @@ const char variableRemote[] PROGMEM = {"remote"};
 const char variableHwAddress[] PROGMEM = {"hwaddress"};
 const char variableHwType[] PROGMEM = {"hwtype"};
 const char variableVal[] PROGMEM = {"val"};
-const char variableListType[] PROGMEN = {"listtype"};
-const char variableListNum[] PROGMEN = {"listnum"};
+const char variableListType[] PROGMEM = {"listtype"};
+const char variableListNum[] PROGMEM = {"listnum"};
 
 const char linkNameX[] PROGMEM = {"x"};
 const char linkNameOn[] PROGMEM = {"on"};
 const char linkNameOff[] PROGMEM = {"off"};
 const char linkNameToggle[] PROGMEM = {"toggle"};
 
+const char linkCmdValDefault[] PROGMEM = {"0x00"};
+const char linkCmdListChecked[] PROGMEM = {" checked='checked'"};
 const char linkCmdListTypeUint8[] PROGMEM = {"u8"};
 const char linkCmdListTypeUint16[] PROGMEM = {"u16"};
 const char linkCmdListTypeInt8[] PROGMEM = {"i8"};
-const char linkCmdListTypeInt16[] PROGMEM = {"i6"};
+const char linkCmdListTypeInt16[] PROGMEM = {"i16"};
 
 
 /** hw type strs */
@@ -207,6 +209,16 @@ class WebServer {
 	const char *pSpDelimiters = " \r\n";
 	const char *pStxDelimiter = "\002";    // STX - ASCII start of text character
 
+	#ifdef DEBUG_WEBSERVER_ENABLE
+	void serialPrintP(const char* str) {
+		if(str == NULL)
+			return;
+
+		char buf[120];
+		strcpy_P(buf, str);
+		Serial.print(buf);
+	}
+	#endif
 
 	/**
 	 * print to ethernet client from PGM space
@@ -314,17 +326,17 @@ class WebServer {
 		EthernetClient client = EthernetClient(clientId);
 		uint8_t menuPages[] = {PAGE_MAIN, PAGE_NODES};
 		uint8_t menuPagesNum = 2;
-		client.print("<h1>Menu</h1><ul>");
+		client.print(F("<h1>Menu</h1><ul>"));
 
 		for(uint8_t i = 0; i < menuPagesNum; i++) {
-			client.print("<li><a href='");
+			client.print(F("<li><a href='"));
 			this->printP(clientId, pageAddresses[menuPages[i]]);
 			client.print("'>");
 			this->printP(clientId, pageTitles[menuPages[i]]);
-			client.print("</a></li>");
+			client.print(F("</a></li>"));
 		}
 
-		client.print("</ul><br/><hr/><br/><a href='javascript:window.history.back();'>&laquo; back</a> &middot; <a href='javascript:location.reload();'>reload</a> &middot; <a href='javascript:window.history.forward();'>forward &raquo;</a><br/>");
+		client.print(F("</ul><br/><hr/><br/><a href='javascript:window.history.back();'>&laquo; back</a> &middot; <a href='javascript:location.reload();'>reload</a> &middot; <a href='javascript:window.history.forward();'>forward &raquo;</a><br/>"));
 		client.flush();
 	}
 
@@ -600,6 +612,8 @@ class WebServer {
 			doPageRequestSensor2(clientId);
 		//} else if(clientStatus[clientId].requestType == PAGE_GETSENSORINFO) {
 			//doPageSensorInfo2(clientId);
+		} else if (clientStatus[clientId].requestType == PAGE_WRITE_SENSOR) {
+			doPageWriteSensor2(clientId);
 		} else {
 			//unknown request
 			sendHttp500WithBody(clientId);
@@ -670,8 +684,8 @@ class WebServer {
 		client.println(F(".ok { color: green; }"));
 		client.println(F("hr { border:none; height: 1px; background-color: black; }"));
 		client.println(F("input { font-size: 9pt; height: 20px; margin: 0; padding: 0px; background-color: white; border: 1px solid darkgray; }"));
-		client.println(F("input[type='submit'] { width: 40px; }"));
-		client.println(F("input[type='text'] { width: 40px }"));
+		client.println(F("input[type='submit'] { width: 50px; }"));
+		client.println(F("input[type='text'] { width: 120px }"));
 		client.println(F(".centered { text-align: center; }"));
 		client.println(F(".righted { text-align: right; }"));
 		client.println(F(".inline { border: none; }"));
@@ -889,44 +903,47 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		char buf3[3];
 		itoa(type, buf3, 10);
 
-		//						0				1					2					3					4					5
-		//						remote id		hw address			hw type				var to write		listtype			listtypenum
-		const char* keys[6] = {variableRemote,	variableHwAddress,	variableHwType,		variableVal,		variableListType,	variableListNum};
-		const char* vals[6] = {buf1,			buf2,				buf3};
+		//buf for rc switch values.
+		//                 012345
+		char bufVal[] = { "0x0000" };
+		char bufListType[10] = { "" };
+
+		//						0				1					2					3					4
+		//						remote id		hw address			hw type				var to write		listtype
+		const uint8_t numKV = 5;
+		const char* keys[numKV] = {variableRemote,	variableHwAddress,	variableHwType,		variableVal,		variableListType};
+		const char* vals[numKV] = {buf1,			buf2,				buf3,				bufVal,				bufListType};
+
 
 		switch(type) {
 			case HWType_relay:
 			case HWType_DIGITAL:
 				//off
-				vals[3] = "0";
-				vals[4] = linkCmdListTypeUint8;
-				vals[5] = "1";
-				printLink(clientId, pageAddresses[PAGE_WRITE_SENSOR], keys, vals, linkNameOff, 3);
+				bufVal[4] = '\0';
+				strcpy_P(bufListType, linkCmdListTypeUint8);
+
+				printLink(clientId, pageAddresses[PAGE_WRITE_SENSOR], keys, vals, linkNameOff, numKV);
 				client.print(F(" &middot; "));
 				//on
-				vals[3] = "1";
-				vals[4] = linkCmdListTypeUint8;
-				vals[5] = "1";
-				printLink(clientId, pageAddresses[PAGE_WRITE_SENSOR], keys, vals, linkNameOn, 4);
+				bufVal[3] = '1';
+				strcpy_P(bufListType, linkCmdListTypeUint8);
+				printLink(clientId, pageAddresses[PAGE_WRITE_SENSOR], keys, vals, linkNameOn, numKV);
 				return;
 			case HWType_rcswitch:
-				char bufTmp[2];
 				client.print(F("<table class='inline' style='width: 99%'"));
 				client.print(F("<tr><td class='centered'>1</td><td class='centered'>2</td><td class='centered'>3</td><td class='centered'>4</td><td class='centered'>all</td></tr>"));
 				client.print(F("<tr>"));
-				vals[4] = linkCmdListTypeUint8;
-				vals[5] = "2";
+				strcpy_P(bufListType, linkCmdListTypeUint8);
 				for(uint8_t i = 0; i < 5; i++) {
 					client.print(F("<td class='inline centered'>"));
-					itoa(10*(i+1)+1, bufTmp, 10);
-					vals[3] = bufTmp;
-					printLink(clientId, pageAddresses[PAGE_WRITE_SENSOR], keys, vals, linkNameOff, 4);
+					bufVal[5] = '0'+i+1; //device
+					bufVal[3] = '0';//val lower
+					printLink(clientId, pageAddresses[PAGE_WRITE_SENSOR], keys, vals, linkNameOff, numKV);
 
 					client.print(F(" &middot; "));
 
-					itoa(10*(i+1)+0, bufTmp, 10);
-					vals[3] = bufTmp;
-					printLink(clientId, pageAddresses[PAGE_WRITE_SENSOR], keys, vals, linkNameOn, 4);
+					bufVal[3] = '1';//val lower
+					printLink(clientId, pageAddresses[PAGE_WRITE_SENSOR], keys, vals, linkNameOn, numKV);
 					client.print(F("</td>"));
 				}
 				client.print(F("</tr>"));
@@ -945,7 +962,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 				client.print(address);
 				client.print(F("'>"));
 
-				client.print(F("val(msbf):<input type='hidden' name='"));
+				client.print(F("<input type='hidden' name='"));
 				printP(clientId, variableHwType);
 				client.print(F("' value='"));
 				client.print(type);
@@ -957,8 +974,10 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 				client.print(remote);
 				client.print(F("'>"));
 
-				client.print(F("<input type='text' name='"));
+				client.print(F("HexInput (msbf): <input type='text' name='"));
 				printP(clientId, variableVal);
+				client.print(F("' value='"));
+				printP(clientId, linkCmdValDefault);
 				client.print(F("'/>"));
 				client.print(F(" <input type='submit'><br/>"));
 
@@ -967,12 +986,26 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 				printP(clientId, variableListType);
 				client.print(F("' value='"));
 				printP(clientId, linkCmdListTypeUint8);
-				client.print(F("'/>"));
+				client.print(F("'"));
+				printP(clientId, linkCmdListChecked);
+				client.print(F("/>"));
 
-				client.print(F(" u8:<input type='radio' name='"));
+				client.print(F(" u16:<input type='radio' name='"));
 				printP(clientId, variableListType);
 				client.print(F("' value='"));
 				printP(clientId, linkCmdListTypeUint16);
+				client.print(F("'/>"));
+
+				client.print(F(" i8:<input type='radio' name='"));
+				printP(clientId, variableListType);
+				client.print(F("' value='"));
+				printP(clientId, linkCmdListTypeInt8);
+				client.print(F("'/>"));
+
+				client.print(F(" i16:<input type='radio' name='"));
+				printP(clientId, variableListType);
+				client.print(F("' value='"));
+				printP(clientId, linkCmdListTypeInt16);
 				client.print(F("'/>"));
 
 				client.print(F("</form>"));
@@ -985,11 +1018,26 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 	void printLink(uint8_t clientId, const char* baseUrl, const char** keys, const char** vals, const char* name, uint8_t num) {
 		EthernetClient client = EthernetClient(clientId);
 
+		#ifdef DEBUG_WEBSERVER_ENABLE
+		Serial.print(millis());
+		Serial.print(F(": printLink() baseUrl="));
+		serialPrintP(baseUrl);
+		Serial.println();
+		#endif
+
 		client.print(F("<a href='"));
 		printP(clientId, baseUrl);
 		client.print('?');
 
 		for(uint8_t i = 0; i < num; i++) {
+			#ifdef DEBUG_WEBSERVER_ENABLE
+			Serial.print(F("\t"));
+			serialPrintP(keys[i]);
+			Serial.print('=');
+			Serial.println(vals[i]);
+			Serial.flush();
+			#endif
+
 			if(i > 0)
 				client.print('&');
 			printP(clientId, keys[i]);
@@ -1191,6 +1239,11 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 			clientStatus[clientId].requestType = PAGE_REQUEST_SENSOR;
 			clientStatus[clientId].waiting = true;
 			clientStatus[clientId].timestamp = millis();
+		} else if(strcmp_P(uriChars, pageAddresses[PAGE_WRITE_SENSOR]) == 0) {
+			doPageWriteSensor(clientId, &req);
+			clientStatus[clientId].requestType = PAGE_WRITE_SENSOR;
+			clientStatus[clientId].waiting = true;
+			clientStatus[clientId].timestamp = millis();
 		} else {
 			sendHttp404WithBody(clientId);
 		}
@@ -1220,27 +1273,65 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		Serial.println(clientId);
 		#endif
 
+		//get request strings
 		String* id = req->getValue(variableRemote);
-		if(id == NULL) {
-			sendHttp500WithBody(clientId);
-			return;
-		}
-		int8_t idInt = id->toInt();
-
 		String* hwAddressStr = req->getValue(variableHwAddress);
-		if(hwAddressStr == NULL) {
-			sendHttp500WithBody(clientId);
-			return;
-		}
-		int8_t hwaddress = hwAddressStr->toInt();
-
 		String* hwtypeStr = req->getValue(variableHwType);
-		if(hwtypeStr == NULL) {
+		String* listTypeStr = req->getValue(variableListType);
+		String* val = req->getValue(variableVal);
+
+		HardwareCommandResult cmd;
+
+		//check if available
+		if(id == NULL || hwAddressStr == NULL || hwtypeStr == NULL || hwtypeStr == NULL || listTypeStr == NULL || val == NULL || val->length() % 2 == 1 || (val->length()-2)/2 > sizeUInt8List) {
 			sendHttp500WithBody(clientId);
 			return;
 		}
+
+		//convert addresses
+		int8_t idInt = id->toInt();
+		int8_t hwaddress = hwAddressStr->toInt();
 		int8_t hwtype = hwtypeStr->toInt();
 
+		//get list numbers
+		uint8_t uint8 = 0;
+		uint8_t uint16 = 0;
+		uint8_t int8 = 0;
+		uint8_t int16 = 0;
+
+
+		int8_t numBytes = (val->length()-2) / 2;
+		if(strcmp_P((const char*) listTypeStr, linkCmdListTypeUint16) == 0) {
+			uint16 = numBytes;
+			cmd.setUint16ListNum(numBytes);
+		} else if(strcmp_P((const char*) listTypeStr, linkCmdListTypeInt8) == 0) {
+			int8 = numBytes;
+			cmd.setInt8ListNum(numBytes);
+		} else if(strcmp_P((const char*) listTypeStr, linkCmdListTypeInt16) == 0) {
+			int16 = numBytes;
+			cmd.setInt16ListNum(numBytes);
+		} else { //uint8
+			uint8 = numBytes;
+			cmd.setUint8ListNum(numBytes);
+		}
+
+		if(numBytes < 0 || 2*uint16 > sizeUInt8List || 2*int16 > sizeUInt8List || uint8 > sizeUInt8List || int8 > sizeUInt8List) {
+			sendHttp500WithBody(clientId);
+			closeClient(clientId);
+			return;
+		}
+
+
+		//get value
+		val->toLowerCase();
+		char valBuf[sizeUInt8List*2+2];
+		val->toCharArray(valBuf, sizeof(valBuf));
+		for(uint8_t i = 2; i < val->length(); i += 2) {
+			sscanf((char*) &valBuf[i], "%2hhx", (char*) &cmd.getUint8List()[numBytes-1]);
+			numBytes--;
+		}
+
+		//check if all is ok.
 		if(idInt == -1 || hwaddress == -1 || hwtype == -1) {
 			sendHttp500WithBody(clientId);
 			closeClient(clientId);
@@ -1248,7 +1339,6 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		}
 
 		Layer3::packet_t p;
-		HardwareCommandResult cmd;
 		cmd.setAddress(hwaddress);
 		cmd.setHardwareType((HardwareTypeIdentifier) hwtype);
 		seq_t sequence = pf.generateHardwareCommandWrite(&p, idInt, &cmd);
@@ -1268,6 +1358,40 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		}
 	}
 
+	void doPageWriteSensor2(uint8_t clientId) {
+		#ifdef DEBUG
+		Serial.print(millis());
+		Serial.print(F(": doPageWriteSensor2() on clientId="));
+		Serial.println(clientId);
+		#endif
+
+		EthernetClient client = EthernetClient(clientId);
+		hardwareRequestListener* listener = (hardwareRequestListener*) clientStatus[clientId].callback;
+
+		sendHttpOk(clientId);
+		sendHtmlHeader(clientId, pageTitles[PAGE_WRITE_SENSOR], false);
+		sendHtmlMenu(clientId);
+		client.print(F("<h1>Sensor Write id="));
+		client.print(listener->remote);
+		client.println(F("</h1>"));
+		client.print(F("<h2>hwaddress="));
+		client.print(listener->hwaddress);
+		client.print(F(" hwtype="));
+		printP(clientId, hardwareTypeStrings[listener->hwtype]);
+		if(listener->cmd.isRead) {
+			client.print(F(" read"));
+			} else {
+			client.print(F(" write"));
+		}
+		client.println(F("</h2>"));
+
+		sendHtmlFooter(clientId);
+		listener->init(0, HWType_UNKNOWN, 0, webserverListener::START);
+
+		closeClient(clientId);
+	}
+
+
 	/**
 	 * initiate sensor reading
 	 * @param clientId
@@ -1281,24 +1405,15 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		#endif
 
 		String* id = req->getValue(variableRemote);
-		if(id == NULL) {
-			sendHttp500WithBody(clientId);
-			return;
-		}
-		int8_t idInt = id->toInt();
-
 		String* hwAddressStr = req->getValue(variableHwAddress);
-		if(hwAddressStr == NULL) {
-			sendHttp500WithBody(clientId);
-			return;
-		}
-		int8_t hwaddress = hwAddressStr->toInt();
-
 		String* hwtypeStr = req->getValue(variableHwType);
-		if(hwtypeStr == NULL) {
+		if(id == NULL || hwAddressStr == NULL || hwtypeStr == NULL) {
 			sendHttp500WithBody(clientId);
 			return;
 		}
+
+		int8_t idInt = id->toInt();
+		int8_t hwaddress = hwAddressStr->toInt();
 		int8_t hwtype = hwtypeStr->toInt();
 
 		if(idInt == -1 || hwaddress == -1 || hwtype == -1) {
