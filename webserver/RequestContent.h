@@ -22,6 +22,7 @@ class RequestContent {
 	#define RequestContentNumKeys 10
 
 	public:
+	boolean mobileDevice = false;
 
 	/** keys */
 	String keys[RequestContentNumKeys];

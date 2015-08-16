@@ -162,7 +162,7 @@ class WebServer {
 	#define TIMEOUT_MILLIS (2*1000)
 
 	#ifndef STRING_BUFFER_SIZE
-		#define STRING_BUFFER_SIZE 128
+		#define STRING_BUFFER_SIZE 200
 	#endif
 	typedef char BUFFER[STRING_BUFFER_SIZE];
 
@@ -365,12 +365,16 @@ class WebServer {
 		BUFFER readBuffer;    // Just a work buffer into which we can read records
 		int nContentLength = 0;
 		bool bIsUrlEncoded;
+		boolean isMobileDevice;
 
 		requestContent[0] = 0;    // Initialize as an empty string
 		// Read the first line: Request-Line setting Uri Index and returning the method type.
 		MethodType eMethod = readRequestLine(clientId, readBuffer, uri, requestContent, req);
 		// Read any following, non-empty headers setting content length.
-		readRequestHeaders(clientId, readBuffer, nContentLength, bIsUrlEncoded);
+		readRequestHeaders(clientId, readBuffer, nContentLength, bIsUrlEncoded, isMobileDevice);
+
+		if(isMobileDevice)
+			req->mobileDevice = true;
 
 		if (nContentLength > 0)
 		{
@@ -446,29 +450,45 @@ class WebServer {
 	 * @param nContentLenth
 	 * @parambIsUrlEncoded
 	 */
-	void readRequestHeaders(uint8_t clientId, BUFFER & readBuffer, int & nContentLength, bool & bIsUrlEncoded)
+	void readRequestHeaders(uint8_t clientId, BUFFER & readBuffer, int & nContentLength, bool & bIsUrlEncoded, boolean & deviceIsMobile)
 	{
 		nContentLength = 0;      // Default is zero in cate there is no content length.
 		bIsUrlEncoded  = true;   // Default encoding
+		deviceIsMobile = false;
 		// Read various headers, each terminated by CRLF.
 		// The CRLF gets removed and the buffer holds each header as a string.
 		// An empty header of zero length terminates the list.
 		do
 		{
 			getNextHttpLine(clientId, readBuffer);
-			//    Serial.println(readBuffer); // DEBUG
+			//#ifdef DEBUG_WEBSERVER_ENABLE
+				//Serial.println(readBuffer); // DEBUG
+			//#endif
 
 			char * pFieldName  = strtok(readBuffer, pSpDelimiters);
 			char * pFieldValue = strtok(NULL, pSpDelimiters);
 
-			if (strcmp(pFieldName, "Content-Length:") == 0)
-			{
+			if (strcmp(pFieldName, "Content-Length:") == 0) {
 				nContentLength = atoi(pFieldValue);
-			}
-			else if (strcmp(pFieldName, "Content-Type:") == 0)
-			{
+			} else if (strcmp(pFieldName, "Content-Type:") == 0) {
 				if (strcmp(pFieldValue, "application/x-www-form-urlencoded") != 0)
 				bIsUrlEncoded = false;
+			} else if(strcmp(pFieldName, "User-Agent:") == 0) {
+				char * tmp = strtok(NULL, "\r\n\0");
+
+				#ifdef DEBUG_WEBSERVER_ENABLE
+				Serial.print(millis());
+				Serial.print(F(": readRequestHeaders() User-Agent: "));
+				Serial.print(pFieldValue);
+				Serial.println(tmp);
+				#endif
+
+				if(strstr(tmp, "Mobile") != NULL || strstr(tmp, "Android") != NULL || strstr(tmp, "iPhone") != NULL || strstr(tmp, "iPad") != NULL) {
+					#ifdef DEBUG_WEBSERVER_ENABLE
+					Serial.println(F("\tmobile."));
+					#endif
+					deviceIsMobile = true;
+				}
 			}
 		} while (strlen(readBuffer) > 0);    // empty string terminates
 	}
@@ -661,34 +681,42 @@ class WebServer {
 	 * stylesheet
 	 * @param clientId
 	 */
-	void doPageCss(uint8_t clientId) {
+	void doPageCss(uint8_t clientId, boolean mobile) {
 		#ifdef DEBUG
 		Serial.print(millis());
 		Serial.print(F(": doPageCss() on clientId="));
-		Serial.println(clientId);
+		Serial.print(clientId);
+		Serial.print(F(" mobile="));
+		Serial.println(mobile);
 		#endif
-				sendHttpOk(clientId, 300);
+
+		sendHttpOk(clientId, 300);
 		EthernetClient client = EthernetClient(clientId);
-		client.println(F("a, a:link, a:visited { color: #5F5F5F; text-decoration: underline; font-weight: normal; }"));
-		client.println(F("a:active { font-weight: bold; }"));
-		client.println(F("a:hover { text-decoration: none; background-color: #FFD8D8; }"));
-		client.println(F("table, th, td, body { font-family: Arial; font-size: 9pt; }"));
-		client.println(F("table { border: 1px lightgray dashed; vertical-align: top; padding: 4px; background-position: center; width: 800px; border-spacing: 2px; -webkit-border-horizontal-spacing: 5px; -webkit-border-vertical-spacing: 2px;}"));
-		client.println(F("td { font-size: 9pt; border-bottom: 1px dotted; }"));
-		client.println(F("th { font-size: 10pt; font-weight: bold; border-bottom: 2px solid }"));
-		client.println(F(".bg1 { background-color: #fafafa; }"));
-		client.println(F(".bg2 { background-color: #efefef; }"));
-		client.println(F(".bg1:hover { background-color: #FFD8D8; }"));
-		client.println(F(".bg2:hover { background-color: #FFD8D8; }"));
-		client.println(F(".warning { color: red; }"));
-		client.println(F(".ok { color: green; }"));
-		client.println(F("hr { border:none; height: 1px; background-color: black; }"));
-		client.println(F("input { font-size: 9pt; height: 20px; margin: 0; padding: 0px; background-color: white; border: 1px solid darkgray; }"));
-		client.println(F("input[type='submit'] { width: 50px; }"));
-		client.println(F("input[type='text'] { width: 120px }"));
-		client.println(F(".centered { text-align: center; }"));
-		client.println(F(".righted { text-align: right; }"));
-		client.println(F(".inline { border: none; }"));
+
+		if(!mobile) {
+			client.println(F("a, a:link, a:visited { color: #5F5F5F; text-decoration: underline; font-weight: normal; }"));
+			client.println(F("a:active { font-weight: bold; }"));
+			client.println(F("a:hover { text-decoration: none; background-color: #FFD8D8; }"));
+			client.println(F("table, th, td, body { font-family: Arial; font-size: 9pt; }"));
+			client.println(F("table { border: 1px lightgray dashed; vertical-align: top; padding: 4px; background-position: center; width: 800px; border-spacing: 2px; -webkit-border-horizontal-spacing: 5px; -webkit-border-vertical-spacing: 2px;}"));
+			client.println(F("td { font-size: 9pt; border-bottom: 1px dotted; }"));
+			client.println(F("th { font-size: 10pt; font-weight: bold; border-bottom: 2px solid }"));
+			client.println(F(".bg1 { background-color: #fafafa; }"));
+			client.println(F(".bg2 { background-color: #efefef; }"));
+			client.println(F(".bg1:hover { background-color: #FFD8D8; }"));
+			client.println(F(".bg2:hover { background-color: #FFD8D8; }"));
+			client.println(F(".warning { color: red; }"));
+			client.println(F(".ok { color: green; }"));
+			client.println(F("hr { border:none; height: 1px; background-color: black; }"));
+			client.println(F("input { font-size: 9pt; height: 20px; margin: 0; padding: 0px; background-color: white; border: 1px solid darkgray; }"));
+			client.println(F("input[type='submit'] { width: 50px; }"));
+			client.println(F("input[type='text'] { width: 120px }"));
+			client.println(F(".centered { text-align: center; }"));
+			client.println(F(".righted { text-align: right; }"));
+			client.println(F(".inline { border: none; }"));
+		} else {
+			//mobile version.
+		}
 		client.flush();
 	}
 
@@ -1018,25 +1046,25 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 	void printLink(uint8_t clientId, const char* baseUrl, const char** keys, const char** vals, const char* name, uint8_t num) {
 		EthernetClient client = EthernetClient(clientId);
 
-		#ifdef DEBUG_WEBSERVER_ENABLE
-		Serial.print(millis());
-		Serial.print(F(": printLink() baseUrl="));
-		serialPrintP(baseUrl);
-		Serial.println();
-		#endif
+		//#ifdef DEBUG_WEBSERVER_ENABLE
+		//Serial.print(millis());
+		//Serial.print(F(": printLink() baseUrl="));
+		//serialPrintP(baseUrl);
+		//Serial.println();
+		//#endif
 
 		client.print(F("<a href='"));
 		printP(clientId, baseUrl);
 		client.print('?');
 
 		for(uint8_t i = 0; i < num; i++) {
-			#ifdef DEBUG_WEBSERVER_ENABLE
-			Serial.print(F("\t"));
-			serialPrintP(keys[i]);
-			Serial.print('=');
-			Serial.println(vals[i]);
-			Serial.flush();
-			#endif
+			//#ifdef DEBUG_WEBSERVER_ENABLE
+			//Serial.print(F("\t"));
+			//serialPrintP(keys[i]);
+			//Serial.print('=');
+			//Serial.println(vals[i]);
+			//Serial.flush();
+			//#endif
 
 			if(i > 0)
 				client.print('&');
@@ -1227,7 +1255,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		} else if(strcmp_P(uriChars, pageAddresses[PAGE_NODES]) == 0) {
 			doPageNodes(clientId);
 		} else if(strcmp_P(uriChars, pageAddresses[PAGE_CSS]) == 0) {
-			doPageCss(clientId);
+			doPageCss(clientId, req.mobileDevice);
 		} else if(strcmp_P(uriChars, pageAddresses[PAGE_GETSENSORINFO]) == 0) {
 			//doPageSensorInfo(clientId, &req);
 			//clientStatus[clientId].requestType = PAGE_GETSENSORINFO;
