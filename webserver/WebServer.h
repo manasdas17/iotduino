@@ -75,7 +75,16 @@ const char pageTitleRequestSensor[] PROGMEM = {"Rquested Sensor Information"};
 const char pageTitleWriteSensor[] PROGMEM = {"Write to Sensor"};
 
 PGM_P pageTitles[] = {NULL, pageTitleMain, pageTitleGetSensorInfo, pageTitleNodes, NULL, pageTitleRequestSensor, pageTitleWriteSensor};
-enum PAGES {PAGE_NONE, PAGE_MAIN, PAGE_GETSENSORINFO, PAGE_NODES, PAGE_CSS, PAGE_REQUEST_SENSOR, PAGE_WRITE_SENSOR};
+enum PAGES {
+		PAGE_NONE,				//0
+		PAGE_MAIN,				//1
+		PAGE_GETSENSORINFO,		//2
+		PAGE_NODES,				//3
+		PAGE_CSS,				//4
+		PAGE_REQUEST_SENSOR,	//5
+		PAGE_WRITE_SENSOR		//6
+};
+uint8_t pageBelongsToMenu[] = {0, 1, 3, 3, 0, 3, 3};
 
 const char variableRemote[] PROGMEM = {"remote"};
 const char variableHwAddress[] PROGMEM = {"hwaddress"};
@@ -285,13 +294,20 @@ class WebServer {
 	 * @param clientId
 	 */
 	void sendHttpOk(uint8_t clientId) {
-		sendHttpOk(clientId, 0);
+		sendHttpOk(clientId, 0, true);
 	}
 
 	void sendHttpOk(uint8_t clientId, uint32_t cacheTime) {
+		sendHttpOk(clientId, cacheTime, true);
+	}
+
+	void sendHttpOk(uint8_t clientId, uint32_t cacheTime, boolean mimeTypeHtml) {
 		EthernetClient client = EthernetClient(clientId);
 		client.println(F("HTTP/1.1 200 OK"));
-		client.println(F("Content-Type: text/html"));
+		if(mimeTypeHtml)
+			client.println(F("Content-Type: text/html"));
+		else
+			client.println(F("Content-Type: text/css"));
 		client.println(F("Connection: close"));  // the connection will be closed after completion of the response
 		if(cacheTime > 0) {
 			client.print(F("Cache-Control: no-transform,public,max-age="));
@@ -305,16 +321,28 @@ class WebServer {
 	 * html head
 	 * @param clientId
 	 */
-	void sendHtmlHeader(uint8_t clientId, PGM_P title, boolean refresh = true) {
+	void sendHtmlHeader(uint8_t clientId, uint8_t pageId, boolean refresh = true, boolean printTitle = true) {
 		EthernetClient client = EthernetClient(clientId);
+		client.println(F("<!DOCTYPE HTML>\n"));
 		client.print(F("<html><header><link rel='stylesheet' href='css' type='text/css'><title>"));
-		printP(clientId, title);
+		printP(clientId, pageTitles[pageId]);
 		client.print(F("</title>"));
 
 		if(refresh)
 			client.print(F("<meta http-equiv='refresh' content='300'>"));
 
 		client.println(F("</header><body>"));
+
+		sendHtmlMenu(clientId, pageId);
+
+		client.println(F("<div id='frame' class='frame'>"));
+		if(printTitle) {
+			client.println(F("<h1>"));
+			printP(clientId, pageTitles[pageId]);
+			client.println(F("</h1>"));
+		}
+		client.println(F("<div>"));
+
 		client.flush();
 	}
 
@@ -322,21 +350,28 @@ class WebServer {
 	 * html menu
 	 * @param clientId
 	 */
-	void sendHtmlMenu(uint8_t clientId) {
+	void sendHtmlMenu(uint8_t clientId, uint8_t page) {
 		EthernetClient client = EthernetClient(clientId);
 		uint8_t menuPages[] = {PAGE_MAIN, PAGE_NODES};
 		uint8_t menuPagesNum = 2;
-		client.print(F("<h1>Menu</h1><ul>"));
+		client.print(F("<div class='pos' id='tabs'>"));
+		client.print(F("<ul>"));
 
 		for(uint8_t i = 0; i < menuPagesNum; i++) {
-			client.print(F("<li><a href='"));
+			client.print(F("<li"));
+			if(pageBelongsToMenu[page] == menuPages[i]) {
+				client.print(F(" class='here'"));
+			}
+			client.print(F("><a href='"));
 			this->printP(clientId, pageAddresses[menuPages[i]]);
 			client.print("'>");
 			this->printP(clientId, pageTitles[menuPages[i]]);
 			client.print(F("</a></li>"));
 		}
 
-		client.print(F("</ul><br/><hr/><br/><a href='javascript:window.history.back();'>&laquo; back</a> &middot; <a href='javascript:location.reload();'>reload</a> &middot; <a href='javascript:window.history.forward();'>forward &raquo;</a><br/>"));
+		client.print(F("</ul>"));
+		client.print(F("</div>"));
+////		client.print(F("<a href='javascript:window.history.back();'>&laquo; back</a> &middot; <a href='javascript:location.reload();'>reload</a> &middot; <a href='javascript:window.history.forward();'>forward &raquo;</a><br/>"));
 		client.flush();
 	}
 
@@ -346,9 +381,9 @@ class WebServer {
 	 */
 	void sendHtmlFooter(uint8_t clientId) {
 		EthernetClient client = EthernetClient(clientId);
-		client.print(F("<br/><br/><hr/><br/><span style='text-align: right; font-style: italic;'><a href='http://iotduino.de'>iotduino</a> webserver. "));
+		client.print(F("</div></div><div class='datum'><a href='http://iotduino.de'>iotduino</a> webserver.<br/>"));
 		printDate(clientId, now());
-		client.println(F("</span></body></html>"));
+		client.println(F("</div></body></html>"));
 		client.flush();
 	}
 
@@ -639,22 +674,8 @@ class WebServer {
 		Serial.println(F("\tdoHttpHeaderOK"));
 		#endif
 		sendHttpOk(clientId);
-
-		#ifdef DEBUG
-		Serial.println(F("\tdoHtmlHeader"));
-		#endif
-		sendHtmlHeader(clientId, pageTitles[PAGE_MAIN]);
-
-		#ifdef DEBUG
-		Serial.println(F("\tdoHtmlMenu"));
-		#endif
-		sendHtmlMenu(clientId);
-		client.println(F("<h1>Oh Hai!</h1>"));
+		sendHtmlHeader(clientId, PAGE_MAIN);
 		client.println(F("Welcome to the <a href='http://iotduino.de'>iotduino</a> gateway system."));
-
-		#ifdef DEBUG
-		Serial.println(F("\tdoHtmlFooter"));
-		#endif
 		sendHtmlFooter(clientId);
 	}
 
@@ -668,28 +689,193 @@ class WebServer {
 		Serial.print(F(": doPageCss() on clientId="));
 		Serial.println(clientId);
 		#endif
-				sendHttpOk(clientId, 300);
+
+		//sendHttpOk(clientId, 300);
+		sendHttpOk(clientId, 300, false);
 		EthernetClient client = EthernetClient(clientId);
 		client.println(F("a, a:link, a:visited { color: #5F5F5F; text-decoration: underline; font-weight: normal; }"));
 		client.println(F("a:active { font-weight: bold; }"));
 		client.println(F("a:hover { text-decoration: none; background-color: #FFD8D8; }"));
-		client.println(F("table, th, td, body { font-family: Arial; font-size: 9pt; }"));
-		client.println(F("table { border: 1px lightgray dashed; vertical-align: top; padding: 4px; background-position: center; width: 800px; border-spacing: 2px; -webkit-border-horizontal-spacing: 5px; -webkit-border-vertical-spacing: 2px;}"));
-		client.println(F("td { font-size: 9pt; border-bottom: 1px dotted; }"));
-		client.println(F("th { font-size: 10pt; font-weight: bold; border-bottom: 2px solid }"));
-		client.println(F(".bg1 { background-color: #fafafa; }"));
-		client.println(F(".bg2 { background-color: #efefef; }"));
-		client.println(F(".bg1:hover { background-color: #FFD8D8; }"));
-		client.println(F(".bg2:hover { background-color: #FFD8D8; }"));
+		//client.println(F("table, th, td, body { font-family: Arial; font-size: 9pt; }"));
+		//client.println(F("table { border: 1px lightgray dashed; vertical-align: top; padding: 4px; background-position: center; width: 800px; border-spacing: 2px; -webkit-border-horizontal-spacing: 5px; -webkit-border-vertical-spacing: 2px;}"));
+		//client.println(F("td { font-size: 9pt; border-bottom: 1px dotted; }"));
+		//client.println(F("th { font-size: 10pt; font-weight: bold; border-bottom: 2px solid }"));
+		//client.println(F(".bg1 { background-color: #fafafa; }"));
+		//client.println(F(".bg2 { background-color: #efefef; }"));
+		//client.println(F(".bg1:hover { background-color: #FFD8D8; }"));
+		//client.println(F(".bg2:hover { background-color: #FFD8D8; }"));
 		client.println(F(".warning { color: red; }"));
 		client.println(F(".ok { color: green; }"));
-		client.println(F("hr { border:none; height: 1px; background-color: black; }"));
+		//client.println(F("hr { border:none; height: 1px; background-color: black; }"));
 		client.println(F("input { font-size: 9pt; height: 20px; margin: 0; padding: 0px; background-color: white; border: 1px solid darkgray; }"));
 		client.println(F("input[type='submit'] { width: 50px; }"));
 		client.println(F("input[type='text'] { width: 120px }"));
 		client.println(F(".centered { text-align: center; }"));
 		client.println(F(".righted { text-align: right; }"));
 		client.println(F(".inline { border: none; }"));
+
+		client.print(F("tbody tr:nth-child(even) {"));
+		client.print(F("  background-color: #eee;"));
+		client.print(F("}"));
+		client.print(F(""));
+		client.print(F("tbody tr:nth-child(odd) {"));
+		client.print(F("  background-color: #fff;"));
+		client.print(F("}"));
+		client.print(F(""));
+		client.print(F("tbody tr:hover {"));
+		client.print(F("  background-color: #ffdcdc;"));
+		client.print(F("}"));
+		client.print(F(""));
+		client.print(F("body {"));
+		client.print(F("  margin-left: 0px;"));
+		client.print(F("  margin-bottom: 0px;"));
+		client.print(F("  font-family: arial;"));
+		client.print(F("  font-size: 12pt;"));
+		client.print(F("  color: #000000;"));
+		client.print(F("  background-color: #dddddd;"));
+		client.print(F("}"));
+		client.print(F(""));
+		client.print(F("div.datum {"));
+		client.print(F("  position: absolute;"));
+		client.print(F("  top: 15px;"));
+		client.print(F("  right: 15px;"));
+		client.print(F("  text-align: right;"));
+		client.print(F("  font-size: 10px;"));
+		client.print(F("}"));
+		client.print(F(""));
+		client.print(F("div.frame {"));
+		client.print(F("  position: absolute;"));
+		client.print(F("  top: 42px;"));
+		client.print(F("  left: 10px;"));
+		client.print(F("  right: 10px;"));
+		client.print(F("  border: 1px solid #000;"));
+		client.print(F("  background-color: #ffffff;"));
+		client.print(F("  padding: 20px 30px 10px;"));
+		client.print(F("}"));
+		client.print(F(""));
+		client.print(F("h1 {"));
+		client.print(F("  font-size: 15pt;"));
+		client.print(F("}"));
+		client.print(F(""));
+		client.print(F("h1:first-letter {"));
+		client.print(F("  color: #dd0000;"));
+		client.print(F("}"));
+		client.print(F(""));
+		client.print(F("div.content {"));
+		client.print(F("  margin: 20px 0px 20px;"));
+		client.print(F("  border: 1px dotted #000;"));
+		client.print(F("  background-color: #fafafa;"));
+		client.print(F("  padding: 10px 10px 10px;"));
+		client.print(F("}"));
+		client.print(F(""));
+		client.print(F("div.pos {"));
+		client.print(F("  z-index: 10;"));
+		client.print(F("  position: absolute;"));
+		client.print(F("  top: 20px;"));
+		client.print(F("  left: 30px;"));
+		client.print(F("}"));
+		client.print(F(""));
+		client.print(F("#tabs ul {"));
+		client.print(F("  margin-left: 0px;"));
+		client.print(F("  padding-left: 0px;"));
+		client.print(F("  display: inline;"));
+		client.print(F("}"));
+		client.print(F(""));
+		client.print(F("#tabs ul li {"));
+		client.print(F("  margin-left: 0px;"));
+		client.print(F("  margin-right: 5px;"));
+		client.print(F("  margin-bottom: 0px;"));
+		client.print(F("  padding: 2px 5px 5px;"));
+		client.print(F("  border: 1px solid #000;"));
+		client.print(F("  list-style: none;"));
+		client.print(F("  display: inline;"));
+		client.print(F("  background-color: #cccccc;"));
+		client.print(F("}"));
+		client.print(F(""));
+		client.print(F("#tabs ul li.here {"));
+		client.print(F("  border-bottom: 1px solid #ffffff;"));
+		client.print(F("  list-style: none;"));
+		client.print(F("  display: inline;"));
+		client.print(F("  background-color: #ffffff;"));
+		client.print(F("}"));
+		client.print(F(""));
+		client.print(F("#tabs ul li:hover {"));
+		client.print(F("  background-color: #eeeeee;"));
+		client.print(F("}"));
+		client.print(F(""));
+		client.print(F("/*nav-links*/"));
+		client.print(F("#tabs a, a:link, a:visited, a:active {"));
+		client.print(F("  color: #000000;"));
+		client.print(F("  font-weight: bold;"));
+		client.print(F("  text-decoration: none;"));
+		client.print(F("}"));
+		client.print(F(""));
+		client.print(F("#tabs a:hover {"));
+		client.print(F("  color: #dd0000;"));
+		client.print(F("  text-decoration: none;"));
+		client.print(F("}"));
+		client.print(F(""));
+		client.print(F("/**Responsivetablewithcss*AdeBudiman-art.visuadlesigner@gmail.com*2015*/"));
+		client.print(F("table {"));
+		client.print(F("  border: 1px solid #ccc;"));
+		client.print(F("  width: 100%;"));
+		client.print(F("  margin: 0px;"));
+		client.print(F("  padding: 0px;"));
+		client.print(F("  border-collapse: collapse;"));
+		client.print(F("  border-spacing: 0px;"));
+		client.print(F("}"));
+		client.print(F(""));
+		client.print(F("table tr {"));
+		client.print(F("  border: 1px solid #ddd;"));
+		client.print(F("  padding: 5px;"));
+		client.print(F("}"));
+		client.print(F(""));
+		client.print(F("table th, table td {"));
+		client.print(F("  padding: 10px;"));
+		client.print(F("  text-align: center;"));
+		client.print(F("}"));
+		client.print(F(""));
+		client.print(F("table th {"));
+		client.print(F("  text-transform: uppercase;"));
+		client.print(F("  font-size: 14px;"));
+		client.print(F("  letter-spacing: 1px;"));
+		client.print(F("}"));
+		client.print(F(""));
+		client.print(F("@media screen and (max-width: 1024px) {"));
+		client.print(F("  table {"));
+		client.print(F("    border: 10px;"));
+		client.print(F("  }"));
+		client.print(F(""));
+		client.print(F("  table thead {"));
+		client.print(F("    display: none;"));
+		client.print(F("  }"));
+		client.print(F(""));
+		client.print(F("  table tr {"));
+		client.print(F("    margin-bottom: 10px;"));
+		client.print(F("    display: block !important;;"));
+		client.print(F("    border-bottom: 2px solid #ddd;"));
+		client.print(F("  }"));
+		client.print(F(""));
+		client.print(F("  table td {"));
+		client.print(F("    display: block !important;;"));
+		client.print(F("    text-align: right;"));
+		client.print(F("    font-size: 13px;"));
+		client.print(F("    border-bottom: 1px dotted #ccc;"));
+		client.print(F("  }"));
+		client.print(F(""));
+		client.print(F("  table td:last-child {"));
+		client.print(F("    border-bottom: 0px;"));
+		client.print(F("  }"));
+		client.print(F(""));
+		client.print(F("  table td:before {"));
+		client.print(F("    content: attr(data-label);"));
+		client.print(F("    float: left;"));
+		client.print(F("    text-transform: uppercase;"));
+		client.print(F("    font-weight: bold;"));
+		client.print(F("  }"));
+		client.print(F("}"));
+
+
 		client.flush();
 	}
 
@@ -705,16 +891,12 @@ class WebServer {
 		#endif
 
 		sendHttpOk(clientId);
-		sendHtmlHeader(clientId, pageTitles[PAGE_NODES]);
-		sendHtmlMenu(clientId);
+		sendHtmlHeader(clientId, PAGE_NODES);
 
 		EthernetClient client = EthernetClient(clientId);
 
-		//page title
-		client.println(F("<h1>Nodes</h1>"));
-
 		//table
-		client.println(F("<table><tr><th>ID</th><th>NodeInfo</th><th>lastDiscovery</th><th>active</th><th>nextHop</th><th>#hops</th><th>routeAge</th><th>info</th></tr>"));
+		client.println(F("<table><thead><tr><th>ID</th><th>NodeInfo</th><th>lastDiscovery</th><th>active</th><th>nextHop</th><th>#hops</th><th>routeAge</th><th>info</th></tr></thead><tbody>"));
 		uint8_t numNodes = 0;
 		uint32_t nowSystem = millis();
 		//uint32_t rtcTime = now();
@@ -758,25 +940,23 @@ class WebServer {
 				numNodes++;
 
 				//node info
-				client.print(F("<tr"));
-				sendHtmlBgColorAlternate(clientId, numNodes);
-				client.print(F("><td class='righted'>"));
+				client.print(F("<tr><td data-label='ID' class='righted'>"));
 				client.print(i);
-				client.print(F("</td><td>"));
+				client.print(F("</td><td data-label='InfoStr'>"));
 				client.print(nodeInfoString);
-				client.print(F("</td><td class='righted'>"));
+				client.print(F("</td><td data-label='lastDicovery' class='righted'>"));
 
 				uint32_t t = infoTable.lastDiscoveryRequest;
 				printDate(clientId, t);
 
 
-				client.print(F("</td><td class='righted'>"));
+				client.print(F("</td><td data-label='Active' class='righted'>"));
 				client.print(neighbourActive);
-				client.print(F("</td><td class='righted'>"));
+				client.print(F("</td><td data-label='NextHop' class='righted'>"));
 				client.print(neighbourNextHop);
-				client.print(F("</td><td class='righted'>"));
+				client.print(F("</td><td data-label='Hops' class='righted'>"));
 				client.print(neighbourHops);
-				client.print(F("</td><td class='righted'>"));
+				client.print(F("</td><td data-label='lastKeepAlive' class='righted'>"));
 				if(i != l3.localAddress) {
 					if(neighbourLastKeepAlive > 0) {
 						client.print((nowSystem - neighbourLastKeepAlive) / 1000);
@@ -788,7 +968,7 @@ class WebServer {
 					client.print(F(" <i>loopback</i>"));
 				}
 				//discover
-				client.print(F("</td><td class='centered'><a href='"));
+				client.print(F("</td><td  data-label='sensors' class='centered'><a href='"));
 				printP(clientId, pageAddresses[PAGE_GETSENSORINFO]);
 				client.print(F("?"));
 				printP(clientId, variableRemote);
@@ -802,9 +982,9 @@ class WebServer {
 		}
 
 		//num entries
-		client.print(F("<tr><th colspan='8'>"));
+		client.print(F("</tbody><tfoot><tr><th colspan='8'>"));
 		client.print(numNodes);
-		client.println(F(" entries</th></tr></table>"));
+		client.println(F(" entries</th></tr></tfoot></table>"));
 
 		//footer
 		sendHtmlFooter(clientId);
@@ -868,20 +1048,6 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 	}
 	return false;
 }
-
-	/**
-	 * helper for alternating background color str
-	 * @param clientId
-	 * @param i
-	 */
-	void sendHtmlBgColorAlternate(uint8_t clientId, uint8_t i) {
-		EthernetClient client = EthernetClient(clientId);
-		if(i % 2 == 0) {
-			client.print(F(" class='bg1'"));
-			return;
-		}
-		client.print(F(" class='bg2'"));
-	}
 
 	static boolean hwIsReadable(HardwareTypeIdentifier type) {
 		switch(type) {
@@ -1079,8 +1245,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		}
 
 		sendHttpOk(clientId);
-		sendHtmlHeader(clientId, pageTitles[PAGE_GETSENSORINFO]);
-		sendHtmlMenu(clientId);
+		sendHtmlHeader(clientId, PAGE_GETSENSORINFO, true, false);
 
 		//general info
 		char nodeInfoString[NODE_INFO_SIZE];
@@ -1127,7 +1292,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 
 		SDcard::SD_nodeDiscoveryInfoTableEntry_t discoveryInfo[SD_DISCOVERY_NUM_INFOS_PER_NODE];
 		sdcard.getDiscoveryInfosForNode(idInt, discoveryInfo, SD_DISCOVERY_NUM_INFOS_PER_NODE);
-		client.println(F("<table><tr><th>HardwareAddress</th><th>HardwareType</th><th>LastUpdated</th><th>requestSensor</th><th>writeSensor</th></tr>"));
+		client.println(F("<table><thead><tr><th>HardwareAddress</th><th>HardwareType</th><th>LastUpdated</th><th>requestSensor</th><th>writeSensor</th></tr></thead><tbody>"));
 		uint8_t numInfos = 0;
 		//conversion buffers
 		char buf1[3];
@@ -1137,24 +1302,22 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		for(uint8_t i = 0; i < SD_DISCOVERY_NUM_INFOS_PER_NODE; i++) {
 			if(discoveryInfo[i].hardwareAddress > 0 && discoveryInfo[i].hardwareType > 0) {
 				//table
-				client.print(F("<tr "));
-				sendHtmlBgColorAlternate(clientId, num);
-				client.print(F(">"));
+				client.print(F("<tr>"));
 				num++;
 
-				client.print(F("<td class='righted'>"));
+				client.print(F("<td data-label='HwAdrr' class='righted'>"));
 				client.print(discoveryInfo[i].hardwareAddress);
 				client.print(F("</td>"));
 
-				client.print(F("<td>"));
+				client.print(F("<td data-label='HwType'>"));
 				printP(clientId, hardwareTypeStrings[discoveryInfo[i].hardwareType]);
 				client.print(F("</td>"));
 
-				client.print(F("<td class='righted'>"));
+				client.print(F("<td data-label='lastDiscovery' class='righted'>"));
 				printDate(clientId, discoveryInfo[i].rtcTimestamp);
 				client.print(F("</td>"));
 
-				client.print(F("<td class='centered'>"));
+				client.print(F("<td data-label='Read' class='centered'>"));
 				if(hwIsReadable((HardwareTypeIdentifier) discoveryInfo[i].hardwareType)) {
 					itoa(idInt, buf1, 10);
 					itoa(discoveryInfo[i].hardwareAddress, buf2, 10);
@@ -1167,7 +1330,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 				}
 				client.print(F("</td>"));
 
-				client.print(F("<td class='centered'>"));
+				client.print(F("<td data-label='Write' class='centered'>"));
 				printExecutableLinks(clientId, idInt, (HardwareTypeIdentifier) discoveryInfo[i].hardwareType, discoveryInfo[i].hardwareAddress);
 				client.print(F("</td>"));
 
@@ -1177,9 +1340,9 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 				numInfos++;
 			}
 		}
-		client.print(F("<tr><th colspan='5'>"));
+		client.print(F("</tbody><tfoot><tr><th colspan='5'>"));
 		client.print(numInfos);
-		client.println(F(" entries</th></tr></table>"));
+		client.println(F(" entries</th></tr></tfoot></table>"));
 
 		sendHtmlFooter(clientId);
 
@@ -1370,8 +1533,8 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		hardwareRequestListener* listener = (hardwareRequestListener*) clientStatus[clientId].callback;
 
 		sendHttpOk(clientId);
-		sendHtmlHeader(clientId, pageTitles[PAGE_WRITE_SENSOR], false);
-		sendHtmlMenu(clientId);
+		sendHtmlHeader(clientId, PAGE_WRITE_SENSOR, false, false);
+
 		client.print(F("<h1>Sensor Write id="));
 		client.print(listener->remote);
 		client.println(F("</h1>"));
@@ -1456,8 +1619,8 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		hardwareRequestListener* listener = (hardwareRequestListener*) clientStatus[clientId].callback;
 
 		sendHttpOk(clientId);
-		sendHtmlHeader(clientId, pageTitles[PAGE_REQUEST_SENSOR], false);
-		sendHtmlMenu(clientId);
+		sendHtmlHeader(clientId, PAGE_REQUEST_SENSOR, false);
+
 		client.print(F("<h1>Sensor Info id="));
 		client.print(listener->remote);
 		client.println(F("</h1>"));
