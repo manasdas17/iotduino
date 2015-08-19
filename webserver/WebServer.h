@@ -66,15 +66,28 @@ const char pageNodes[] PROGMEM = {"/nodes"};
 const char pageCss[] PROGMEM = {"/css"};
 const char pageRequestSensor[] PROGMEM = {"/sensor"};
 const char pageWriteSensor[] PROGMEM = {"/sensorWrite"};
-PGM_P pageAddresses[] = {NULL, pageAddressMain, pageAddressGetSensorInfo, pageNodes, pageCss, pageRequestSensor, pageWriteSensor};
+const char pageSensorData[] PROGMEM = {"/sensorData"};
+PGM_P pageAddresses[] = {NULL, pageAddressMain, pageAddressGetSensorInfo, pageNodes, pageCss, pageRequestSensor, pageWriteSensor, pageSensorData};
 
 const char pageTitleMain[] PROGMEM = {"Start"};
 const char pageTitleGetSensorInfo[] PROGMEM = {"Sensor Info"};
 const char pageTitleNodes[] PROGMEM = {"Nodes"};
 const char pageTitleRequestSensor[] PROGMEM = {"Rquested Sensor Information"};
 const char pageTitleWriteSensor[] PROGMEM = {"Write to Sensor"};
+const char pageTitleSensordata[] PROGMEM = {"Sensordata"};
 
-PGM_P pageTitles[] = {NULL, pageTitleMain, pageTitleGetSensorInfo, pageTitleNodes, NULL, pageTitleRequestSensor, pageTitleWriteSensor};
+const char mimeTypeHtml[] PROGMEM = { "text/html" };
+const char mimeTypeCss[] PROGMEM = { "text/css" };
+const char mimeTypeBinary[] PROGMEM = { "application/octet-stream" };
+
+PGM_P mimeTypes[] = {mimeTypeHtml, mimeTypeCss, mimeTypeBinary};
+enum MIME_TYPES {
+	HTML,
+	CSS,
+	BINARY
+};
+
+PGM_P pageTitles[] = {NULL, pageTitleMain, pageTitleGetSensorInfo, pageTitleNodes, NULL, pageTitleRequestSensor, pageTitleWriteSensor, pageTitleSensordata};
 enum PAGES {
 		PAGE_NONE,				//0
 		PAGE_MAIN,				//1
@@ -82,9 +95,10 @@ enum PAGES {
 		PAGE_NODES,				//3
 		PAGE_CSS,				//4
 		PAGE_REQUEST_SENSOR,	//5
-		PAGE_WRITE_SENSOR		//6
+		PAGE_WRITE_SENSOR,		//6
+		PAGE_LIST_FILES			//7
 };
-uint8_t pageBelongsToMenu[] = {0, 1, 3, 3, 0, 3, 3};
+uint8_t pageBelongsToMenu[] = {0, 1, 3, 3, 0, 3, 3, 7};
 
 const char variableRemote[] PROGMEM = {"remote"};
 const char variableHwAddress[] PROGMEM = {"hwaddress"};
@@ -92,6 +106,7 @@ const char variableHwType[] PROGMEM = {"hwtype"};
 const char variableVal[] PROGMEM = {"val"};
 const char variableListType[] PROGMEM = {"listtype"};
 const char variableListNum[] PROGMEM = {"listnum"};
+const char variableFilename[] PROGMEM = {"file"};
 
 const char linkNameX[] PROGMEM = {"x"};
 const char linkNameOn[] PROGMEM = {"on"};
@@ -294,20 +309,30 @@ class WebServer {
 	 * @param clientId
 	 */
 	void sendHttpOk(uint8_t clientId) {
-		sendHttpOk(clientId, 0, true);
+		sendHttpOk(clientId, 0, HTML);
 	}
 
 	void sendHttpOk(uint8_t clientId, uint32_t cacheTime) {
-		sendHttpOk(clientId, cacheTime, true);
+		sendHttpOk(clientId, cacheTime, HTML);
 	}
 
-	void sendHttpOk(uint8_t clientId, uint32_t cacheTime, boolean mimeTypeHtml) {
+	void sendHttpOk(uint8_t clientId, uint32_t cacheTime, MIME_TYPES mime) {
 		EthernetClient client = EthernetClient(clientId);
 		client.println(F("HTTP/1.1 200 OK"));
-		if(mimeTypeHtml)
-			client.println(F("Content-Type: text/html"));
-		else
-			client.println(F("Content-Type: text/css"));
+
+		switch(mime) {
+			case HTML:
+				printP(clientId, mimeTypes[HTML]);
+			break;
+			case CSS:
+				printP(clientId, mimeTypes[CSS]);
+			break;
+			case BINARY:
+			default:
+				printP(clientId, mimeTypes[BINARY]);
+			break;
+		}
+
 		client.println(F("Connection: close"));  // the connection will be closed after completion of the response
 		if(cacheTime > 0) {
 			client.print(F("Cache-Control: no-transform,public,max-age="));
@@ -352,12 +377,11 @@ class WebServer {
 	 */
 	void sendHtmlMenu(uint8_t clientId, uint8_t page) {
 		EthernetClient client = EthernetClient(clientId);
-		uint8_t menuPages[] = {PAGE_MAIN, PAGE_NODES};
-		uint8_t menuPagesNum = 2;
+		uint8_t menuPages[] = {PAGE_MAIN, PAGE_NODES, PAGE_LIST_FILES};
 		client.print(F("<div class='pos' id='tabs'>"));
 		client.print(F("<ul>"));
 
-		for(uint8_t i = 0; i < menuPagesNum; i++) {
+		for(uint8_t i = 0; i < sizeof(menuPages); i++) {
 			client.print(F("<li"));
 			if(pageBelongsToMenu[page] == menuPages[i]) {
 				client.print(F(" class='here'"));
@@ -371,7 +395,6 @@ class WebServer {
 
 		client.print(F("</ul>"));
 		client.print(F("</div>"));
-////		client.print(F("<a href='javascript:window.history.back();'>&laquo; back</a> &middot; <a href='javascript:location.reload();'>reload</a> &middot; <a href='javascript:window.history.forward();'>forward &raquo;</a><br/>"));
 		client.flush();
 	}
 
@@ -381,7 +404,7 @@ class WebServer {
 	 */
 	void sendHtmlFooter(uint8_t clientId) {
 		EthernetClient client = EthernetClient(clientId);
-		client.print(F("</div></div><div class='datum'><a href='http://iotduino.de'>iotduino</a> webserver.<br/>"));
+		client.print(F("</div><p style='margin-top: 25px; text-align: center;'><a href='javascript:window.history.back();'>&laquo; back</a> &middot; <a href='javascript:location.reload();'>reload</a> &middot; <a href='javascript:window.history.forward();'>forward &raquo;</a></p></div><div class='datum'><a href='http://iotduino.de'>iotduino</a> webserver.<br/>"));
 		printDate(clientId, now());
 		client.println(F("</div></body></html>"));
 		client.flush();
@@ -691,7 +714,7 @@ class WebServer {
 		#endif
 
 		//sendHttpOk(clientId, 300);
-		sendHttpOk(clientId, 300, false);
+		sendHttpOk(clientId, 300, CSS);
 		EthernetClient client = EthernetClient(clientId);
 		client.println(F("a, a:link, a:visited { color: #5F5F5F; text-decoration: underline; font-weight: normal; }"));
 		client.println(F("a:active { font-weight: bold; }"));
@@ -738,7 +761,7 @@ class WebServer {
 		client.print(F("div.datum {"));
 		client.print(F("  position: absolute;"));
 		client.print(F("  top: 15px;"));
-		client.print(F("  right: 15px;"));
+		client.print(F("  left: 300px;"));
 		client.print(F("  text-align: right;"));
 		client.print(F("  font-size: 10px;"));
 		client.print(F("}"));
@@ -747,7 +770,7 @@ class WebServer {
 		client.print(F("  position: absolute;"));
 		client.print(F("  top: 42px;"));
 		client.print(F("  left: 10px;"));
-		client.print(F("  right: 10px;"));
+		//client.print(F("  right: 10px;"));
 		client.print(F("  border: 1px solid #000;"));
 		client.print(F("  background-color: #ffffff;"));
 		client.print(F("  padding: 20px 30px 10px;"));
@@ -785,7 +808,7 @@ class WebServer {
 		client.print(F("  margin-left: 0px;"));
 		client.print(F("  margin-right: 5px;"));
 		client.print(F("  margin-bottom: 0px;"));
-		client.print(F("  padding: 2px 5px 5px;"));
+		client.print(F("  padding: 2px 6px 5px;"));
 		client.print(F("  border: 1px solid #000;"));
 		client.print(F("  list-style: none;"));
 		client.print(F("  display: inline;"));
@@ -874,7 +897,6 @@ class WebServer {
 		client.print(F("    font-weight: bold;"));
 		client.print(F("  }"));
 		client.print(F("}"));
-
 
 		client.flush();
 	}
@@ -1392,6 +1414,8 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 			doPageNodes(clientId);
 		} else if(strcmp_P(uriChars, pageAddresses[PAGE_CSS]) == 0) {
 			doPageCss(clientId);
+		} else if(strcmp_P(uriChars, pageAddresses[PAGE_LIST_FILES]) == 0) {
+			doPageListFiles(clientId, &req);
 		} else if(strcmp_P(uriChars, pageAddresses[PAGE_GETSENSORINFO]) == 0) {
 			//doPageSensorInfo(clientId, &req);
 			//clientStatus[clientId].requestType = PAGE_GETSENSORINFO;
@@ -1676,6 +1700,169 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		closeClient(clientId);
 	}
 
+
+	inline uint8_t hexdigit( char hex ) {
+		return (hex <= '9') ? hex - '0' : toupper(hex) - 'A' + 10 ;
+	}
+	inline uint8_t hexbyte( char* hex ) {
+		return (hexdigit(*hex) << 4) | hexdigit(*(hex+1)) ;
+	}
+	void doPageListFiles(uint8_t clientId, RequestContent* req) {
+		#ifdef DEBUG_WEBSERVER_ENABLE
+		Serial.print(millis());
+		Serial.print(F(": doPageListFiles() on clientId="));
+		Serial.println(clientId);
+		#endif
+
+		if(req->hasKey(variableFilename) == -1) {
+			#ifdef DEBUG_WEBSERVER_ENABLE
+			Serial.println(F("\tlist files."));
+			#endif
+			doPageListeFilesStart(clientId);
+		} else {
+
+			const uint8_t bufSize = 13;
+			char filename[bufSize];
+			req->getValue(variableFilename)->toCharArray(filename, bufSize);
+
+			#ifdef DEBUG_WEBSERVER_ENABLE
+			Serial.print(F("\tlist file="));
+			Serial.println(filename);
+			#endif
+
+			doPageListFile(clientId, filename);
+		}
+	}
+
+	void doPageListFile(uint8_t clientId, char* filename) {
+		EthernetClient client = EthernetClient(clientId);
+		sendHttpOk(clientId, 0, BINARY);
+
+		if(!SD.exists(filename)) {
+			sendHttp500WithBody(clientId);
+			return;
+		}
+
+		File f = SD.open(filename);
+
+		if(f == NULL) {
+			sendHttp500WithBody(clientId);
+			return;
+		}
+
+		const uint8_t bufSize = 512;
+		uint8_t buffer[bufSize];
+		size_t bytes = 0;
+		uint16_t totalBytes = 0;
+
+		#ifdef DEBUG_WEBSERVER_ENABLE
+			uint32_t t1 = millis();
+			Serial.print(t1);
+			Serial.print(F(": filesize="));
+			Serial.println(f.size());
+		#endif
+
+		//while(bytes = f.read(buffer, bufSize) > 0) {
+			//client.write(buffer, bytes);
+			//totalBytes += bytes;
+		//}
+		while(f.available()) {
+			client.write(f.read());
+			totalBytes++;
+		}
+
+		#ifdef DEBUG_WEBSERVER_ENABLE
+			uint32_t t2 = millis();
+			Serial.print(millis());
+			Serial.print(F(": total bytes written="));
+			Serial.println(totalBytes);
+			Serial.print(F("\ttime in ms="));
+			Serial.println(t2-t1);
+			Serial.flush();
+		#endif
+	}
+
+	void doPageListeFilesStart(uint8_t clientId) {
+		EthernetClient client = EthernetClient(clientId);
+
+		sendHttpOk(clientId);
+		sendHtmlHeader(clientId, PAGE_MAIN, true, true);
+		client.println(F("<table><thead><tr><th>Remote</th><th>HardwareAddress</th><th>HardwareType</th><th>Filename</th><th>Size [b]</th></tr></thead>"));
+
+		uint8_t num = 0;
+
+
+		File test = SD.open("/");
+		#ifdef DEBUG_WEBSERVER_ENABLE
+		Serial.print(F("isDir="));
+		Serial.println(test.isDirectory());
+		#endif
+
+		if(test.isDirectory()) {
+			test.rewindDirectory();
+
+			File cursor = test.openNextFile();
+			while(cursor != NULL) {
+				#ifdef DEBUG_WEBSERVER_ENABLE
+				Serial.print('\t');
+				Serial.println(cursor.name());
+				#endif
+				if(strstr(cursor.name(), ".LOG") != NULL && strlen(cursor.name())  >= 11) {
+					//0  3  6
+					//XX_XX_XX.LOG
+					uint8_t remote = hexbyte(&cursor.name()[0]);
+					uint8_t type = hexbyte(&cursor.name()[3]);
+					uint8_t address = hexbyte(&cursor.name()[6]);
+
+					#ifdef DEBUG_WEBSERVER_ENABLE
+					Serial.print(F("\t\t"));
+					Serial.print(remote);
+					Serial.print(' ');
+					Serial.print(type);
+					Serial.print(' ');
+					Serial.println(address);
+					Serial.flush();
+					#endif
+
+					client.print(F("<tr>"));
+					client.print(F("<td data-label='Remote'>"));
+					client.print(remote);
+					client.print(F("</td>"));
+					client.print(F("<td data-label='HwAddress'>"));
+					client.print(address);
+					client.print(F("</td>"));
+					client.print(F("<td data-label='HwType'>"));
+					client.print(type);
+					client.print(F("</td>"));
+					client.print(F("<td data-label='Filename'><a href='"));
+					printP(clientId, pageAddresses[PAGE_LIST_FILES]);
+					client.print(F("?"));
+					printP(clientId, variableFilename);
+					client.print(F("="));
+					client.print(cursor.name());
+					client.print(F("'>"));
+					client.print(cursor.name());
+					client.print(F("</a></td>"));
+					client.print(F("<td data-label='bytes'>"));
+					client.print(cursor.size());
+					client.print(F(" ("));
+					client.print(cursor.size() / (sizeUInt8List + 4)); //uint32_t rtc timestamp + sensordata.
+					client.print(F(" samples)</td>"));
+					client.print(F("</td>"));
+					client.print(F("</tr>"));
+
+					num++;
+				}
+				cursor = test.openNextFile();
+			}
+		}
+
+		client.println(F("<tfoot><tr><th colspan='5'>"));
+		client.print(num);
+		client.println(F(" Entries</th></tr></tfoot>"));
+		client.println(F("</table>"));
+		sendHtmlFooter(clientId);
+	}
 
 };
 
