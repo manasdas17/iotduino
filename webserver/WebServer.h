@@ -461,14 +461,15 @@ class WebServer {
 			char * pFieldName  = strtok(readBuffer, pSpDelimiters);
 			char * pFieldValue = strtok(NULL, pSpDelimiters);
 
-			if (strcmp(pFieldName, "Content-Length:") == 0)
-			{
+			if (strcmp(pFieldName, "Content-Length:") == 0) {
 				nContentLength = atoi(pFieldValue);
-			}
-			else if (strcmp(pFieldName, "Content-Type:") == 0)
-			{
+			} else if (strcmp(pFieldName, "Content-Type:") == 0) {
 				if (strcmp(pFieldValue, "application/x-www-form-urlencoded") != 0)
 				bIsUrlEncoded = false;
+			} else if (strcmp(pFieldName, "User-Agent:") == 0) {
+				if(strstr("Mobile", readBuffer) != NULL) {
+					//mobile!
+				}
 			}
 		} while (strlen(readBuffer) > 0);    // empty string terminates
 	}
@@ -908,8 +909,8 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		char bufVal[] = { "0x0000" };
 		char bufListType[10] = { "" };
 
-		//						0				1					2					3					4
-		//						remote id		hw address			hw type				var to write		listtype
+		//							0				1					2					3					4
+		//							remote id		hw address			hw type				var to write		listtype
 		const uint8_t numKV = 5;
 		const char* keys[numKV] = {variableRemote,	variableHwAddress,	variableHwType,		variableVal,		variableListType};
 		const char* vals[numKV] = {buf1,			buf2,				buf3,				bufVal,				bufListType};
@@ -1018,12 +1019,12 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 	void printLink(uint8_t clientId, const char* baseUrl, const char** keys, const char** vals, const char* name, uint8_t num) {
 		EthernetClient client = EthernetClient(clientId);
 
-		#ifdef DEBUG_WEBSERVER_ENABLE
-		Serial.print(millis());
-		Serial.print(F(": printLink() baseUrl="));
-		serialPrintP(baseUrl);
-		Serial.println();
-		#endif
+		//#ifdef DEBUG_WEBSERVER_ENABLE
+		//Serial.print(millis());
+		//Serial.print(F(": printLink() baseUrl="));
+		//serialPrintP(baseUrl);
+		//Serial.println();
+		//#endif
 
 		client.print(F("<a href='"));
 		printP(clientId, baseUrl);
