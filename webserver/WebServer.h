@@ -1837,7 +1837,10 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 			//CSV
 			while(totalBytes < f.size()) {
 				bytes = f.readBytes(buffer, bufSize);
-				timestamp = buffer[3] << 24 | buffer[2] << 16 | buffer[1] << 8 | buffer[0];
+				timestamp = (uint32_t) buffer[3] << 24;
+				timestamp |= (uint32_t) buffer[2] << 16;
+				timestamp |= (uint16_t) buffer[1] << 8;
+				timestamp |= buffer[0];
 
 				printDate(clientId, timestamp); //client.print(timestamp); //yyyy-MM-dd HH:mm:ss
 				client.print(';');
