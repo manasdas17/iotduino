@@ -250,14 +250,13 @@ class WebServer {
 
 	/**
 	 * print to ethernet client from PGM space
-	 * @param clientId
+	 * @param client
 	 * @param str
 	 */
-	void printP(uint8_t clientId, const char * str) {
+	void printP(EthernetClient* client, const char * str) {
 		if(str == NULL)
 			return;
 
-		EthernetClient client = EthernetClient(clientId);
 		// copy data out of program memory into local storage, write out in
 		// chunks of 32 bytes to avoid extra short TCP/IP packets
 		uint8_t buffer[32];
@@ -265,177 +264,171 @@ class WebServer {
 
 		while (buffer[bufferEnd++] = pgm_read_byte(str++)){
 			if (bufferEnd == 32) {
-				client.write(buffer, 32);
+				client->write(buffer, 32);
 				bufferEnd = 0;
 			}
 		}
 
 		// write out everything left but trailing NUL
 		if (bufferEnd > 1) {
-			client.write(buffer, bufferEnd - 1);
+			client->write(buffer, bufferEnd - 1);
 		}
 	}
 
 	/**
 	 * 404 page
-	 * @param clientId
+	 * @param client
 	 */
-	void sendHttp404WithBody(uint8_t clientId) {
-		EthernetClient client = EthernetClient(clientId);
-		client.println(F("HTTP/1.1 404 Not Found"));
-		client.println(F("Content-Type: text/html"));
-		//client.println(F("Content-Length: 16"));
-		client.println(F("Connection: close"));  // the connection will be closed after completion of the response
-		client.println();
-		client.println(F("404 - Not found."));
+	void sendHttp404WithBody(EthernetClient* client) {
+		client->println(F("HTTP/1.1 404 Not Found"));
+		client->println(F("Content-Type: text/html"));
+		//client->println(F("Content-Length: 16"));
+		client->println(F("Connection: close"));  // the connection will be closed after completion of the response
+		client->println();
+		client->println(F("404 - Not found."));
 
-		closeClient(clientId);
+		closeClient(client);
 	}
 
 	/**
 	 * 500 page
-	 * @param clientId
+	 * @param client
 	 */
-	void sendHttp500WithBody(uint8_t clientId) {
-		EthernetClient client = EthernetClient(clientId);
-		client.println(F("HTTP/1.1 500 Internal error"));
-		client.println(F("Content-Type: text/html"));
-		//client.println(F("Content-Length: 19"));
-		client.println(F("Connection: close"));  // the connection will be closed after completion of the response
-		client.println();
-		client.println(F("500 Internal error. <a href='/'>return to main.</a>"));
+	void sendHttp500WithBody(EthernetClient* client) {
+		client->println(F("HTTP/1.1 500 Internal error"));
+		client->println(F("Content-Type: text/html"));
+		//client->println(F("Content-Length: 19"));
+		client->println(F("Connection: close"));  // the connection will be closed after completion of the response
+		client->println();
+		client->println(F("500 Internal error. <a href='/'>return to main.</a>"));
 
-		closeClient(clientId);
+		closeClient(client);
 	}
 
 	/**
 	 * 200 ok head
-	 * @param clientId
+	 * @param client
 	 */
-	void sendHttpOk(uint8_t clientId) {
-		sendHttpOk(clientId, 0, HTML, NULL);
+	void sendHttpOk(EthernetClient* client) {
+		sendHttpOk(client, 0, HTML, NULL);
 	}
 
-	void sendHttpOk(uint8_t clientId, uint32_t cacheTime) {
-		sendHttpOk(clientId, cacheTime, HTML, NULL);
+	void sendHttpOk(EthernetClient* client, uint32_t cacheTime) {
+		sendHttpOk(client, cacheTime, HTML, NULL);
 	}
 
 	/**
 	 * send header - all options.
 	 */
-	void sendHttpOk(uint8_t clientId, uint32_t cacheTime, MIME_TYPES mime, char* filenameForDownload) {
-		EthernetClient client = EthernetClient(clientId);
-		client.println(F("HTTP/1.1 200 OK"));
+	void sendHttpOk(EthernetClient* client, uint32_t cacheTime, MIME_TYPES mime, char* filenameForDownload) {
+		client->println(F("HTTP/1.1 200 OK"));
 
 		if(filenameForDownload != NULL) {
-			client.print(F("Content-Disposition: attachment; filename=\""));
-			client.print(filenameForDownload);
-			client.println('"');
+			client->print(F("Content-Disposition: attachment; filename=\""));
+			client->print(filenameForDownload);
+			client->println('"');
 		}
 
-		client.print(F("Content-Type: "));
+		client->print(F("Content-Type: "));
 		switch(mime) {
 			case HTML:
-				printP(clientId, mimeTypes[HTML]);
+				printP(client, mimeTypes[HTML]);
 			break;
 			case CSS:
-				printP(clientId, mimeTypes[CSS]);
+				printP(client, mimeTypes[CSS]);
 			break;
 			case CSV:
-				printP(clientId, mimeTypes[CSV]);
+				printP(client, mimeTypes[CSV]);
 			break;
 			case BINARY:
 			default:
-				printP(clientId, mimeTypes[BINARY]);
+				printP(client, mimeTypes[BINARY]);
 			break;
 		}
-		client.println();
+		client->println();
 
-		client.println(F("Connection: close"));  // the connection will be closed after completion of the response
+		client->println(F("Connection: close"));  // the connection will be closed after completion of the response
 		if(cacheTime > 0) {
-			client.print(F("Cache-Control: no-transform,public,max-age="));
-			client.println(cacheTime);
+			client->print(F("Cache-Control: no-transform,public,max-age="));
+			client->println(cacheTime);
 		}
-		client.println();
-		client.flush();
+		client->println();
+		client->flush();
 	}
 
 	/**
 	 * html head
-	 * @param clientId
+	 * @param client
 	 */
-	void sendHtmlHeader(uint8_t clientId, uint8_t pageId, boolean refresh = true, boolean printTitle = true) {
-		EthernetClient client = EthernetClient(clientId);
-		client.println(F("<!DOCTYPE HTML>\n"));
-		client.print(F("<html><header><link rel='stylesheet' href='css' type='text/css'><title>"));
-		printP(clientId, pageTitles[pageId]);
-		client.print(F("</title>"));
+	void sendHtmlHeader(EthernetClient* client, uint8_t pageId, boolean refresh = true, boolean printTitle = true) {
+		client->println(F("<!DOCTYPE HTML>\n"));
+		client->print(F("<html><header><link rel='stylesheet' href='css' type='text/css'><title>"));
+		printP(client, pageTitles[pageId]);
+		client->print(F("</title>"));
 
 		if(refresh)
-			client.print(F("<meta http-equiv='refresh' content='300'>"));
+			client->print(F("<meta http-equiv='refresh' content='300'>"));
 
-		client.println(F("</header><body>"));
+		client->println(F("</header><body>"));
 
-		sendHtmlMenu(clientId, pageId);
+		sendHtmlMenu(client, pageId);
 
-		client.println(F("<div id='frame' class='frame'>"));
+		client->println(F("<div id='frame' class='frame'>"));
 		if(printTitle) {
-			client.println(F("<h1>"));
-			printP(clientId, pageTitles[pageId]);
-			client.println(F("</h1>"));
+			client->println(F("<h1>"));
+			printP(client, pageTitles[pageId]);
+			client->println(F("</h1>"));
 		}
-		client.println(F("<div>"));
+		client->println(F("<div>"));
 
-		client.flush();
+		client->flush();
 	}
 
 	/**
 	 * html menu
-	 * @param clientId
+	 * @param client
 	 */
-	void sendHtmlMenu(uint8_t clientId, uint8_t page) {
-		EthernetClient client = EthernetClient(clientId);
+	void sendHtmlMenu(EthernetClient* client, uint8_t page) {
 		uint8_t menuPages[] = {PAGE_MAIN, PAGE_NODES, PAGE_LIST_FILES};
-		client.print(F("<div class='pos' id='tabs'>"));
-		client.print(F("<ul>"));
+		client->print(F("<div class='pos' id='tabs'>"));
+		client->print(F("<ul>"));
 
 		for(uint8_t i = 0; i < sizeof(menuPages); i++) {
-			client.print(F("<li"));
+			client->print(F("<li"));
 			if(pageBelongsToMenu[page] == menuPages[i]) {
-				client.print(F(" class='here'"));
+				client->print(F(" class='here'"));
 			}
-			client.print(F("><a href='"));
-			this->printP(clientId, pageAddresses[menuPages[i]]);
-			client.print("'>");
-			this->printP(clientId, pageTitles[menuPages[i]]);
-			client.print(F("</a></li>"));
+			client->print(F("><a href='"));
+			this->printP(client, pageAddresses[menuPages[i]]);
+			client->print("'>");
+			this->printP(client, pageTitles[menuPages[i]]);
+			client->print(F("</a></li>"));
 		}
 
-		client.print(F("</ul>"));
-		client.print(F("</div>"));
-		client.flush();
+		client->print(F("</ul>"));
+		client->print(F("</div>"));
+		client->flush();
 	}
 
 	/**
 	 * html footer
-	 * @param clientId
+	 * @param client
 	 */
-	void sendHtmlFooter(uint8_t clientId) {
-		EthernetClient client = EthernetClient(clientId);
-		client.print(F("</div><p style='margin-top: 25px; text-align: center;'><a href='javascript:window.history.back();'>&laquo; back</a> &middot; <a href='javascript:location.reload();'>reload</a> &middot; <a href='javascript:window.history.forward();'>forward &raquo;</a></p></div><div class='datum'><a href='http://iotduino.de'>iotduino</a> webserver.<br/>"));
-		printDate(clientId, now());
-		client.println(F("</div></body></html>"));
-		client.flush();
+	void sendHtmlFooter(EthernetClient* client) {
+		client->print(F("</div><p style='margin-top: 25px; text-align: center;'><a href='javascript:window.history.back();'>&laquo; back</a> &middot; <a href='javascript:location.reload();'>reload</a> &middot; <a href='javascript:window.history.forward();'>forward &raquo;</a></p></div><div class='datum'><a href='http://iotduino.de'>iotduino</a> webserver.<br/>"));
+		printDate(client, now());
+		client->println(F("</div></body></html>"));
+		client->flush();
 	}
 
 
 	/**
 	 * Read HTTP request, setting Uri Index, the requestContent and returning the method type.
-	 * @param clientId
+	 * @param client
 	 * @param uri
 	 * @param req here the GET dats is stored
 	 */
-	MethodType readHttpRequest(uint8_t clientId, String* uri, RequestContent* req)
+	MethodType readHttpRequest(EthernetClient* client, String* uri, RequestContent* req)
 	{
 		BUFFER requestContent;
 		BUFFER readBuffer;    // Just a work buffer into which we can read records
@@ -444,14 +437,14 @@ class WebServer {
 
 		requestContent[0] = 0;    // Initialize as an empty string
 		// Read the first line: Request-Line setting Uri Index and returning the method type.
-		MethodType eMethod = readRequestLine(clientId, readBuffer, uri, requestContent, req);
+		MethodType eMethod = readRequestLine(client, readBuffer, uri, requestContent, req);
 		// Read any following, non-empty headers setting content length.
-		readRequestHeaders(clientId, readBuffer, nContentLength, bIsUrlEncoded);
+		readRequestHeaders(client, readBuffer, nContentLength, bIsUrlEncoded);
 
 		if (nContentLength > 0)
 		{
 			// If there is some content then read it and do an elementary decode.
-			readEntityBody(clientId, nContentLength, requestContent);
+			readEntityBody(client, nContentLength, requestContent);
 			if (bIsUrlEncoded)
 			{
 				// The '+' encodes for a space, so decode it within the string
@@ -467,18 +460,18 @@ class WebServer {
 	 * Read the first line of the HTTP request, setting Uri Index and returning the method type.
 	 * If it is a GET method then we set the requestContent to whatever follows the '?'. For a other
 	 * methods there is no content except it may get set later, after the headers for a POST method.
-	 * @param clientId
+	 * @param client
 	 * @param readBuffer
 	 * @param uri
 	 * @param requestContent buffer
 	 * @param req request content map object
 	 */
-	MethodType readRequestLine(uint8_t clientId, BUFFER & readBuffer, String* uri, BUFFER & requestContent, RequestContent* req)
+	MethodType readRequestLine(EthernetClient* client, BUFFER & readBuffer, String* uri, BUFFER & requestContent, RequestContent* req)
 	{
 		MethodType eMethod;
 		// Get first line of request:
 		// Request-Line = Method SP Request-URI SP HTTP-Version CRLF
-		getNextHttpLine(clientId, readBuffer);
+		getNextHttpLine(client, readBuffer);
 		// Split it into the 3 tokens
 		char * pMethod  = strtok(readBuffer, pSpDelimiters);
 		char * pUri     = strtok(NULL, pSpDelimiters);
@@ -517,12 +510,12 @@ class WebServer {
 
 	/**
 	 * Read each header of the request till we get the terminating CRLF
-	 * @param clientID
+	 * @param client
 	 * @param readBuffer
 	 * @param nContentLenth
 	 * @parambIsUrlEncoded
 	 */
-	void readRequestHeaders(uint8_t clientId, BUFFER & readBuffer, int & nContentLength, bool & bIsUrlEncoded)
+	void readRequestHeaders(EthernetClient* client, BUFFER & readBuffer, int & nContentLength, bool & bIsUrlEncoded)
 	{
 		nContentLength = 0;      // Default is zero in cate there is no content length.
 		bIsUrlEncoded  = true;   // Default encoding
@@ -531,7 +524,7 @@ class WebServer {
 		// An empty header of zero length terminates the list.
 		do
 		{
-			getNextHttpLine(clientId, readBuffer);
+			getNextHttpLine(client, readBuffer);
 			//    Serial.println(readBuffer); // DEBUG
 
 			char * pFieldName  = strtok(readBuffer, pSpDelimiters);
@@ -552,11 +545,11 @@ class WebServer {
 
 	/**
 	 * Read the entity body of given length (after all the headers) into the buffer.
-	 * @param  clientId
+	 * @param  client
 	 * @param nContentLength
 	 * @param content buffer
 	 */
-	void readEntityBody(uint8_t clientId, int nContentLength, BUFFER & content)
+	void readEntityBody(EthernetClient* client, int nContentLength, BUFFER & content)
 	{
 		int i;
 		char c;
@@ -566,7 +559,7 @@ class WebServer {
 
 		for (i = 0; i < nContentLength; ++i)
 		{
-			c = EthernetClient(clientId).read();
+			c = client->read();
 			//    Serial.print(c); // DEBUG
 			content[i] = c;
 		}
@@ -579,27 +572,25 @@ class WebServer {
 
 	/**
 	 * eat headers.
-	 * @param clientId
+	 * @param client
 	 * @param readBuffer
 	 */
-	void getNextHttpLine(uint8_t clientId, BUFFER & readBuffer)
+	void getNextHttpLine(EthernetClient* client, BUFFER & readBuffer)
 	{
 		char c;
 		uint8_t bufindex = 0; // reset buffer
 
-		EthernetClient client = EthernetClient(clientId);
-
 		// reading next header of HTTP request
-		if (client.connected() && client.available())
+		if (client->connected() && client->available())
 		{
 			// read a line terminated by CRLF
-			readBuffer[0] = client.read();
-			readBuffer[1] = client.read();
+			readBuffer[0] = client->read();
+			readBuffer[1] = client->read();
 			bufindex = 2;
 			for (int i = 2; readBuffer[i - 2] != '\r' && readBuffer[i - 1] != '\n'; ++i)
 			{
 				// read full line and save it in buffer, up to the buffer size
-				c = client.read();
+				c = client->read();
 				if (bufindex < sizeof(BUFFER))
 				readBuffer[bufindex++] = c;
 			}
@@ -613,11 +604,11 @@ class WebServer {
 	 * @param socketNumber
 	 * @return success
 	 */
-	boolean closeClient(uint8_t clientId) {
+	boolean closeClient(EthernetClient* client) {
 		#ifdef DEBUG_WEBSERVER_ENABLE
 		Serial.print(millis());
 		Serial.print(F(": WebServer::closeClient() clientSlot="));
-		Serial.println(clientId);
+		Serial.println(client->_sock);
 		#endif
 
 		/*
@@ -633,14 +624,14 @@ class WebServer {
 		}*/
 
 		delay(1);
-		EthernetClient(clientId).stop();
-		clientStatus[clientId].inUse = false;
-		clientStatus[clientId].requestType = PAGE_NONE;
-		clientStatus[clientId].waiting = false;
+		clientStatus[client->_sock].inUse = false;
+		clientStatus[client->_sock].requestType = PAGE_NONE;
+		clientStatus[client->_sock].waiting = false;
 
-		if(clientStatus[clientId].callback != NULL && dispatcher.getResponseHandler() != NULL) {
-			dispatcher.getResponseHandler()->unregisterListener(clientStatus[clientId].callback);
+		if(clientStatus[client->_sock].callback != NULL && dispatcher.getResponseHandler() != NULL) {
+			dispatcher.getResponseHandler()->unregisterListener(clientStatus[client->_sock].callback);
 		}
+		client->stop();
 
 		return true;
 	}
@@ -653,18 +644,19 @@ class WebServer {
 
 		////iterate clients
 		for(uint8_t i = 0; i < CLIENT_INSTANCES_NUM; i++) {
+			EthernetClient client = EthernetClient(i);
 			//new connections
-			if(clientStatus[i].inUse == false && EthernetClient(i).available()) {
+			if(clientStatus[i].inUse == false && client.available()) {
 				clientStatus[i].inUse = true;
 			}
 
 			//check for answers from listeners
 			if(clientStatus[i].waiting == true) {
 				if(clientStatus[i].callback != NULL && clientStatus[i].callback->state == webserverListener::FINISHED) {
-					handleFinishedCallback(i);
+					handleFinishedCallback(&client);
 				} else if(clientStatus[i].callback != NULL && clientStatus[i].callback != NULL && (clientStatus[i].callback->state == webserverListener::FAILED || millis() - clientStatus[i].timestamp > TIMEOUT_MILLIS)) {
 					//no answer.
-					sendHttp500WithBody(i);
+					sendHttp500WithBody(&client);
 				}
 			}
 
@@ -675,7 +667,7 @@ class WebServer {
 				Serial.print(F(": WebServer::loop() handle clientSlot="));
 				Serial.println(i);
 				#endif
-				doClientHandling(i);
+				doClientHandling(&client);
 			}
 	}
 }
@@ -684,259 +676,255 @@ class WebServer {
 	 * callback has finished, now execute this (usually actual page creation)
 	 * @param clintId
 	 */
-	void handleFinishedCallback(uint8_t clientId) {
-		if(clientStatus[clientId].requestType == PAGE_REQUEST_SENSOR) {
-			doPageRequestSensor2(clientId);
-		//} else if(clientStatus[clientId].requestType == PAGE_GETSENSORINFO) {
-			//doPageSensorInfo2(clientId);
-		} else if (clientStatus[clientId].requestType == PAGE_WRITE_SENSOR) {
-			doPageWriteSensor2(clientId);
+	void handleFinishedCallback(EthernetClient* client) {
+		if(clientStatus[client->_sock].requestType == PAGE_REQUEST_SENSOR) {
+			doPageRequestSensor2(client);
+		//} else if(clientStatus[client->_sock].requestType == PAGE_GETSENSORINFO) {
+			//doPageSensorInfo2(client);
+		} else if (clientStatus[client->_sock].requestType == PAGE_WRITE_SENSOR) {
+			doPageWriteSensor2(client);
 		} else {
 			//unknown request
-			sendHttp500WithBody(clientId);
-			closeClient(clientId);
+			sendHttp500WithBody(client);
+			closeClient(client);
 		}
 	}
 
 	/**
 	 * welcome page
-	 * @param clientId
+	 * @param client
 	 */
-	void doPageStart(uint8_t clientId) {
+	void doPageStart(EthernetClient* client) {
 		#ifdef DEBUG
 		Serial.print(millis());
 		Serial.print(F(": doPageStart() on clientId="));
-		Serial.println(clientId);
+		Serial.println(client->_sock);
 		#endif
-
-		EthernetClient client = EthernetClient(clientId);
 
 		#ifdef DEBUG
 		Serial.println(F("\tdoHttpHeaderOK"));
 		#endif
-		sendHttpOk(clientId);
-		sendHtmlHeader(clientId, PAGE_MAIN);
-		client.println(F("Welcome to the <a href='http://iotduino.de'>iotduino</a> gateway system."));
-		sendHtmlFooter(clientId);
+		sendHttpOk(client);
+		sendHtmlHeader(client, PAGE_MAIN);
+		client->println(F("Welcome to the <a href='http://iotduino.de'>iotduino</a> gateway system."));
+		sendHtmlFooter(client);
 	}
 
 	/**
 	 * stylesheet
-	 * @param clientId
+	 * @param client
 	 */
-	void doPageCss(uint8_t clientId) {
+	void doPageCss(EthernetClient* client) {
 		#ifdef DEBUG
 		Serial.print(millis());
-		Serial.print(F(": doPageCss() on clientId="));
-		Serial.println(clientId);
+		Serial.print(F(": doPageCss() on client="));
+		Serial.println(client->_sock);
 		#endif
 
-		//sendHttpOk(clientId, 300);
-		sendHttpOk(clientId, 300, CSS, NULL);
-		EthernetClient client = EthernetClient(clientId);
-		client.println(F("a, a:link, a:visited { color: #5F5F5F; text-decoration: underline; font-weight: normal; }"));
-		client.println(F("a:active { font-weight: bold; }"));
-		client.println(F("a:hover { text-decoration: none; background-color: #FFD8D8; }"));
-		//client.println(F("table, th, td, body { font-family: Arial; font-size: 9pt; }"));
-		//client.println(F("table { border: 1px lightgray dashed; vertical-align: top; padding: 4px; background-position: center; width: 800px; border-spacing: 2px; -webkit-border-horizontal-spacing: 5px; -webkit-border-vertical-spacing: 2px;}"));
-		//client.println(F("td { font-size: 9pt; border-bottom: 1px dotted; }"));
-		//client.println(F("th { font-size: 10pt; font-weight: bold; border-bottom: 2px solid }"));
-		//client.println(F(".bg1 { background-color: #fafafa; }"));
-		//client.println(F(".bg2 { background-color: #efefef; }"));
-		//client.println(F(".bg1:hover { background-color: #FFD8D8; }"));
-		//client.println(F(".bg2:hover { background-color: #FFD8D8; }"));
-		client.println(F(".warning { color: red; }"));
-		client.println(F(".ok { color: green; }"));
-		//client.println(F("hr { border:none; height: 1px; background-color: black; }"));
-		client.println(F("input { font-size: 9pt; height: 20px; margin: 0; padding: 0px; background-color: white; border: 1px solid darkgray; }"));
-		client.println(F("input[type='submit'] { width: 50px; }"));
-		client.println(F("input[type='text'] { width: 120px }"));
-		client.println(F(".centered { text-align: center; }"));
-		client.println(F(".righted { text-align: right; }"));
-		client.println(F(".inline { border: none; }"));
+		//sendHttpOk(client, 300);
+		sendHttpOk(client, 300, CSS, NULL);
 
-		client.print(F("tbody tr:nth-child(even) {"));
-		client.print(F("  background-color: #eee;"));
-		client.print(F("}"));
-		client.print(F(""));
-		client.print(F("tbody tr:nth-child(odd) {"));
-		client.print(F("  background-color: #fff;"));
-		client.print(F("}"));
-		client.print(F(""));
-		client.print(F("tbody tr:hover {"));
-		client.print(F("  background-color: #ffdcdc;"));
-		client.print(F("}"));
-		client.print(F(""));
-		client.print(F("body {"));
-		client.print(F("  margin-left: 0px;"));
-		client.print(F("  margin-bottom: 0px;"));
-		client.print(F("  font-family: arial;"));
-		client.print(F("  font-size: 12pt;"));
-		client.print(F("  color: #000000;"));
-		client.print(F("  background-color: #dddddd;"));
-		client.print(F("}"));
-		client.print(F(""));
-		client.print(F("div.datum {"));
-		client.print(F("  position: absolute;"));
-		client.print(F("  top: 15px;"));
-		client.print(F("  left: 300px;"));
-		client.print(F("  text-align: right;"));
-		client.print(F("  font-size: 10px;"));
-		client.print(F("}"));
-		client.print(F(""));
-		client.print(F("div.frame {"));
-		client.print(F("  position: absolute;"));
-		client.print(F("  top: 42px;"));
-		client.print(F("  left: 10px;"));
-		//client.print(F("  right: 10px;"));
-		client.print(F("  border: 1px solid #000;"));
-		client.print(F("  background-color: #ffffff;"));
-		client.print(F("  padding: 20px 30px 10px;"));
-		client.print(F("}"));
-		client.print(F(""));
-		client.print(F("h1 {"));
-		client.print(F("  font-size: 15pt;"));
-		client.print(F("}"));
-		client.print(F(""));
-		client.print(F("h1:first-letter {"));
-		client.print(F("  color: #dd0000;"));
-		client.print(F("}"));
-		client.print(F(""));
-		client.print(F("div.content {"));
-		client.print(F("  margin: 20px 0px 20px;"));
-		client.print(F("  border: 1px dotted #000;"));
-		client.print(F("  background-color: #fafafa;"));
-		client.print(F("  padding: 10px 10px 10px;"));
-		client.print(F("}"));
-		client.print(F(""));
-		client.print(F("div.pos {"));
-		client.print(F("  z-index: 10;"));
-		client.print(F("  position: absolute;"));
-		client.print(F("  top: 20px;"));
-		client.print(F("  left: 30px;"));
-		client.print(F("}"));
-		client.print(F(""));
-		client.print(F("#tabs ul {"));
-		client.print(F("  margin-left: 0px;"));
-		client.print(F("  padding-left: 0px;"));
-		client.print(F("  display: inline;"));
-		client.print(F("}"));
-		client.print(F(""));
-		client.print(F("#tabs ul li {"));
-		client.print(F("  margin-left: 0px;"));
-		client.print(F("  margin-right: 5px;"));
-		client.print(F("  margin-bottom: 0px;"));
-		client.print(F("  padding: 2px 6px 5px;"));
-		client.print(F("  border: 1px solid #000;"));
-		client.print(F("  list-style: none;"));
-		client.print(F("  display: inline;"));
-		client.print(F("  background-color: #cccccc;"));
-		client.print(F("}"));
-		client.print(F(""));
-		client.print(F("#tabs ul li.here {"));
-		client.print(F("  border-bottom: 1px solid #ffffff;"));
-		client.print(F("  list-style: none;"));
-		client.print(F("  display: inline;"));
-		client.print(F("  background-color: #ffffff;"));
-		client.print(F("}"));
-		client.print(F(""));
-		client.print(F("#tabs ul li:hover {"));
-		client.print(F("  background-color: #eeeeee;"));
-		client.print(F("}"));
-		client.print(F(""));
-		client.print(F("/*nav-links*/"));
-		client.print(F("#tabs a, a:link, a:visited, a:active {"));
-		client.print(F("  color: #000000;"));
-		client.print(F("  font-weight: bold;"));
-		client.print(F("  text-decoration: none;"));
-		client.print(F("}"));
-		client.print(F(""));
-		client.print(F("#tabs a:hover {"));
-		client.print(F("  color: #dd0000;"));
-		client.print(F("  text-decoration: none;"));
-		client.print(F("}"));
-		client.print(F(""));
-		client.print(F("/**Responsivetablewithcss*AdeBudiman-art.visuadlesigner@gmail.com*2015*/"));
-		client.print(F("table {"));
-		client.print(F("  border: 1px solid #ccc;"));
-		client.print(F("  width: 100%;"));
-		client.print(F("  margin: 0px;"));
-		client.print(F("  padding: 0px;"));
-		client.print(F("  border-collapse: collapse;"));
-		client.print(F("  border-spacing: 0px;"));
-		client.print(F("}"));
-		client.print(F(""));
-		client.print(F("table tr {"));
-		client.print(F("  border: 1px solid #ddd;"));
-		client.print(F("  padding: 5px;"));
-		client.print(F("}"));
-		client.print(F(""));
-		client.print(F("table th, table td {"));
-		client.print(F("  padding: 10px;"));
-		client.print(F("  text-align: center;"));
-		client.print(F("}"));
-		client.print(F(""));
-		client.print(F("table th {"));
-		client.print(F("  text-transform: uppercase;"));
-		client.print(F("  font-size: 14px;"));
-		client.print(F("  letter-spacing: 1px;"));
-		client.print(F("}"));
-		client.print(F(""));
-		client.print(F("@media screen and (max-width: 1024px) {"));
-		client.print(F("  table {"));
-		client.print(F("    border: 10px;"));
-		client.print(F("  }"));
-		client.print(F(""));
-		client.print(F("  table thead {"));
-		client.print(F("    display: none;"));
-		client.print(F("  }"));
-		client.print(F(""));
-		client.print(F("  table tr {"));
-		client.print(F("    margin-bottom: 10px;"));
-		client.print(F("    display: block !important;;"));
-		client.print(F("    border-bottom: 2px solid #ddd;"));
-		client.print(F("  }"));
-		client.print(F(""));
-		client.print(F("  table td {"));
-		client.print(F("    display: block !important;;"));
-		client.print(F("    text-align: right;"));
-		client.print(F("    font-size: 13px;"));
-		client.print(F("    border-bottom: 1px dotted #ccc;"));
-		client.print(F("  }"));
-		client.print(F(""));
-		client.print(F("  table td:last-child {"));
-		client.print(F("    border-bottom: 0px;"));
-		client.print(F("  }"));
-		client.print(F(""));
-		client.print(F("  table td:before {"));
-		client.print(F("    content: attr(data-label);"));
-		client.print(F("    float: left;"));
-		client.print(F("    text-transform: uppercase;"));
-		client.print(F("    font-weight: bold;"));
-		client.print(F("  }"));
-		client.print(F("}"));
+		client->println(F("a, a:link, a:visited { color: #5F5F5F; text-decoration: underline; font-weight: normal; }"));
+		client->println(F("a:active { font-weight: bold; }"));
+		client->println(F("a:hover { text-decoration: none; background-color: #FFD8D8; }"));
+		//client->println(F("table, th, td, body { font-family: Arial; font-size: 9pt; }"));
+		//client->println(F("table { border: 1px lightgray dashed; vertical-align: top; padding: 4px; background-position: center; width: 800px; border-spacing: 2px; -webkit-border-horizontal-spacing: 5px; -webkit-border-vertical-spacing: 2px;}"));
+		//client->println(F("td { font-size: 9pt; border-bottom: 1px dotted; }"));
+		//client->println(F("th { font-size: 10pt; font-weight: bold; border-bottom: 2px solid }"));
+		//client->println(F(".bg1 { background-color: #fafafa; }"));
+		//client->println(F(".bg2 { background-color: #efefef; }"));
+		//client->println(F(".bg1:hover { background-color: #FFD8D8; }"));
+		//client->println(F(".bg2:hover { background-color: #FFD8D8; }"));
+		client->println(F(".warning { color: red; }"));
+		client->println(F(".ok { color: green; }"));
+		//client->println(F("hr { border:none; height: 1px; background-color: black; }"));
+		client->println(F("input { font-size: 9pt; height: 20px; margin: 0; padding: 0px; background-color: white; border: 1px solid darkgray; }"));
+		client->println(F("input[type='submit'] { width: 50px; }"));
+		client->println(F("input[type='text'] { width: 120px }"));
+		client->println(F(".centered { text-align: center; }"));
+		client->println(F(".righted { text-align: right; }"));
+		client->println(F(".inline { border: none; }"));
 
-		client.flush();
+		client->print(F("tbody tr:nth-child(even) {"));
+		client->print(F("  background-color: #eee;"));
+		client->print(F("}"));
+		client->print(F(""));
+		client->print(F("tbody tr:nth-child(odd) {"));
+		client->print(F("  background-color: #fff;"));
+		client->print(F("}"));
+		client->print(F(""));
+		client->print(F("tbody tr:hover {"));
+		client->print(F("  background-color: #ffdcdc;"));
+		client->print(F("}"));
+		client->print(F(""));
+		client->print(F("body {"));
+		client->print(F("  margin-left: 0px;"));
+		client->print(F("  margin-bottom: 0px;"));
+		client->print(F("  font-family: arial;"));
+		client->print(F("  font-size: 12pt;"));
+		client->print(F("  color: #000000;"));
+		client->print(F("  background-color: #dddddd;"));
+		client->print(F("}"));
+		client->print(F(""));
+		client->print(F("div.datum {"));
+		client->print(F("  position: absolute;"));
+		client->print(F("  top: 15px;"));
+		client->print(F("  left: 300px;"));
+		client->print(F("  text-align: right;"));
+		client->print(F("  font-size: 10px;"));
+		client->print(F("}"));
+		client->print(F(""));
+		client->print(F("div.frame {"));
+		client->print(F("  position: absolute;"));
+		client->print(F("  top: 42px;"));
+		client->print(F("  left: 10px;"));
+		//client->print(F("  right: 10px;"));
+		client->print(F("  border: 1px solid #000;"));
+		client->print(F("  background-color: #ffffff;"));
+		client->print(F("  padding: 20px 30px 10px;"));
+		client->print(F("}"));
+		client->print(F(""));
+		client->print(F("h1 {"));
+		client->print(F("  font-size: 15pt;"));
+		client->print(F("}"));
+		client->print(F(""));
+		client->print(F("h1:first-letter {"));
+		client->print(F("  color: #dd0000;"));
+		client->print(F("}"));
+		client->print(F(""));
+		client->print(F("div.content {"));
+		client->print(F("  margin: 20px 0px 20px;"));
+		client->print(F("  border: 1px dotted #000;"));
+		client->print(F("  background-color: #fafafa;"));
+		client->print(F("  padding: 10px 10px 10px;"));
+		client->print(F("}"));
+		client->print(F(""));
+		client->print(F("div.pos {"));
+		client->print(F("  z-index: 10;"));
+		client->print(F("  position: absolute;"));
+		client->print(F("  top: 20px;"));
+		client->print(F("  left: 30px;"));
+		client->print(F("}"));
+		client->print(F(""));
+		client->print(F("#tabs ul {"));
+		client->print(F("  margin-left: 0px;"));
+		client->print(F("  padding-left: 0px;"));
+		client->print(F("  display: inline;"));
+		client->print(F("}"));
+		client->print(F(""));
+		client->print(F("#tabs ul li {"));
+		client->print(F("  margin-left: 0px;"));
+		client->print(F("  margin-right: 5px;"));
+		client->print(F("  margin-bottom: 0px;"));
+		client->print(F("  padding: 2px 6px 5px;"));
+		client->print(F("  border: 1px solid #000;"));
+		client->print(F("  list-style: none;"));
+		client->print(F("  display: inline;"));
+		client->print(F("  background-color: #cccccc;"));
+		client->print(F("}"));
+		client->print(F(""));
+		client->print(F("#tabs ul li.here {"));
+		client->print(F("  border-bottom: 1px solid #ffffff;"));
+		client->print(F("  list-style: none;"));
+		client->print(F("  display: inline;"));
+		client->print(F("  background-color: #ffffff;"));
+		client->print(F("}"));
+		client->print(F(""));
+		client->print(F("#tabs ul li:hover {"));
+		client->print(F("  background-color: #eeeeee;"));
+		client->print(F("}"));
+		client->print(F(""));
+		client->print(F("/*nav-links*/"));
+		client->print(F("#tabs a, a:link, a:visited, a:active {"));
+		client->print(F("  color: #000000;"));
+		client->print(F("  font-weight: bold;"));
+		client->print(F("  text-decoration: none;"));
+		client->print(F("}"));
+		client->print(F(""));
+		client->print(F("#tabs a:hover {"));
+		client->print(F("  color: #dd0000;"));
+		client->print(F("  text-decoration: none;"));
+		client->print(F("}"));
+		client->print(F(""));
+		client->print(F("/**Responsivetablewithcss*AdeBudiman-art.visuadlesigner@gmail.com*2015*/"));
+		client->print(F("table {"));
+		client->print(F("  border: 1px solid #ccc;"));
+		client->print(F("  width: 100%;"));
+		client->print(F("  margin: 0px;"));
+		client->print(F("  padding: 0px;"));
+		client->print(F("  border-collapse: collapse;"));
+		client->print(F("  border-spacing: 0px;"));
+		client->print(F("}"));
+		client->print(F(""));
+		client->print(F("table tr {"));
+		client->print(F("  border: 1px solid #ddd;"));
+		client->print(F("  padding: 5px;"));
+		client->print(F("}"));
+		client->print(F(""));
+		client->print(F("table th, table td {"));
+		client->print(F("  padding: 10px;"));
+		client->print(F("  text-align: center;"));
+		client->print(F("}"));
+		client->print(F(""));
+		client->print(F("table th {"));
+		client->print(F("  text-transform: uppercase;"));
+		client->print(F("  font-size: 14px;"));
+		client->print(F("  letter-spacing: 1px;"));
+		client->print(F("}"));
+		client->print(F(""));
+		client->print(F("@media screen and (max-width: 1024px) {"));
+		client->print(F("  table {"));
+		client->print(F("    border: 10px;"));
+		client->print(F("  }"));
+		client->print(F(""));
+		client->print(F("  table thead {"));
+		client->print(F("    display: none;"));
+		client->print(F("  }"));
+		client->print(F(""));
+		client->print(F("  table tr {"));
+		client->print(F("    margin-bottom: 10px;"));
+		client->print(F("    display: block !important;;"));
+		client->print(F("    border-bottom: 2px solid #ddd;"));
+		client->print(F("  }"));
+		client->print(F(""));
+		client->print(F("  table td {"));
+		client->print(F("    display: block !important;;"));
+		client->print(F("    text-align: right;"));
+		client->print(F("    font-size: 13px;"));
+		client->print(F("    border-bottom: 1px dotted #ccc;"));
+		client->print(F("  }"));
+		client->print(F(""));
+		client->print(F("  table td:last-child {"));
+		client->print(F("    border-bottom: 0px;"));
+		client->print(F("  }"));
+		client->print(F(""));
+		client->print(F("  table td:before {"));
+		client->print(F("    content: attr(data-label);"));
+		client->print(F("    float: left;"));
+		client->print(F("    text-transform: uppercase;"));
+		client->print(F("    font-weight: bold;"));
+		client->print(F("  }"));
+		client->print(F("}"));
+
+		client->flush();
 	}
 
 	/**
 	 * node overview (from routing table)
-	 * @param clientId
+	 * @param client
 	 */
-	void doPageNodes(uint8_t clientId) {
+	void doPageNodes(EthernetClient* client) {
 		#ifdef DEBUG
 		Serial.print(millis());
-		Serial.print(F(": doPageNodes() on clientId="));
-		Serial.println(clientId);
+		Serial.print(F(": doPageNodes() on client="));
+		Serial.println(client->_sock);
 		#endif
 
-		sendHttpOk(clientId);
-		sendHtmlHeader(clientId, PAGE_NODES);
-
-		EthernetClient client = EthernetClient(clientId);
+		sendHttpOk(client);
+		sendHtmlHeader(client, PAGE_NODES);
 
 		//table
-		client.println(F("<table><thead><tr><th>ID</th><th>NodeInfo</th><th>lastDiscovery</th><th>active</th><th>nextHop</th><th>#hops</th><th>routeAge</th><th>info</th></tr></thead><tbody>"));
+		client->println(F("<table><thead><tr><th>ID</th><th>NodeInfo</th><th>lastDiscovery</th><th>active</th><th>nextHop</th><th>#hops</th><th>routeAge</th><th>info</th></tr></thead><tbody>"));
 		uint8_t numNodes = 0;
 		uint32_t nowSystem = millis();
 		//uint32_t rtcTime = now();
@@ -980,82 +968,80 @@ class WebServer {
 				numNodes++;
 
 				//node info
-				client.print(F("<tr><td data-label='ID' class='righted'>"));
-				client.print(i);
-				client.print(F("</td><td data-label='InfoStr'>"));
-				client.print(nodeInfoString);
-				client.print(F("</td><td data-label='lastDicovery' class='righted'>"));
+				client->print(F("<tr><td data-label='ID' class='righted'>"));
+				client->print(i);
+				client->print(F("</td><td data-label='InfoStr'>"));
+				client->print(nodeInfoString);
+				client->print(F("</td><td data-label='lastDicovery' class='righted'>"));
 
 				uint32_t t = infoTable.lastDiscoveryRequest;
-				printDate(clientId, t);
+				printDate(client, t);
 
 
-				client.print(F("</td><td data-label='Active' class='righted'>"));
-				client.print(neighbourActive);
-				client.print(F("</td><td data-label='NextHop' class='righted'>"));
-				client.print(neighbourNextHop);
-				client.print(F("</td><td data-label='Hops' class='righted'>"));
-				client.print(neighbourHops);
-				client.print(F("</td><td data-label='lastKeepAlive' class='righted'>"));
+				client->print(F("</td><td data-label='Active' class='righted'>"));
+				client->print(neighbourActive);
+				client->print(F("</td><td data-label='NextHop' class='righted'>"));
+				client->print(neighbourNextHop);
+				client->print(F("</td><td data-label='Hops' class='righted'>"));
+				client->print(neighbourHops);
+				client->print(F("</td><td data-label='lastKeepAlive' class='righted'>"));
 				if(i != l3.localAddress) {
 					if(neighbourLastKeepAlive > 0) {
-						client.print((nowSystem - neighbourLastKeepAlive) / 1000);
-						client.print(F("s"));
+						client->print((nowSystem - neighbourLastKeepAlive) / 1000);
+						client->print(F("s"));
 					} else {
-						client.print(F("<i>no route to host</i>"));
+						client->print(F("<i>no route to host</i>"));
 					}
 				} else {
-					client.print(F(" <i>loopback</i>"));
+					client->print(F(" <i>loopback</i>"));
 				}
 				//discover
-				client.print(F("</td><td  data-label='sensors' class='centered'><a href='"));
-				printP(clientId, pageAddresses[PAGE_GETSENSORINFO]);
-				client.print(F("?"));
-				printP(clientId, variableRemote);
-				client.print(F("="));
-				client.print(i);
-				client.println(F("'>x</a>"));
-				client.println(F("</td>"));
+				client->print(F("</td><td  data-label='sensors' class='centered'><a href='"));
+				printP(client, pageAddresses[PAGE_GETSENSORINFO]);
+				client->print(F("?"));
+				printP(client, variableRemote);
+				client->print(F("="));
+				client->print(i);
+				client->println(F("'>x</a>"));
+				client->println(F("</td>"));
 				//tr end
-				client.println(F("</tr>"));
+				client->println(F("</tr>"));
 			}
 		}
 
 		//num entries
-		client.print(F("</tbody><tfoot><tr><th colspan='8'>"));
-		client.print(numNodes);
-		client.println(F(" entries</th></tr></tfoot></table>"));
+		client->print(F("</tbody><tfoot><tr><th colspan='8'>"));
+		client->print(numNodes);
+		client->println(F(" entries</th></tr></tfoot></table>"));
 
 		//footer
-		sendHtmlFooter(clientId);
+		sendHtmlFooter(client);
 	}
 
 
-	void trailing0(uint8_t clientId, uint8_t a) {
+	void trailing0(EthernetClient* client, uint8_t a) {
 		if(a < 10) {
-			EthernetClient client = EthernetClient(clientId);
-			client.print(F("0"));
+			client->print(F("0"));
 		}
 	}
 
-	void printDate(uint8_t clientId, uint32_t t) {
-		EthernetClient client = EthernetClient(clientId);
-		client.print(year(t));
-		client.print(F("-"));
-		trailing0(clientId, month(t));
-		client.print(month(t));
-		client.print(F("-"));
-		trailing0(clientId, day(t));
-		client.print(day(t));
-		client.print(F(" "));
-		trailing0(clientId, hour(t));
-		client.print(hour(t));
-		client.print(F(":"));
-		trailing0(clientId, minute(t));
-		client.print(minute(t));
-		client.print(F(":"));
-		trailing0(clientId, second(t));
-		client.print(second(t));
+	void printDate(EthernetClient* client, uint32_t t) {
+		client->print(year(t));
+		client->print(F("-"));
+		trailing0(client, month(t));
+		client->print(month(t));
+		client->print(F("-"));
+		trailing0(client, day(t));
+		client->print(day(t));
+		client->print(F(" "));
+		trailing0(client, hour(t));
+		client->print(hour(t));
+		client->print(F(":"));
+		trailing0(client, minute(t));
+		client->print(minute(t));
+		client->print(F(":"));
+		trailing0(client, second(t));
+		client->print(second(t));
 	}
 
 /**
@@ -1099,9 +1085,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		}
 	}
 
-	void printExecutableLinks(uint8_t clientId, l3_address_t remote, HardwareTypeIdentifier type, uint8_t address) {
-		EthernetClient client = EthernetClient(clientId);
-
+	void printExecutableLinks(EthernetClient* client, l3_address_t remote, HardwareTypeIdentifier type, uint8_t address) {
 		//conversion buffers
 		char buf1[3];
 		itoa(remote, buf1, 10);
@@ -1129,102 +1113,100 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 				bufVal[4] = '\0';
 				strcpy_P(bufListType, linkCmdListTypeUint8);
 
-				printLink(clientId, pageAddresses[PAGE_WRITE_SENSOR], keys, vals, linkNameOff, numKV);
-				client.print(F(" &middot; "));
+				printLink(client, pageAddresses[PAGE_WRITE_SENSOR], keys, vals, linkNameOff, numKV);
+				client->print(F(" &middot; "));
 				//on
 				bufVal[3] = '1';
 				strcpy_P(bufListType, linkCmdListTypeUint8);
-				printLink(clientId, pageAddresses[PAGE_WRITE_SENSOR], keys, vals, linkNameOn, numKV);
+				printLink(client, pageAddresses[PAGE_WRITE_SENSOR], keys, vals, linkNameOn, numKV);
 				return;
 			case HWType_rcswitch:
-				client.print(F("<table class='inline' style='width: 99%'"));
-				client.print(F("<tr><td class='centered'>1</td><td class='centered'>2</td><td class='centered'>3</td><td class='centered'>4</td><td class='centered'>all</td></tr>"));
-				client.print(F("<tr>"));
+				client->print(F("<table class='inline' style='width: 99%'"));
+				client->print(F("<tr><td class='centered'>1</td><td class='centered'>2</td><td class='centered'>3</td><td class='centered'>4</td><td class='centered'>all</td></tr>"));
+				client->print(F("<tr>"));
 				strcpy_P(bufListType, linkCmdListTypeUint8);
 				for(uint8_t i = 0; i < 5; i++) {
-					client.print(F("<td class='inline centered'>"));
+					client->print(F("<td class='inline centered'>"));
 					bufVal[5] = '0'+i+1; //device
 					bufVal[3] = '0';//val lower
-					printLink(clientId, pageAddresses[PAGE_WRITE_SENSOR], keys, vals, linkNameOff, numKV);
+					printLink(client, pageAddresses[PAGE_WRITE_SENSOR], keys, vals, linkNameOff, numKV);
 
-					client.print(F(" &middot; "));
+					client->print(F(" &middot; "));
 
 					bufVal[3] = '1';//val lower
-					printLink(clientId, pageAddresses[PAGE_WRITE_SENSOR], keys, vals, linkNameOn, numKV);
-					client.print(F("</td>"));
+					printLink(client, pageAddresses[PAGE_WRITE_SENSOR], keys, vals, linkNameOn, numKV);
+					client->print(F("</td>"));
 				}
-				client.print(F("</tr>"));
-				client.print(F("</table>"));
+				client->print(F("</tr>"));
+				client->print(F("</table>"));
 				return;
 			case HWType_ANALOG:
 			case HWType_rtc:
 			case HWType_tone:
-				client.print(F("<form action='"));
-				printP(clientId, pageAddresses[PAGE_WRITE_SENSOR]);
-				client.print(F("' method='get'>"));
+				client->print(F("<form action='"));
+				printP(client, pageAddresses[PAGE_WRITE_SENSOR]);
+				client->print(F("' method='get'>"));
 
-				client.print(F("<input type='hidden' name='"));
-				printP(clientId, variableHwAddress);
-				client.print(F("' value='"));
-				client.print(address);
-				client.print(F("'>"));
+				client->print(F("<input type='hidden' name='"));
+				printP(client, variableHwAddress);
+				client->print(F("' value='"));
+				client->print(address);
+				client->print(F("'>"));
 
-				client.print(F("<input type='hidden' name='"));
-				printP(clientId, variableHwType);
-				client.print(F("' value='"));
-				client.print(type);
-				client.print(F("' style='width: 200px'>"));
+				client->print(F("<input type='hidden' name='"));
+				printP(client, variableHwType);
+				client->print(F("' value='"));
+				client->print(type);
+				client->print(F("' style='width: 200px'>"));
 
-				client.print(F("<input type='hidden' name='"));
-				printP(clientId, variableRemote);
-				client.print(F("' value='"));
-				client.print(remote);
-				client.print(F("'>"));
+				client->print(F("<input type='hidden' name='"));
+				printP(client, variableRemote);
+				client->print(F("' value='"));
+				client->print(remote);
+				client->print(F("'>"));
 
-				client.print(F("HexInput (msbf): <input type='text' name='"));
-				printP(clientId, variableVal);
-				client.print(F("' value='"));
-				printP(clientId, linkCmdValDefault);
-				client.print(F("'/>"));
-				client.print(F(" <input type='submit'><br/>"));
+				client->print(F("HexInput (msbf): <input type='text' name='"));
+				printP(client, variableVal);
+				client->print(F("' value='"));
+				printP(client, linkCmdValDefault);
+				client->print(F("'/>"));
+				client->print(F(" <input type='submit'><br/>"));
 
 
-				client.print(F(" u8:<input type='radio' name='"));
-				printP(clientId, variableListType);
-				client.print(F("' value='"));
-				printP(clientId, linkCmdListTypeUint8);
-				client.print(F("'"));
-				printP(clientId, linkCmdListChecked);
-				client.print(F("/>"));
+				client->print(F(" u8:<input type='radio' name='"));
+				printP(client, variableListType);
+				client->print(F("' value='"));
+				printP(client, linkCmdListTypeUint8);
+				client->print(F("'"));
+				printP(client, linkCmdListChecked);
+				client->print(F("/>"));
 
-				client.print(F(" u16:<input type='radio' name='"));
-				printP(clientId, variableListType);
-				client.print(F("' value='"));
-				printP(clientId, linkCmdListTypeUint16);
-				client.print(F("'/>"));
+				client->print(F(" u16:<input type='radio' name='"));
+				printP(client, variableListType);
+				client->print(F("' value='"));
+				printP(client, linkCmdListTypeUint16);
+				client->print(F("'/>"));
 
-				client.print(F(" i8:<input type='radio' name='"));
-				printP(clientId, variableListType);
-				client.print(F("' value='"));
-				printP(clientId, linkCmdListTypeInt8);
-				client.print(F("'/>"));
+				client->print(F(" i8:<input type='radio' name='"));
+				printP(client, variableListType);
+				client->print(F("' value='"));
+				printP(client, linkCmdListTypeInt8);
+				client->print(F("'/>"));
 
-				client.print(F(" i16:<input type='radio' name='"));
-				printP(clientId, variableListType);
-				client.print(F("' value='"));
-				printP(clientId, linkCmdListTypeInt16);
-				client.print(F("'/>"));
+				client->print(F(" i16:<input type='radio' name='"));
+				printP(client, variableListType);
+				client->print(F("' value='"));
+				printP(client, linkCmdListTypeInt16);
+				client->print(F("'/>"));
 
-				client.print(F("</form>"));
+				client->print(F("</form>"));
 				return;
 			default:
-				client.print('-');
+				client->print('-');
 		}
 	}
 
-	void printLink(uint8_t clientId, const char* baseUrl, const char** keys, const char** vals, const char* name, uint8_t num) {
-		EthernetClient client = EthernetClient(clientId);
-
+	void printLink(EthernetClient* client, const char* baseUrl, const char** keys, const char** vals, const char* name, uint8_t num) {
 		//#ifdef DEBUG_WEBSERVER_ENABLE
 		//Serial.print(millis());
 		//Serial.print(F(": printLink() baseUrl="));
@@ -1232,9 +1214,9 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		//Serial.println();
 		//#endif
 
-		client.print(F("<a href='"));
-		printP(clientId, baseUrl);
-		client.print('?');
+		client->print(F("<a href='"));
+		printP(client, baseUrl);
+		client->print('?');
 
 		for(uint8_t i = 0; i < num; i++) {
 			#ifdef DEBUG_WEBSERVER_ENABLE
@@ -1246,33 +1228,31 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 			#endif
 
 			if(i > 0)
-				client.print('&');
-			printP(clientId, keys[i]);
-			client.print('=');
-			client.print(vals[i]);
+				client->print('&');
+			printP(client, keys[i]);
+			client->print('=');
+			client->print(vals[i]);
 		}
 
-		client.print(F("'>"));
-		printP(clientId, name);
-		client.print(F("</a>"));
+		client->print(F("'>"));
+		printP(client, name);
+		client->print(F("</a>"));
 	}
 
 	/**
 	 * discovery has finished - print result
-	 * @param clientId
+	 * @param client
 	 */
-	void doPageSensorInfo2(uint8_t clientId, RequestContent* req) {
+	void doPageSensorInfo2(EthernetClient* client, RequestContent* req) {
 		#ifdef DEBUG
 		Serial.print(millis());
-		Serial.print(F(": doPageSensorInfo2() on clientId="));
-		Serial.println(clientId);
+		Serial.print(F(": doPageSensorInfo2() on client="));
+		Serial.println(client->_sock);
 		#endif
 
 		//yay!
-		EthernetClient client = EthernetClient(clientId);
-
 		if(req == NULL) {
-			sendHttp500WithBody(clientId);
+			sendHttp500WithBody(client);
 			return;
 		}
 
@@ -1280,12 +1260,12 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		uint8_t idInt = id->toInt();
 
 		if(id == NULL) {
-			sendHttp500WithBody(clientId);
+			sendHttp500WithBody(client);
 			return;
 		}
 
-		sendHttpOk(clientId);
-		sendHtmlHeader(clientId, PAGE_GETSENSORINFO, true, false);
+		sendHttpOk(client);
+		sendHtmlHeader(client, PAGE_GETSENSORINFO, true, false);
 
 		//general info
 		char nodeInfoString[NODE_INFO_SIZE];
@@ -1301,38 +1281,38 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		getRouteInfoForNode(idInt, neighbourActive, neighbourLastKeepAlive, neighbourHops, neighbourNextHop);
 
 
-		client.print(F("<h1>Sensor Info id="));
-		client.print(idInt);
-		client.print(F(" ("));
+		client->print(F("<h1>Sensor Info id="));
+		client->print(idInt);
+		client->print(F(" ("));
 		if(strlen(nodeInfoString) > 0) {
-			client.print(nodeInfoString);
+			client->print(nodeInfoString);
 		} else {
-			client.print(F("<i>NA</i>"));
+			client->print(F("<i>NA</i>"));
 		}
-		client.println(F(")</h1>"));
+		client->println(F(")</h1>"));
 
-		client.print(F("<p>"));
+		client->print(F("<p>"));
 
 		if(neighbourActive == 0) {
-			client.print(F("<span class='warning'>"));
+			client->print(F("<span class='warning'>"));
 		} else {
-			client.print(F("<span class='ok'>"));
+			client->print(F("<span class='ok'>"));
 		}
-		client.print(F("active="));
-		client.print(neighbourActive);
-		client.print(F("</span>"));
+		client->print(F("active="));
+		client->print(neighbourActive);
+		client->print(F("</span>"));
 
-		client.print(F("<br/>nextHop="));
-		client.print(neighbourNextHop);
-		client.print(F("<br/>hops="));
-		client.print(neighbourHops);
-		client.print(F("<br/>lastKeepAliveAge="));
-		client.print((millis() - neighbourLastKeepAlive) / 1000);
-		client.print(F("s</p>"));
+		client->print(F("<br/>nextHop="));
+		client->print(neighbourNextHop);
+		client->print(F("<br/>hops="));
+		client->print(neighbourHops);
+		client->print(F("<br/>lastKeepAliveAge="));
+		client->print((millis() - neighbourLastKeepAlive) / 1000);
+		client->print(F("s</p>"));
 
 		SDcard::SD_nodeDiscoveryInfoTableEntry_t discoveryInfo[SD_DISCOVERY_NUM_INFOS_PER_NODE];
 		sdcard.getDiscoveryInfosForNode(idInt, discoveryInfo, SD_DISCOVERY_NUM_INFOS_PER_NODE);
-		client.println(F("<table><thead><tr><th>HardwareAddress</th><th>HardwareType</th><th>LastUpdated</th><th>requestSensor</th><th>writeSensor</th></tr></thead><tbody>"));
+		client->println(F("<table><thead><tr><th>HardwareAddress</th><th>HardwareType</th><th>LastUpdated</th><th>requestSensor</th><th>writeSensor</th></tr></thead><tbody>"));
 		uint8_t numInfos = 0;
 		//conversion buffers
 		char buf1[3];
@@ -1342,63 +1322,63 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		for(uint8_t i = 0; i < SD_DISCOVERY_NUM_INFOS_PER_NODE; i++) {
 			if(discoveryInfo[i].hardwareAddress > 0 && discoveryInfo[i].hardwareType > 0) {
 				//table
-				client.print(F("<tr>"));
+				client->print(F("<tr>"));
 				num++;
 
-				client.print(F("<td data-label='HwAdrr' class='righted'>"));
-				client.print(discoveryInfo[i].hardwareAddress);
-				client.print(F("</td>"));
+				client->print(F("<td data-label='HwAdrr' class='righted'>"));
+				client->print(discoveryInfo[i].hardwareAddress);
+				client->print(F("</td>"));
 
-				client.print(F("<td data-label='HwType'>"));
-				printP(clientId, hardwareTypeStrings[discoveryInfo[i].hardwareType]);
-				client.print(F("</td>"));
+				client->print(F("<td data-label='HwType'>"));
+				printP(client, hardwareTypeStrings[discoveryInfo[i].hardwareType]);
+				client->print(F("</td>"));
 
-				client.print(F("<td data-label='lastDiscovery' class='righted'>"));
-				printDate(clientId, discoveryInfo[i].rtcTimestamp);
-				client.print(F("</td>"));
+				client->print(F("<td data-label='lastDiscovery' class='righted'>"));
+				printDate(client, discoveryInfo[i].rtcTimestamp);
+				client->print(F("</td>"));
 
-				client.print(F("<td data-label='Read' class='centered'>"));
+				client->print(F("<td data-label='Read' class='centered'>"));
 				if(hwIsReadable((HardwareTypeIdentifier) discoveryInfo[i].hardwareType)) {
 					itoa(idInt, buf1, 10);
 					itoa(discoveryInfo[i].hardwareAddress, buf2, 10);
 					itoa(discoveryInfo[i].hardwareType, buf3, 10);
 					const char* keys[3] = {variableRemote, variableHwAddress, variableHwType};
 					const char* vals[3] = {buf1, buf2, buf3};
-					printLink(clientId, pageAddresses[PAGE_REQUEST_SENSOR], keys, vals, linkNameX, 3);
+					printLink(client, pageAddresses[PAGE_REQUEST_SENSOR], keys, vals, linkNameX, 3);
 				} else {
-					client.print(F("-"));
+					client->print(F("-"));
 				}
-				client.print(F("</td>"));
+				client->print(F("</td>"));
 
-				client.print(F("<td data-label='Write' class='centered'>"));
-				printExecutableLinks(clientId, idInt, (HardwareTypeIdentifier) discoveryInfo[i].hardwareType, discoveryInfo[i].hardwareAddress);
-				client.print(F("</td>"));
+				client->print(F("<td data-label='Write' class='centered'>"));
+				printExecutableLinks(client, idInt, (HardwareTypeIdentifier) discoveryInfo[i].hardwareType, discoveryInfo[i].hardwareAddress);
+				client->print(F("</td>"));
 
-				client.print(F("</tr>"));
-				client.print(F("</form>"));
+				client->print(F("</tr>"));
+				client->print(F("</form>"));
 
 				numInfos++;
 			}
 		}
-		client.print(F("</tbody><tfoot><tr><th colspan='5'>"));
-		client.print(numInfos);
-		client.println(F(" entries</th></tr></tfoot></table>"));
+		client->print(F("</tbody><tfoot><tr><th colspan='5'>"));
+		client->print(numInfos);
+		client->println(F(" entries</th></tr></tfoot></table>"));
 
-		sendHtmlFooter(clientId);
+		sendHtmlFooter(client);
 
 		//listener->init(0, webserverListener::START);
-		closeClient(clientId);
+		closeClient(client);
 	}
 
 	/**
 	 * first method when client connects - read http request
-	 * @param clientId
+	 * @param client
 	 */
-	void doClientHandling(uint8_t clientId) {
+	void doClientHandling(EthernetClient* client) {
 		#ifdef DEBUG
 		Serial.print(millis());
 		Serial.print(F(": doClientHandling() on clientId="));
-		Serial.println(clientId);
+		Serial.println(client->_sock);
 		#endif
 
 		// now client is connected to arduino we need to extract the
@@ -1406,7 +1386,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		String    uri;  // Gives the index into table of recognized URIs or -1 for not found.
 
 		RequestContent req;
-		MethodType eMethod = readHttpRequest(clientId, &uri, &req);
+		MethodType eMethod = readHttpRequest(client, &uri, &req);
 
 		#ifdef DEBUG
 		Serial.print(F("\tRead Request type: "));
@@ -1427,56 +1407,56 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		uri.toCharArray(uriChars, STRING_BUFFER_SIZE);
 		//select page
 		if(strcmp_P(uriChars, pageAddresses[PAGE_MAIN]) == 0) {
-			doPageStart(clientId);
+			doPageStart(client);
 		} else if(strcmp_P(uriChars, pageAddresses[PAGE_NODES]) == 0) {
-			doPageNodes(clientId);
+			doPageNodes(client);
 		} else if(strcmp_P(uriChars, pageAddresses[PAGE_CSS]) == 0) {
-			doPageCss(clientId);
+			doPageCss(client);
 		} else if(strcmp_P(uriChars, pageAddresses[PAGE_LIST_FILES]) == 0) {
-			doPageListFiles(clientId, &req);
+			doPageListFiles(client, &req);
 		} else if(strcmp_P(uriChars, pageAddresses[PAGE_GETSENSORINFO]) == 0) {
-			//doPageSensorInfo(clientId, &req);
-			//clientStatus[clientId].requestType = PAGE_GETSENSORINFO;
-			//clientStatus[clientId].waiting = true;
-			//clientStatus[clientId].timestamp = millis();
-			doPageSensorInfo2(clientId, &req);
+			//doPageSensorInfo(client, &req);
+			//clientStatus[client->_sock].requestType = PAGE_GETSENSORINFO;
+			//clientStatus[client->_sock].waiting = true;
+			//clientStatus[client->_sock].timestamp = millis();
+			doPageSensorInfo2(client, &req);
 		} else if(strcmp_P(uriChars, pageAddresses[PAGE_REQUEST_SENSOR]) == 0) {
-			doPageRequestSensor(clientId, &req);
-			clientStatus[clientId].requestType = PAGE_REQUEST_SENSOR;
-			clientStatus[clientId].waiting = true;
-			clientStatus[clientId].timestamp = millis();
+			doPageRequestSensor(client, &req);
+			clientStatus[client->_sock].requestType = PAGE_REQUEST_SENSOR;
+			clientStatus[client->_sock].waiting = true;
+			clientStatus[client->_sock].timestamp = millis();
 		} else if(strcmp_P(uriChars, pageAddresses[PAGE_WRITE_SENSOR]) == 0) {
-			doPageWriteSensor(clientId, &req);
-			clientStatus[clientId].requestType = PAGE_WRITE_SENSOR;
-			clientStatus[clientId].waiting = true;
-			clientStatus[clientId].timestamp = millis();
+			doPageWriteSensor(client, &req);
+			clientStatus[client->_sock].requestType = PAGE_WRITE_SENSOR;
+			clientStatus[client->_sock].waiting = true;
+			clientStatus[client->_sock].timestamp = millis();
 		} else {
-			sendHttp404WithBody(clientId);
+			sendHttp404WithBody(client);
 		}
 
 		#ifdef DEBUG
 		Serial.println(F("\tpage sent out. checking for connection close."));
 		#endif
 
-		if(!clientStatus[clientId].waiting) {
+		if(!clientStatus[client->_sock].waiting) {
 			#ifdef DEBUG
 			Serial.println(F("\tnot waiting, do close."));
 			#endif
-			closeClient(clientId);
+			closeClient(client);
 		}
 	}
 
 	/**
 	 * initiate sensor write
-	 * @param clientId
+	 * @param client
 	 * @param req
 	 * TODO! ****************************************************************************************************************************************************************
 	 */
-	void doPageWriteSensor(uint8_t clientId, RequestContent* req) {
+	void doPageWriteSensor(EthernetClient* client, RequestContent* req) {
 		#ifdef DEBUG
 		Serial.print(millis());
 		Serial.print(F(": doPageWriteSensor() on clientId="));
-		Serial.println(clientId);
+		Serial.println(client->_sock);
 		#endif
 
 		//get request strings
@@ -1490,7 +1470,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 
 		//check if available
 		if(id == NULL || hwAddressStr == NULL || hwtypeStr == NULL || hwtypeStr == NULL || listTypeStr == NULL || val == NULL || val->length() % 2 == 1 || (val->length()-2)/2 > sizeUInt8List) {
-			sendHttp500WithBody(clientId);
+			sendHttp500WithBody(client);
 			return;
 		}
 
@@ -1522,8 +1502,8 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		}
 
 		if(numBytes < 0 || 2*uint16 > sizeUInt8List || 2*int16 > sizeUInt8List || uint8 > sizeUInt8List || int8 > sizeUInt8List) {
-			sendHttp500WithBody(clientId);
-			closeClient(clientId);
+			sendHttp500WithBody(client);
+			closeClient(client);
 			return;
 		}
 
@@ -1539,8 +1519,8 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 
 		//check if all is ok.
 		if(idInt == -1 || hwaddress == -1 || hwtype == -1) {
-			sendHttp500WithBody(clientId);
-			closeClient(clientId);
+			sendHttp500WithBody(client);
+			closeClient(client);
 			return;
 		}
 
@@ -1550,71 +1530,70 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		seq_t sequence = pf.generateHardwareCommandWrite(&p, idInt, &cmd);
 		listenerHardwareRequest.init(idInt, (HardwareTypeIdentifier) hwtype, hwaddress, webserverListener::AWAITING_ANSWER);
 
-		clientStatus[clientId].callback = &listenerHardwareRequest;
+		clientStatus[client->_sock].callback = &listenerHardwareRequest;
 
 		boolean success = dispatcher.getResponseHandler()->registerListenerBySeq(millis()+TIMEOUT_MILLIS, sequence, idInt, &listenerHardwareRequest);
 
 		success &= l3.sendPacket(p);
 
 		if(!success) {
-			sendHttp500WithBody(clientId);
-			closeClient(clientId);
+			sendHttp500WithBody(client);
+			closeClient(client);
 			dispatcher.getResponseHandler()->unregisterListener(&listenerHardwareRequest);
 			return;
 		}
 	}
 
-	void doPageWriteSensor2(uint8_t clientId) {
+	void doPageWriteSensor2(EthernetClient* client) {
 		#ifdef DEBUG
 		Serial.print(millis());
 		Serial.print(F(": doPageWriteSensor2() on clientId="));
-		Serial.println(clientId);
+		Serial.println(client->_sock);
 		#endif
 
-		EthernetClient client = EthernetClient(clientId);
-		hardwareRequestListener* listener = (hardwareRequestListener*) clientStatus[clientId].callback;
+		hardwareRequestListener* listener = (hardwareRequestListener*) clientStatus[client->_sock].callback;
 
-		sendHttpOk(clientId);
-		sendHtmlHeader(clientId, PAGE_WRITE_SENSOR, false, false);
+		sendHttpOk(client);
+		sendHtmlHeader(client, PAGE_WRITE_SENSOR, false, false);
 
-		client.print(F("<h1>Sensor Write id="));
-		client.print(listener->remote);
-		client.println(F("</h1>"));
-		client.print(F("<h2>hwaddress="));
-		client.print(listener->hwaddress);
-		client.print(F(" hwtype="));
-		printP(clientId, hardwareTypeStrings[listener->hwtype]);
+		client->print(F("<h1>Sensor Write id="));
+		client->print(listener->remote);
+		client->println(F("</h1>"));
+		client->print(F("<h2>hwaddress="));
+		client->print(listener->hwaddress);
+		client->print(F(" hwtype="));
+		printP(client, hardwareTypeStrings[listener->hwtype]);
 		if(listener->cmd.isRead) {
-			client.print(F(" read"));
+			client->print(F(" read"));
 			} else {
-			client.print(F(" write"));
+			client->print(F(" write"));
 		}
-		client.println(F("</h2>"));
+		client->println(F("</h2>"));
 
-		sendHtmlFooter(clientId);
+		sendHtmlFooter(client);
 		listener->init(0, HWType_UNKNOWN, 0, webserverListener::START);
 
-		closeClient(clientId);
+		closeClient(client);
 	}
 
 
 	/**
 	 * initiate sensor reading
-	 * @param clientId
+	 * @param client
 	 * @param req
 	 */
-	void doPageRequestSensor(uint8_t clientId, RequestContent* req) {
+	void doPageRequestSensor(EthernetClient* client, RequestContent* req) {
 		#ifdef DEBUG
 		Serial.print(millis());
-		Serial.print(F(": doPageRequestSensor() on clientId="));
-		Serial.println(clientId);
+		Serial.print(F(": doPageRequestSensor() on client="));
+		Serial.println(client->_sock);
 		#endif
 
 		String* id = req->getValue(variableRemote);
 		String* hwAddressStr = req->getValue(variableHwAddress);
 		String* hwtypeStr = req->getValue(variableHwType);
 		if(id == NULL || hwAddressStr == NULL || hwtypeStr == NULL) {
-			sendHttp500WithBody(clientId);
+			sendHttp500WithBody(client);
 			return;
 		}
 
@@ -1623,8 +1602,8 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		int8_t hwtype = hwtypeStr->toInt();
 
 		if(idInt == -1 || hwaddress == -1 || hwtype == -1) {
-			sendHttp500WithBody(clientId);
-			closeClient(clientId);
+			sendHttp500WithBody(client);
+			closeClient(client);
 			return;
 		}
 
@@ -1632,15 +1611,15 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		seq_t sequence = pf.generateHardwareCommandRead(&p, idInt, hwaddress, (HardwareTypeIdentifier) hwtype);
 		listenerHardwareRequest.init(idInt, (HardwareTypeIdentifier) hwtype, hwaddress, webserverListener::AWAITING_ANSWER);
 
-		clientStatus[clientId].callback = &listenerHardwareRequest;
+		clientStatus[client->_sock].callback = &listenerHardwareRequest;
 
 		boolean success = dispatcher.getResponseHandler()->registerListenerBySeq(millis()+TIMEOUT_MILLIS, sequence, idInt, &listenerHardwareRequest);
 
 		success &= l3.sendPacket(p);
 
 		if(!success) {
-			sendHttp500WithBody(clientId);
-			closeClient(clientId);
+			sendHttp500WithBody(client);
+			closeClient(client);
 			dispatcher.getResponseHandler()->unregisterListener(&listenerHardwareRequest);
 			return;
 		}
@@ -1648,74 +1627,73 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 
 	/**
 	 * sensor reading has finished - print
-	 * @param clientId
+	 * @param client
 	 */
-	void doPageRequestSensor2(uint8_t clientId) {
+	void doPageRequestSensor2(EthernetClient* client) {
 		#ifdef DEBUG
 		Serial.print(millis());
 		Serial.print(F(": doPageRequestSensor2() on clientId="));
-		Serial.println(clientId);
+		Serial.println(client->_sock);
 		#endif
 
-		EthernetClient client = EthernetClient(clientId);
-		hardwareRequestListener* listener = (hardwareRequestListener*) clientStatus[clientId].callback;
+		hardwareRequestListener* listener = (hardwareRequestListener*) clientStatus[client->_sock].callback;
 
-		sendHttpOk(clientId);
-		sendHtmlHeader(clientId, PAGE_REQUEST_SENSOR, false);
+		sendHttpOk(client);
+		sendHtmlHeader(client, PAGE_REQUEST_SENSOR, false);
 
-		client.print(F("<h1>Sensor Info id="));
-		client.print(listener->remote);
-		client.println(F("</h1>"));
-		client.print(F("<h2>hwaddress="));
-		client.print(listener->hwaddress);
-		client.print(F(" hwtype="));
-		printP(clientId, hardwareTypeStrings[listener->hwtype]);
+		client->print(F("<h1>Sensor Info id="));
+		client->print(listener->remote);
+		client->println(F("</h1>"));
+		client->print(F("<h2>hwaddress="));
+		client->print(listener->hwaddress);
+		client->print(F(" hwtype="));
+		printP(client, hardwareTypeStrings[listener->hwtype]);
 		if(listener->cmd.isRead) {
-			client.print(F(" read"));
+			client->print(F(" read"));
 		} else {
-			client.print(F(" write"));
+			client->print(F(" write"));
 		}
-		client.println(F("</h2>"));
+		client->println(F("</h2>"));
 
-		client.println(F("<code><pre>"));
+		client->println(F("<code><pre>"));
 		if(listener->cmd.numUint8 > 0) {
-			client.print(F("Uint8:\t"));
+			client->print(F("Uint8:\t"));
 			for(uint8_t i = 0; i < listener->cmd.numUint8; i++)	 {
-				client.print(listener->cmd.uint8list[i]);
-				client.print(F("\t"));
+				client->print(listener->cmd.uint8list[i]);
+				client->print(F("\t"));
 			}
-			client.println(F("<br/>"));
+			client->println(F("<br/>"));
 		}
 		if(listener->cmd.numUint16 > 0) {
-			client.print(F("Uint16:\t"));
+			client->print(F("Uint16:\t"));
 			for(uint8_t i = 0; i < listener->cmd.numUint16; i++) {
-				client.print(listener->cmd.uint16list[i]);
-				client.print(F("\t"));
+				client->print(listener->cmd.uint16list[i]);
+				client->print(F("\t"));
 			}
-			client.println(F("<br/>"));
+			client->println(F("<br/>"));
 		}
 		if(listener->cmd.numInt8 > 0) {
-			client.print(F("Int8:\t"));
+			client->print(F("Int8:\t"));
 			for(uint8_t i = 0; i < listener->cmd.numInt8; i++) {
-				client.print(listener->cmd.int8list[i]);
-				client.print(F("\t"));
+				client->print(listener->cmd.int8list[i]);
+				client->print(F("\t"));
 			}
-			client.println(F("<br/>"));
+			client->println(F("<br/>"));
 		}
 		if(listener->cmd.numInt16 > 0) {
-			client.print(F("Int16:\t"));
+			client->print(F("Int16:\t"));
 			for(uint8_t i = 0; i < listener->cmd.numInt16; i++) {
-				client.print(listener->cmd.int16list[i]);
-				client.print(F("\t"));
+				client->print(listener->cmd.int16list[i]);
+				client->print(F("\t"));
 			}
-			client.println(F("<br/>"));
+			client->println(F("<br/>"));
 		}
-		client.println(F("</pre></code>"));
+		client->println(F("</pre></code>"));
 
-		sendHtmlFooter(clientId);
+		sendHtmlFooter(client);
 		listener->init(0, HWType_UNKNOWN, 0, webserverListener::START);
 
-		closeClient(clientId);
+		closeClient(client);
 	}
 
 
@@ -1728,18 +1706,18 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 	/**
 	 * list files or download one, depending on given? filename
 	 */
-	void doPageListFiles(uint8_t clientId, RequestContent* req) {
+	void doPageListFiles(EthernetClient* client, RequestContent* req) {
 		#ifdef DEBUG_WEBSERVER_ENABLE
 		Serial.print(millis());
 		Serial.print(F(": doPageListFiles() on clientId="));
-		Serial.println(clientId);
+		Serial.println(client->_sock);
 		#endif
 
 		if(req->hasKey(variableFilename) == -1) {
 			#ifdef DEBUG_WEBSERVER_ENABLE
 			Serial.println(F("\tlist files."));
 			#endif
-			doPageListeFilesStart(clientId);
+			doPageListeFilesStart(client);
 		} else {
 			const uint8_t bufSize = 13;
 			char filename[bufSize];
@@ -1753,25 +1731,24 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 			Serial.println(filename);
 			#endif
 
-			doPageListFile(clientId, filename, filetype);
+			doPageListFile(client, filename, filetype);
 		}
 	}
 
 	/**
 	 * download/show
 	 */
-	void doPageListFile(uint8_t clientId, const char* filename, const char* filetype) {
-		EthernetClient client = EthernetClient(clientId);
+	void doPageListFile(EthernetClient* client, const char* filename, const char* filetype) {
 
 		if(!SD.exists((char*) filename)) {
-			sendHttp500WithBody(clientId);
+			sendHttp500WithBody(client);
 			return;
 		}
 
 		File f = SD.open(filename);
 
 		if(f == NULL) {
-			sendHttp500WithBody(clientId);
+			sendHttp500WithBody(client);
 			return;
 		}
 
@@ -1793,7 +1770,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		uint16_t totalBytes = 0;
 		//read data and write.
 		if(isRaw) {
-			sendHttpOk(clientId, 0, BINARY, f.name());
+			sendHttpOk(client, 0, BINARY, f.name());
 			const uint16_t bufSize = 512;
 			uint8_t buffer[bufSize];
 			//RAW
@@ -1805,7 +1782,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 					bytes = f.readBytes(buffer, bufSize);
 				}
 
-				client.write(buffer, bytes);
+				client->write(buffer, bytes);
 				totalBytes += bytes;
 
 				wdt_reset();
@@ -1814,7 +1791,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 			const uint16_t bufSize = sizeUInt8List + 4;
 
 			if(f.size() % bufSize != 0) {
-				sendHttp500WithBody(clientId);
+				sendHttp500WithBody(client);
 				return;
 			}
 
@@ -1825,14 +1802,14 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 			*(pos+2) = 's';
 			*(pos+3) = 'v';
 			*(pos+4) = '\0';
-			sendHttpOk(clientId, 0, CSV, filename2);
+			sendHttpOk(client, 0, CSV, filename2);
 
-			client.print(F("timestamp"));
+			client->print(F("timestamp"));
 			for(uint8_t i = 0; i < sizeUInt8List; i++) {
-				client.print(F(";byte"));
-				client.print(i);
+				client->print(F(";byte"));
+				client->print(i);
 			}
-			client.println();
+			client->println();
 
 			uint8_t buffer[bufSize];
 			uint32_t timestamp = now();
@@ -1844,14 +1821,14 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 				timestamp |= (uint16_t) buffer[1] << 8;
 				timestamp |= buffer[0];
 
-				printDate(clientId, timestamp); //client.print(timestamp); //yyyy-MM-dd HH:mm:ss
-				client.print(';');
+				printDate(client, timestamp); //client->print(timestamp); //yyyy-MM-dd HH:mm:ss
+				client->print(';');
 				for(uint8_t i = 0; i < sizeUInt8List; i++) {
-					client.print(buffer[4+i]);
+					client->print(buffer[4+i]);
 					if(i < sizeUInt8List-1) {
-						client.print(';');
+						client->print(';');
 					} else {
-						client.println();
+						client->println();
 					}
 				}
 				totalBytes += bytes;
@@ -1874,12 +1851,10 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 	/**
 	 * list files.
 	 */
-	void doPageListeFilesStart(uint8_t clientId) {
-		EthernetClient client = EthernetClient(clientId);
-
-		sendHttpOk(clientId);
-		sendHtmlHeader(clientId, PAGE_MAIN, true, true);
-		client.println(F("<table><thead><tr><th>Remote</th><th>HardwareAddress</th><th>HardwareType</th><th>Filename</th><th>CSV</th><th>Size [b]</th></tr></thead>"));
+	void doPageListeFilesStart(EthernetClient* client) {
+		sendHttpOk(client);
+		sendHtmlHeader(client, PAGE_MAIN, true, true);
+		client->println(F("<table><thead><tr><th>Remote</th><th>HardwareAddress</th><th>HardwareType</th><th>Filename</th><th>CSV</th><th>Size [b]</th></tr></thead>"));
 
 		uint8_t num = 0;
 
@@ -1919,54 +1894,54 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 					Serial.flush();
 					#endif
 
-					client.print(F("<tr>"));
-					client.print(F("<td data-label='Remote'>"));
-					client.print(remote);
+					client->print(F("<tr>"));
+					client->print(F("<td data-label='Remote'>"));
+					client->print(remote);
 					if(strlen(nodeInfoString) > 0) {
-						client.print(F(" ("));
-						client.print(nodeInfoString);
-						client.print(F(")"));
+						client->print(F(" ("));
+						client->print(nodeInfoString);
+						client->print(F(")"));
 					}
-					client.print(F("</td>"));
+					client->print(F("</td>"));
 
-					client.print(F("<td data-label='HwAddress'>"));
-					client.print(address);
-					client.print(F("</td>"));
+					client->print(F("<td data-label='HwAddress'>"));
+					client->print(address);
+					client->print(F("</td>"));
 
-					client.print(F("<td data-label='HwType'>"));
-					//client.print(type);
-					printP(clientId, hardwareTypeStrings[type]);
-					client.print(F("</td>"));
+					client->print(F("<td data-label='HwType'>"));
+					//client->print(type);
+					printP(client, hardwareTypeStrings[type]);
+					client->print(F("</td>"));
 
-					client.print(F("<td data-label='Filename'><a href='"));
-					printP(clientId, pageAddresses[PAGE_LIST_FILES]);
-					client.print(F("?"));
-					printP(clientId, variableFilename);
-					client.print(F("="));
-					client.print(cursor.name());
-					client.print(F("'>"));
-					client.print(cursor.name());
-					client.print(F("</a></td>"));
+					client->print(F("<td data-label='Filename'><a href='"));
+					printP(client, pageAddresses[PAGE_LIST_FILES]);
+					client->print(F("?"));
+					printP(client, variableFilename);
+					client->print(F("="));
+					client->print(cursor.name());
+					client->print(F("'>"));
+					client->print(cursor.name());
+					client->print(F("</a></td>"));
 
-					client.print(F("<td data-label='csv'><a href='"));
-					printP(clientId, pageAddresses[PAGE_LIST_FILES]);
-					client.print(F("?"));
-					printP(clientId, variableFilename);
-					client.print(F("="));
-					client.print(cursor.name());
-					client.print(F("&"));
-					printP(clientId, variableFiletype);
-					client.print(F("="));
-					printP(clientId, variableFiletypeCsv);
-					client.print(F("'>x</a></td>"));
+					client->print(F("<td data-label='csv'><a href='"));
+					printP(client, pageAddresses[PAGE_LIST_FILES]);
+					client->print(F("?"));
+					printP(client, variableFilename);
+					client->print(F("="));
+					client->print(cursor.name());
+					client->print(F("&"));
+					printP(client, variableFiletype);
+					client->print(F("="));
+					printP(client, variableFiletypeCsv);
+					client->print(F("'>x</a></td>"));
 
-					client.print(F("<td data-label='bytes'>"));
-					client.print(cursor.size());
-					client.print(F(" ("));
-					client.print(cursor.size() / (sizeUInt8List + 4)); //uint32_t rtc timestamp + sensordata.
-					client.print(F(" samples)</td>"));
-					client.print(F("</td>"));
-					client.print(F("</tr>"));
+					client->print(F("<td data-label='bytes'>"));
+					client->print(cursor.size());
+					client->print(F(" ("));
+					client->print(cursor.size() / (sizeUInt8List + 4)); //uint32_t rtc timestamp + sensordata.
+					client->print(F(" samples)</td>"));
+					client->print(F("</td>"));
+					client->print(F("</tr>"));
 
 					num++;
 				}
@@ -1974,11 +1949,11 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 			}
 		}
 
-		client.println(F("<tfoot><tr><th colspan='6'>"));
-		client.print(num);
-		client.println(F(" Entries</th></tr></tfoot>"));
-		client.println(F("</table>"));
-		sendHtmlFooter(clientId);
+		client->println(F("<tfoot><tr><th colspan='6'>"));
+		client->print(num);
+		client->println(F(" Entries</th></tr></tfoot>"));
+		client->println(F("</table>"));
+		sendHtmlFooter(client);
 	}
 
 };
