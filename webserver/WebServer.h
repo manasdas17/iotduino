@@ -1807,6 +1807,8 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 
 				client.write(buffer, bytes);
 				totalBytes += bytes;
+
+				wdt_reset();
 			}
 		} else {
 			const uint16_t bufSize = sizeUInt8List + 4;
@@ -1853,6 +1855,8 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 					}
 				}
 				totalBytes += bytes;
+
+				wdt_reset();
 			}
 		}
 
