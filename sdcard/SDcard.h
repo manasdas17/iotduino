@@ -375,6 +375,23 @@ class SDcard {
 		}
 
 		/**
+		 * save node info. adds terminating character.
+		 */
+		boolean saveNodeInfoString(uint8_t nodeId, uint8_t* buf, uint8_t bufSize) {
+			if(bufSize < NODE_INFO_SIZE)
+				return false;
+			buf[NODE_INFO_SIZE-1] = '\0';
+			uint32_t pos = nodeId * NODE_INFO_SIZE;
+			if(!myFileInfo.seek(pos)) {
+				return false;
+			}
+			boolean success = myFileInfo.write(buf, NODE_INFO_SIZE);
+			myFileInfo.flush();
+			return success;
+		};
+
+
+		/**
 		 * @param pos
 		 * @success
 		 */
@@ -409,5 +426,7 @@ class SDcard {
 		void prepareDiscoveryFile();
 
 		boolean appendToFile(const char* fileName, uint8_t* buf, uint8_t bufSize);
+
 };
+
 #endif /* SDCARD_H_ */

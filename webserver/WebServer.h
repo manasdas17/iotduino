@@ -67,7 +67,18 @@ const char pageCss[] PROGMEM = {"/css"};
 const char pageRequestSensor[] PROGMEM = {"/sensor"};
 const char pageWriteSensor[] PROGMEM = {"/sensorWrite"};
 const char pageSensorData[] PROGMEM = {"/sensorData"};
-PGM_P pageAddresses[] = {NULL, pageAddressMain, pageAddressGetSensorInfo, pageNodes, pageCss, pageRequestSensor, pageWriteSensor, pageSensorData};
+const char pageMaintenanceNodesInfos[] PROGMEM = {"/nodeInfos"};
+PGM_P pageAddresses[] = {
+	NULL,
+	pageAddressMain,
+	pageAddressGetSensorInfo,
+	pageNodes,
+	pageCss,
+	pageRequestSensor,
+	pageWriteSensor,
+	pageSensorData,
+	pageMaintenanceNodesInfos
+};
 
 const char pageTitleMain[] PROGMEM = {"Start"};
 const char pageTitleGetSensorInfo[] PROGMEM = {"Sensor Info"};
@@ -75,6 +86,7 @@ const char pageTitleNodes[] PROGMEM = {"Nodes"};
 const char pageTitleRequestSensor[] PROGMEM = {"Rquested Sensor Information"};
 const char pageTitleWriteSensor[] PROGMEM = {"Write to Sensor"};
 const char pageTitleSensordata[] PROGMEM = {"Sensordata"};
+const char pageTitleMaintenanceNodeInfos[] PROGMEM = {"Maintenance"};
 
 const char mimeTypeHtml[] PROGMEM = { "text/html" };
 const char mimeTypeCss[] PROGMEM = { "text/css" };
@@ -89,18 +101,29 @@ enum MIME_TYPES {
 	CSV
 };
 
-PGM_P pageTitles[] = {NULL, pageTitleMain, pageTitleGetSensorInfo, pageTitleNodes, NULL, pageTitleRequestSensor, pageTitleWriteSensor, pageTitleSensordata};
-enum PAGES {
-		PAGE_NONE,				//0
-		PAGE_MAIN,				//1
-		PAGE_GETSENSORINFO,		//2
-		PAGE_NODES,				//3
-		PAGE_CSS,				//4
-		PAGE_REQUEST_SENSOR,	//5
-		PAGE_WRITE_SENSOR,		//6
-		PAGE_LIST_FILES			//7
+PGM_P pageTitles[] = {
+	NULL,
+	pageTitleMain,
+	pageTitleGetSensorInfo,
+	pageTitleNodes,
+	NULL,
+	pageTitleRequestSensor,
+	pageTitleWriteSensor,
+	pageTitleSensordata,
+	pageTitleMaintenanceNodeInfos
 };
-uint8_t pageBelongsToMenu[] = {0, 1, 3, 3, 0, 3, 3, 7};
+enum PAGES {
+	PAGE_NONE,				//0
+	PAGE_MAIN,				//1
+	PAGE_GETSENSORINFO,		//2
+	PAGE_NODES,				//3
+	PAGE_CSS,				//4
+	PAGE_REQUEST_SENSOR,	//5
+	PAGE_WRITE_SENSOR,		//6
+	PAGE_LIST_FILES,			//7
+	PAGE_MAINTAIN_NODE_INFO		//8
+};
+uint8_t pageBelongsToMenu[] = {0, 1, 3, 3, 0, 3, 3, 7, 8};
 
 const char variableRemote[] PROGMEM = {"remote"};
 const char variableHwAddress[] PROGMEM = {"hwaddress"};
@@ -111,6 +134,7 @@ const char variableListNum[] PROGMEM = {"listnum"};
 const char variableFilename[] PROGMEM = {"file"};
 const char variableFiletype[] PROGMEM = {"type"};
 const char variableFiletypeCsv[] PROGMEM = {"csv"};
+const char variableName[] PROGMEM = {"name"};
 
 const char linkNameX[] PROGMEM = {"x"};
 const char linkNameOn[] PROGMEM = {"on"};
@@ -389,7 +413,7 @@ class WebServer {
 	 * @param client
 	 */
 	void sendHtmlMenu(EthernetClient* client, uint8_t page) {
-		uint8_t menuPages[] = {PAGE_MAIN, PAGE_NODES, PAGE_LIST_FILES};
+		uint8_t menuPages[] = {PAGE_MAIN, PAGE_NODES, PAGE_LIST_FILES, PAGE_MAINTAIN_NODE_INFO};
 		client->print(F("<div class='pos' id='tabs'>"));
 		client->print(F("<ul>"));
 
@@ -614,7 +638,7 @@ class WebServer {
 		/*
 		//is there a pending request?
 		if(EthernetClient(i).available()) {
-			#ifdef DEBUG_WEBSERVER
+			#ifdef DEBUG_WEBSERVER_ENABLE
 			Serial.print(F("\tnot closing"));
 			#endif
 
@@ -695,13 +719,13 @@ class WebServer {
 	 * @param client
 	 */
 	void doPageStart(EthernetClient* client) {
-		#ifdef DEBUG
+		#ifdef DEBUG_WEBSERVER_ENABLE
 		Serial.print(millis());
 		Serial.print(F(": doPageStart() on clientId="));
 		Serial.println(client->_sock);
 		#endif
 
-		#ifdef DEBUG
+		#ifdef DEBUG_WEBSERVER_ENABLE
 		Serial.println(F("\tdoHttpHeaderOK"));
 		#endif
 		sendHttpOk(client);
@@ -724,6 +748,7 @@ class WebServer {
 		//sendHttpOk(client, 300);
 		sendHttpOk(client, 300, CSS, NULL);
 
+		client->println(F(".info { font-family: monospace; margin-bottom: 5px; background-color: rgb(220,255,220); border: 1px darkgray dashed; padding: 5px;}"));
 		client->println(F("a, a:link, a:visited { color: #5F5F5F; text-decoration: underline; font-weight: normal; }"));
 		client->println(F("a:active { font-weight: bold; }"));
 		client->println(F("a:hover { text-decoration: none; background-color: #FFD8D8; }"));
@@ -769,7 +794,7 @@ class WebServer {
 		client->print(F("div.datum {"));
 		client->print(F("  position: absolute;"));
 		client->print(F("  top: 15px;"));
-		client->print(F("  left: 300px;"));
+		client->print(F("  left: 400px;"));
 		client->print(F("  text-align: right;"));
 		client->print(F("  font-size: 10px;"));
 		client->print(F("}"));
@@ -1414,6 +1439,8 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 			doPageCss(client);
 		} else if(strcmp_P(uriChars, pageAddresses[PAGE_LIST_FILES]) == 0) {
 			doPageListFiles(client, &req);
+		} else if(strcmp_P(uriChars, pageAddresses[PAGE_MAINTAIN_NODE_INFO]) == 0) {
+			doPageMaintenanceNodeInfo(client, &req);
 		} else if(strcmp_P(uriChars, pageAddresses[PAGE_GETSENSORINFO]) == 0) {
 			//doPageSensorInfo(client, &req);
 			//clientStatus[client->_sock].requestType = PAGE_GETSENSORINFO;
@@ -1434,12 +1461,12 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 			sendHttp404WithBody(client);
 		}
 
-		#ifdef DEBUG
+		#ifdef DEBUG_WEBSERVER_ENABLE
 		Serial.println(F("\tpage sent out. checking for connection close."));
 		#endif
 
 		if(!clientStatus[client->_sock].waiting) {
-			#ifdef DEBUG
+			#ifdef DEBUG_WEBSERVER_ENABLE
 			Serial.println(F("\tnot waiting, do close."));
 			#endif
 			closeClient(client);
@@ -1955,6 +1982,112 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		client->println(F("</table>"));
 		sendHtmlFooter(client);
 	}
+
+	void doPageMaintenanceNodeInfo(EthernetClient* client, RequestContent* req) {
+		const uint16_t multiplicator = 32;
+		uint8_t BUF[NODE_INFO_SIZE * multiplicator];
+		uint8_t BUF2[NODE_INFO_SIZE];
+		boolean headerIsSent = false;
+
+		if(req->hasKey(variableRemote) != -1 && req->hasKey(variableName) != -1) {
+			//do update.
+			String* id = req->getValue(variableRemote);
+			l3_address_t idInt = id->toInt();
+
+			String* name = req->getValue(variableName);
+			if(name->length() > NODE_INFO_SIZE) {
+				sendHttp500WithBody(client);
+				return;
+			}
+
+			name->toCharArray((char*) BUF2, NODE_INFO_SIZE);
+			if(!sdcard.saveNodeInfoString(idInt, BUF2, NODE_INFO_SIZE)) {
+				sendHttp500WithBody(client);
+				return;
+			} else {
+				sendHttpOk(client);
+				sendHtmlHeader(client, PAGE_MAINTAIN_NODE_INFO, true, true);
+				headerIsSent = true;
+				client->print(F("<div class='info'>Updated NoteID "));
+				client->print(idInt);
+				client->print(F("</div>"));
+			}
+		}
+
+		if(!headerIsSent) {
+			sendHttpOk(client);
+			sendHtmlHeader(client, PAGE_MAINTAIN_NODE_INFO, true, true);
+		}
+
+		client->println(F("<div class='info'>This may take a while ;-)</div>"));
+		client->println(F("<table><thead><tr><th>ID</th><th>Info</th><th>Newinfo</th></tr></thead>"));
+		client->print(F("<tfoot><tr><th colspan='3'>"));
+		client->print(SD_DISCOVERY_NUM_NODES);
+		client->println(F(" Entries</th></tr></tfoot>"));
+
+		sdcard.myFileInfo.seek(0);
+
+		uint8_t page = 0;
+		for(uint8_t i = 0; i < SD_DISCOVERY_NUM_NODES; i++) {
+			if(i % multiplicator == 0) {
+				sdcard.myFileInfo.readBytes(BUF, NODE_INFO_SIZE * multiplicator);
+				wdt_reset();
+				client->flush();
+				#ifdef DEBUG_WEBSERVER_ENABLE
+				Serial.print(millis());
+				Serial.print(F(": page="));
+				Serial.print(page);
+				Serial.println(F(" read."));
+				#endif
+				page++;
+			}
+
+			//#ifdef DEBUG_WEBSERVER_ENABLE
+			//Serial.print(F("node="));
+			//Serial.print(i);
+			//Serial.print(F(" page="));
+			//Serial.println(page);
+			//#endif
+
+			client->print(F("<form action='"));
+			printP(client, pageAddresses[PAGE_MAINTAIN_NODE_INFO]);
+			client->print(F("' method='get'><input type='hidden' name='"));
+			printP(client, variableRemote);
+			client->print(F("' value='"));
+			client->print(i);
+			client->print(F("'/><tr><td data-label='ID'>"));
+			client->print(i);
+			client->print(F("</td>"));
+
+			client->print(F("<td data-label='Info'>"));
+			//sdcard.getNodeInfoString(i, BUF2, NODE_INFO_SIZE);
+
+			uint16_t item = (uint16_t) i % multiplicator;
+			uint16_t addressInBuf = NODE_INFO_SIZE * item;
+			char* tmp = (char*) &BUF[addressInBuf];
+			//#ifdef DEBUG_WEBSERVER_ENABLE
+				//Serial.print(F("\titemNo="));
+				//Serial.print(item);
+				//Serial.print(F(" has addressInBuf=0x"));
+				//Serial.print(addressInBuf, HEX);
+				//Serial.print(F(" memoryAddress="));
+				//Serial.println(tmp);
+			//#endif
+
+			client->print(tmp);
+			client->print(F("</td>"));
+
+			client->print(F("<td><input type='text' name='"));
+			printP(client, variableName);
+			client->print(F("' maxlength='"));
+			client->print(NODE_INFO_SIZE-1); //terminating character!
+			client->print(F("'/> <input type='submit'/></td></tr></form>"));
+		}
+
+		client->println(F("</table>"));
+		sendHtmlFooter(client);
+	}
+
 
 };
 
