@@ -309,17 +309,27 @@ class WebServer {
 	 * @param clientId
 	 */
 	void sendHttpOk(uint8_t clientId) {
-		sendHttpOk(clientId, 0, HTML);
+		sendHttpOk(clientId, 0, HTML, NULL);
 	}
 
 	void sendHttpOk(uint8_t clientId, uint32_t cacheTime) {
-		sendHttpOk(clientId, cacheTime, HTML);
+		sendHttpOk(clientId, cacheTime, HTML, NULL);
 	}
 
-	void sendHttpOk(uint8_t clientId, uint32_t cacheTime, MIME_TYPES mime) {
+	/**
+	 * send header - all options.
+	 */
+	void sendHttpOk(uint8_t clientId, uint32_t cacheTime, MIME_TYPES mime, char* filenameForDownload) {
 		EthernetClient client = EthernetClient(clientId);
 		client.println(F("HTTP/1.1 200 OK"));
 
+		if(filenameForDownload != NULL) {
+			client.print(F("Content-Disposition: attachment; filename=\""));
+			client.print(filenameForDownload);
+			client.println('"');
+		}
+
+		client.print(F("Content-Type: "));
 		switch(mime) {
 			case HTML:
 				printP(clientId, mimeTypes[HTML]);
@@ -332,6 +342,7 @@ class WebServer {
 				printP(clientId, mimeTypes[BINARY]);
 			break;
 		}
+		client.println();
 
 		client.println(F("Connection: close"));  // the connection will be closed after completion of the response
 		if(cacheTime > 0) {
@@ -714,7 +725,7 @@ class WebServer {
 		#endif
 
 		//sendHttpOk(clientId, 300);
-		sendHttpOk(clientId, 300, CSS);
+		sendHttpOk(clientId, 300, CSS, NULL);
 		EthernetClient client = EthernetClient(clientId);
 		client.println(F("a, a:link, a:visited { color: #5F5F5F; text-decoration: underline; font-weight: normal; }"));
 		client.println(F("a:active { font-weight: bold; }"));
@@ -1720,7 +1731,6 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 			#endif
 			doPageListeFilesStart(clientId);
 		} else {
-
 			const uint8_t bufSize = 13;
 			char filename[bufSize];
 			req->getValue(variableFilename)->toCharArray(filename, bufSize);
@@ -1736,7 +1746,6 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 
 	void doPageListFile(uint8_t clientId, char* filename) {
 		EthernetClient client = EthernetClient(clientId);
-		sendHttpOk(clientId, 0, BINARY);
 
 		if(!SD.exists(filename)) {
 			sendHttp500WithBody(clientId);
@@ -1750,10 +1759,12 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 			return;
 		}
 
-		const uint8_t bufSize = 512;
+		const uint16_t bufSize = 512;
 		uint8_t buffer[bufSize];
 		size_t bytes = 0;
 		uint16_t totalBytes = 0;
+
+		sendHttpOk(clientId, 0, BINARY, f.name());
 
 		#ifdef DEBUG_WEBSERVER_ENABLE
 			uint32_t t1 = millis();
@@ -1761,15 +1772,22 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 			Serial.print(F(": filesize="));
 			Serial.println(f.size());
 		#endif
+		//read data and write.
+		while(totalBytes < f.size()) {
+			uint32_t remaining = f.size() - totalBytes;
+			if(remaining < bufSize) {
+				bytes = f.readBytes(buffer, remaining);
+			} else {
+				bytes = f.readBytes(buffer, bufSize);
+			}
 
-		//while(bytes = f.read(buffer, bufSize) > 0) {
-			//client.write(buffer, bytes);
-			//totalBytes += bytes;
-		//}
-		while(f.available()) {
-			client.write(f.read());
-			totalBytes++;
+			client.write(buffer, bytes);
+			totalBytes += bytes;
 		}
+		//while(f.available()) {
+			//client.write(f.read());
+			//totalBytes++;
+		//}
 
 		#ifdef DEBUG_WEBSERVER_ENABLE
 			uint32_t t2 = millis();
