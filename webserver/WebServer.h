@@ -1798,7 +1798,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		//read data and write.
 		if(isRaw) {
 			sendHttpOk(client, 0, BINARY, f.name());
-			const uint16_t bufSize = 512;
+			const uint16_t bufSize = 512; //page size.
 			uint8_t buffer[bufSize];
 			//RAW
 			while(totalBytes < f.size()) {
@@ -1881,7 +1881,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 	void doPageListeFilesStart(EthernetClient* client) {
 		sendHttpOk(client);
 		sendHtmlHeader(client, PAGE_MAIN, true, true);
-		client->println(F("<table><thead><tr><th>Remote</th><th>HardwareAddress</th><th>HardwareType</th><th>Filename</th><th>CSV</th><th>Size [b]</th></tr></thead>"));
+		client->println(F("<table><thead><tr><th>Remote</th><th>HardwareAddress</th><th>HardwareType</th><th>Filename</th><th>RAW</th><th>Size [b]</th></tr></thead>"));
 
 		uint8_t num = 0;
 
@@ -1940,17 +1940,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 					printP(client, hardwareTypeStrings[type]);
 					client->print(F("</td>"));
 
-					client->print(F("<td data-label='Filename'><a href='"));
-					printP(client, pageAddresses[PAGE_LIST_FILES]);
-					client->print(F("?"));
-					printP(client, variableFilename);
-					client->print(F("="));
-					client->print(cursor.name());
-					client->print(F("'>"));
-					client->print(cursor.name());
-					client->print(F("</a></td>"));
-
-					client->print(F("<td data-label='csv'><a href='"));
+					client->print(F("<td data-label='CSV'><a href='"));
 					printP(client, pageAddresses[PAGE_LIST_FILES]);
 					client->print(F("?"));
 					printP(client, variableFilename);
@@ -1960,6 +1950,16 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 					printP(client, variableFiletype);
 					client->print(F("="));
 					printP(client, variableFiletypeCsv);
+					client->print(F("'>"));
+					client->print(cursor.name());
+					client->print(F("</a></td>"));
+
+					client->print(F("<td data-label='RAW'><a href='"));
+					printP(client, pageAddresses[PAGE_LIST_FILES]);
+					client->print(F("?"));
+					printP(client, variableFilename);
+					client->print(F("="));
+					client->print(cursor.name());
 					client->print(F("'>x</a></td>"));
 
 					client->print(F("<td data-label='bytes'>"));
