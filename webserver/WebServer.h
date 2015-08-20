@@ -79,12 +79,14 @@ const char pageTitleSensordata[] PROGMEM = {"Sensordata"};
 const char mimeTypeHtml[] PROGMEM = { "text/html" };
 const char mimeTypeCss[] PROGMEM = { "text/css" };
 const char mimeTypeBinary[] PROGMEM = { "application/octet-stream" };
+const char mimeTypeCsv[] PROGMEM = { "text/csv" };
 
-PGM_P mimeTypes[] = {mimeTypeHtml, mimeTypeCss, mimeTypeBinary};
+PGM_P mimeTypes[] = {mimeTypeHtml, mimeTypeCss, mimeTypeBinary, mimeTypeCsv};
 enum MIME_TYPES {
 	HTML,
 	CSS,
-	BINARY
+	BINARY,
+	CSV
 };
 
 PGM_P pageTitles[] = {NULL, pageTitleMain, pageTitleGetSensorInfo, pageTitleNodes, NULL, pageTitleRequestSensor, pageTitleWriteSensor, pageTitleSensordata};
@@ -107,6 +109,8 @@ const char variableVal[] PROGMEM = {"val"};
 const char variableListType[] PROGMEM = {"listtype"};
 const char variableListNum[] PROGMEM = {"listnum"};
 const char variableFilename[] PROGMEM = {"file"};
+const char variableFiletype[] PROGMEM = {"type"};
+const char variableFiletypeCsv[] PROGMEM = {"csv"};
 
 const char linkNameX[] PROGMEM = {"x"};
 const char linkNameOn[] PROGMEM = {"on"};
@@ -336,6 +340,9 @@ class WebServer {
 			break;
 			case CSS:
 				printP(clientId, mimeTypes[CSS]);
+			break;
+			case CSV:
+				printP(clientId, mimeTypes[CSV]);
 			break;
 			case BINARY:
 			default:
@@ -1718,6 +1725,9 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 	inline uint8_t hexbyte( char* hex ) {
 		return (hexdigit(*hex) << 4) | hexdigit(*(hex+1)) ;
 	}
+	/**
+	 * list files or download one, depending on given? filename
+	 */
 	void doPageListFiles(uint8_t clientId, RequestContent* req) {
 		#ifdef DEBUG_WEBSERVER_ENABLE
 		Serial.print(millis());
@@ -1735,19 +1745,25 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 			char filename[bufSize];
 			req->getValue(variableFilename)->toCharArray(filename, bufSize);
 
+			char filetype[bufSize];
+			req->getValue(variableFiletype)->toCharArray(filetype, bufSize);
+
 			#ifdef DEBUG_WEBSERVER_ENABLE
 			Serial.print(F("\tlist file="));
 			Serial.println(filename);
 			#endif
 
-			doPageListFile(clientId, filename);
+			doPageListFile(clientId, filename, filetype);
 		}
 	}
 
-	void doPageListFile(uint8_t clientId, char* filename) {
+	/**
+	 * download/show
+	 */
+	void doPageListFile(uint8_t clientId, const char* filename, const char* filetype) {
 		EthernetClient client = EthernetClient(clientId);
 
-		if(!SD.exists(filename)) {
+		if(!SD.exists((char*) filename)) {
 			sendHttp500WithBody(clientId);
 			return;
 		}
@@ -1759,12 +1775,11 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 			return;
 		}
 
-		const uint16_t bufSize = 512;
-		uint8_t buffer[bufSize];
-		size_t bytes = 0;
-		uint16_t totalBytes = 0;
-
-		sendHttpOk(clientId, 0, BINARY, f.name());
+		//type
+		boolean isRaw = true;
+		if(strcmp_P(filetype, variableFiletypeCsv) == 0) {
+			isRaw = false;
+		}
 
 		#ifdef DEBUG_WEBSERVER_ENABLE
 			uint32_t t1 = millis();
@@ -1772,22 +1787,71 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 			Serial.print(F(": filesize="));
 			Serial.println(f.size());
 		#endif
+
+
+		size_t bytes = 0;
+		uint16_t totalBytes = 0;
 		//read data and write.
-		while(totalBytes < f.size()) {
-			uint32_t remaining = f.size() - totalBytes;
-			if(remaining < bufSize) {
-				bytes = f.readBytes(buffer, remaining);
-			} else {
-				bytes = f.readBytes(buffer, bufSize);
+		if(isRaw) {
+			sendHttpOk(clientId, 0, BINARY, f.name());
+			const uint16_t bufSize = 512;
+			uint8_t buffer[bufSize];
+			//RAW
+			while(totalBytes < f.size()) {
+				uint32_t remaining = f.size() - totalBytes;
+				if(remaining < bufSize) {
+					bytes = f.readBytes(buffer, remaining);
+				} else {
+					bytes = f.readBytes(buffer, bufSize);
+				}
+
+				client.write(buffer, bytes);
+				totalBytes += bytes;
+			}
+		} else {
+			const uint16_t bufSize = sizeUInt8List + 4;
+
+			if(f.size() % bufSize != 0) {
+				sendHttp500WithBody(clientId);
+				return;
 			}
 
-			client.write(buffer, bytes);
-			totalBytes += bytes;
+			char filename2[14];
+			strcpy(filename2, f.name());
+			char* pos = strstr(filename2, ".");
+			*(pos+1) = 'c';
+			*(pos+2) = 's';
+			*(pos+3) = 'v';
+			*(pos+4) = '\0';
+			sendHttpOk(clientId, 0, CSV, filename2);
+
+			client.print(F("timestamp"));
+			for(uint8_t i = 0; i < sizeUInt8List; i++) {
+				client.print(F(";byte"));
+				client.print(i);
+			}
+			client.println();
+
+			uint8_t buffer[bufSize];
+			uint32_t timestamp = now();
+			//CSV
+			while(totalBytes < f.size()) {
+				bytes = f.readBytes(buffer, bufSize);
+				timestamp = buffer[3] << 24 | buffer[2] << 16 | buffer[1] << 8 | buffer[0];
+
+				printDate(clientId, timestamp); //client.print(timestamp); //yyyy-MM-dd HH:mm:ss
+				client.print(';');
+				for(uint8_t i = 0; i < sizeUInt8List; i++) {
+					client.print(buffer[4+i]);
+					if(i < sizeUInt8List-1) {
+						client.print(';');
+					} else {
+						client.println();
+					}
+				}
+				totalBytes += bytes;
+			}
 		}
-		//while(f.available()) {
-			//client.write(f.read());
-			//totalBytes++;
-		//}
 
 		#ifdef DEBUG_WEBSERVER_ENABLE
 			uint32_t t2 = millis();
@@ -1800,12 +1864,15 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		#endif
 	}
 
+	/**
+	 * list files.
+	 */
 	void doPageListeFilesStart(uint8_t clientId) {
 		EthernetClient client = EthernetClient(clientId);
 
 		sendHttpOk(clientId);
 		sendHtmlHeader(clientId, PAGE_MAIN, true, true);
-		client.println(F("<table><thead><tr><th>Remote</th><th>HardwareAddress</th><th>HardwareType</th><th>Filename</th><th>Size [b]</th></tr></thead>"));
+		client.println(F("<table><thead><tr><th>Remote</th><th>HardwareAddress</th><th>HardwareType</th><th>Filename</th><th>CSV</th><th>Size [b]</th></tr></thead>"));
 
 		uint8_t num = 0;
 
@@ -1820,6 +1887,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 			test.rewindDirectory();
 
 			File cursor = test.openNextFile();
+			char nodeInfoString[NODE_INFO_SIZE];
 			while(cursor != NULL) {
 				#ifdef DEBUG_WEBSERVER_ENABLE
 				Serial.print('\t');
@@ -1831,6 +1899,8 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 					uint8_t remote = hexbyte(&cursor.name()[0]);
 					uint8_t type = hexbyte(&cursor.name()[3]);
 					uint8_t address = hexbyte(&cursor.name()[6]);
+
+					sdcard.getNodeInfoString(remote, (uint8_t*) nodeInfoString, NODE_INFO_SIZE);
 
 					#ifdef DEBUG_WEBSERVER_ENABLE
 					Serial.print(F("\t\t"));
@@ -1845,13 +1915,22 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 					client.print(F("<tr>"));
 					client.print(F("<td data-label='Remote'>"));
 					client.print(remote);
+					if(strlen(nodeInfoString) > 0) {
+						client.print(F(" ("));
+						client.print(nodeInfoString);
+						client.print(F(")"));
+					}
 					client.print(F("</td>"));
+
 					client.print(F("<td data-label='HwAddress'>"));
 					client.print(address);
 					client.print(F("</td>"));
+
 					client.print(F("<td data-label='HwType'>"));
-					client.print(type);
+					//client.print(type);
+					printP(clientId, hardwareTypeStrings[type]);
 					client.print(F("</td>"));
+
 					client.print(F("<td data-label='Filename'><a href='"));
 					printP(clientId, pageAddresses[PAGE_LIST_FILES]);
 					client.print(F("?"));
@@ -1861,6 +1940,19 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 					client.print(F("'>"));
 					client.print(cursor.name());
 					client.print(F("</a></td>"));
+
+					client.print(F("<td data-label='csv'><a href='"));
+					printP(clientId, pageAddresses[PAGE_LIST_FILES]);
+					client.print(F("?"));
+					printP(clientId, variableFilename);
+					client.print(F("="));
+					client.print(cursor.name());
+					client.print(F("&"));
+					printP(clientId, variableFiletype);
+					client.print(F("="));
+					printP(clientId, variableFiletypeCsv);
+					client.print(F("'>x</a></td>"));
+
 					client.print(F("<td data-label='bytes'>"));
 					client.print(cursor.size());
 					client.print(F(" ("));
@@ -1875,7 +1967,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 			}
 		}
 
-		client.println(F("<tfoot><tr><th colspan='5'>"));
+		client.println(F("<tfoot><tr><th colspan='6'>"));
 		client.print(num);
 		client.println(F(" Entries</th></tr></tfoot>"));
 		client.println(F("</table>"));
