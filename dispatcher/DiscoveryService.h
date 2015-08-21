@@ -13,7 +13,7 @@
 #include <dispatcher/EventCallbackInterface.h>
 #include <dispatcher/HardwareInterface.h>
 
-#define INTERFACES_BUF_SIZE 16
+#define INTERFACES_BUF_SIZE 15
 
 class DiscoveryService {
 	//variables

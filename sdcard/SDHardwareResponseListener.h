@@ -11,6 +11,13 @@
 
 #include <Arduino.h>
 #include <dispatcher/EventCallbackInterface.h>
+#include <sdcard/SDcard.h>
+#include <interfaces/input/RTC.h>
+
+extern RTC rtc;
+extern SDcard sdcard;
+
+#define SD_LOGGER_BINARY
 
 /**
  * handler for hardware request responses - writes everything to sdcard.

@@ -293,19 +293,19 @@ void setup() {
 
 	Serial.println("start test...");
 	Serial.flush();
-
-	randomSeed(analogRead(1));
-
-	Serial.print(F("pin miso="));
-	Serial.print(MISO);
-	Serial.print(F(", pin mosi="));
-	Serial.print(MOSI);
-	Serial.print(F(", pin sck="));
-	Serial.print(SCK);
-	Serial.print(F(", pin ce="));
-	Serial.print(PIN_CE);
-	Serial.print(F(", pin csn(ss)="));
-	Serial.println(PIN_CSN);
+//
+	//randomSeed(analogRead(1));
+//
+	//Serial.print(F("pin miso="));
+	//Serial.print(MISO);
+	//Serial.print(F(", pin mosi="));
+	//Serial.print(MOSI);
+	//Serial.print(F(", pin sck="));
+	//Serial.print(SCK);
+	//Serial.print(F(", pin ce="));
+	//Serial.print(PIN_CE);
+	//Serial.print(F(", pin csn(ss)="));
+	//Serial.println(PIN_CSN);
 	#endif
 
 	//enable watchdog
@@ -320,7 +320,6 @@ void setup() {
 
 	#ifdef SDCARD_ENABLE
 		sdcard.init();
-
 		subscriptionManager.init();
 	#endif
 
@@ -369,11 +368,15 @@ void setup() {
 
 	dispatcher.init(&l3, &hwInterface);
 
+	#ifdef SDCARD_ENABLE
 	#ifdef SDCARD_LOGGER_ENABLE
 		dispatcher.getResponseHandler()->registerListenerByPacketType(0, HARDWARE_COMMAND_RES, 0, &sdlistener);
 	#endif
+	#endif
 
+	#ifdef TIMER_ENABLE
 	timer.init();
+	#endif
 
 	/*
 	SDcard::SD_nodeDiscoveryInfoTableEntry_t infos[2];

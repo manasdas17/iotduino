@@ -7,13 +7,6 @@
 
 
 #include "SDHardwareResponseListener.h"
-#include <sdcard/SDcard.h>
-#include <interfaces/input/RTC.h>
-
-extern RTC rtc;
-extern SDcard sdcard;
-
-#define SD_LOGGER_BINARY
 
 void SDHardwareRequestListener::doCallback(packet_application_numbered_cmd_t* appLayerPacket, l3_address_t address, seq_t seq) {
 	//abort for uninteresting packets

@@ -27,7 +27,7 @@
 /** maximum discovery infos per node */
 #define SD_DISCOVERY_NUM_INFOS_PER_NODE INTERFACES_BUF_SIZE
 /** maximum subscriptions per node */
-#define SD_DISCOVERY_NUM_SUBSCRIPTIONS_PER_NODE numSubscriptionList
+#define SD_DISCOVERY_NUM_SUBSCRIPTIONS_PER_NODE 4
 
 /**  size of total discovery storage*/
 #define SD_DISCOVERY_FILESIZE (SD_DISCOVERY_NUM_NODES * sizeof(SDcard::SD_nodeInfoTableEntry_t) \

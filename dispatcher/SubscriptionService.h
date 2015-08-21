@@ -15,7 +15,7 @@
 
 #ifdef ENABLE_SUBSCRIPTION_SERVICE
 
-#define numSubscriptionList 5
+#define numSubscriptionList 4
 /** period for subscription execution */
 #define SUBSCRIPTION_CHECK_PERIOD_MILLIS (1*1000UL)
 /** period for subscription polling check */

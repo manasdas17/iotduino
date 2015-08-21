@@ -12,7 +12,7 @@
 #include <networking/Packets.h> //used for sanity check
 #include <drivers/HardwareID.h> //types are referenced
 
-#define sizeUInt8List 8 //enough size for 4 16bit vars.
+#define sizeUInt8List 4 //enough size for 4 16bit vars.
 
 
 typedef struct hwCommand {
