@@ -10,7 +10,7 @@
 #define SDCARD_H_
 
 #include <Arduino.h>
-#include <SD/SD.h>
+#include <SD.h>
 #include <dispatcher/EventCallbackInterface.h>
 #include <dispatcher/Commands.h>
 #include <dispatcher/DiscoveryService.h>
