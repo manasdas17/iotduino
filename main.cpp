@@ -331,7 +331,7 @@ void setup() {
 
 	dht11.init(2, 20);
 	rcsw.init(A6, 21);
-	motion.init(A4, 50);
+	motion.init(3, 50);
 	light.init(A5, 60);
 	//mytone.init(A8, 70);
 
@@ -373,7 +373,9 @@ void setup() {
 		dispatcher.getResponseHandler()->registerListenerByPacketType(0, HARDWARE_COMMAND_RES, 0, &sdlistener);
 	#endif
 
+	#ifdef TIMER_ENABLE
 	timer.init();
+	#endif
 
 	/*
 	SDcard::SD_nodeDiscoveryInfoTableEntry_t infos[2];
