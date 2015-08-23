@@ -334,23 +334,28 @@ class WebServer {
 	 * @param client
 	 */
 	void sendHttpOk(EthernetClient* client) {
-		sendHttpOk(client, 0, HTML, NULL);
+		sendHttpOk(client, 0, HTML, NULL, 0);
 	}
 
 	void sendHttpOk(EthernetClient* client, uint32_t cacheTime) {
-		sendHttpOk(client, cacheTime, HTML, NULL);
+		sendHttpOk(client, cacheTime, HTML, NULL, 0);
 	}
 
 	/**
 	 * send header - all options.
 	 */
-	void sendHttpOk(EthernetClient* client, uint32_t cacheTime, MIME_TYPES mime, char* filenameForDownload) {
+	void sendHttpOk(EthernetClient* client, uint32_t cacheTime, MIME_TYPES mime, char* filenameForDownload, uint32_t len) {
 		client->println(F("HTTP/1.1 200 OK"));
 
 		if(filenameForDownload != NULL) {
 			client->print(F("Content-Disposition: attachment; filename=\""));
 			client->print(filenameForDownload);
 			client->println('"');
+		}
+
+		if(len > 0) {
+			client->print(F("Content-Length: "));
+			client->println(len);
 		}
 
 		client->print(F("Content-Type: "));
@@ -746,7 +751,7 @@ class WebServer {
 		#endif
 
 		//sendHttpOk(client, 300);
-		sendHttpOk(client, 300, CSS, NULL);
+		sendHttpOk(client, 300, CSS, NULL, 0);
 
 		client->println(F(".info { font-family: monospace; margin-bottom: 5px; background-color: rgb(220,255,220); border: 1px darkgray dashed; padding: 5px;}"));
 		client->println(F("a, a:link, a:visited { color: #5F5F5F; text-decoration: underline; font-weight: normal; }"));
@@ -1797,10 +1802,11 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		uint16_t totalBytes = 0;
 		//read data and write.
 		if(isRaw) {
-			sendHttpOk(client, 0, BINARY, f.name());
+			sendHttpOk(client, 0, BINARY, f.name(), f.size());
 			const uint16_t bufSize = 512; //page size.
 			uint8_t buffer[bufSize];
 			//RAW
+			//client->finishSendPacket();
 			while(totalBytes < f.size()) {
 				uint32_t remaining = f.size() - totalBytes;
 				if(remaining < bufSize) {
@@ -1809,12 +1815,16 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 					bytes = f.readBytes(buffer, bufSize);
 				}
 
+				//client->addData(buffer, bytes);
 				client->write(buffer, bytes);
 				totalBytes += bytes;
 
 				wdt_reset();
 			}
+
+			//client->finishSendPacket();
 		} else {
+			//CSV
 			const uint16_t bufSize = sizeUInt8List + 4;
 
 			if(f.size() % bufSize != 0) {
@@ -1829,7 +1839,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 			*(pos+2) = 's';
 			*(pos+3) = 'v';
 			*(pos+4) = '\0';
-			sendHttpOk(client, 0, CSV, filename2);
+			sendHttpOk(client, 0, CSV, filename2, 0);
 
 			client->print(F("timestamp"));
 			for(uint8_t i = 0; i < sizeUInt8List; i++) {
