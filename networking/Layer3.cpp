@@ -394,6 +394,14 @@ boolean Layer3::routePacket( packet_t* packet )
 	//no.
 	packet->data.hopcount++;
 
+	if(getNeighbour(packet->data.destination) == NULL) {
+		#ifdef DEBUG_NETWORK_ENABLE
+			Serial.println(F("\tnot route to host, discarding."));
+			Serial.flush();
+		#endif
+		return false;
+	}
+
 	//actual route handling will be done by sendPacket; i.e. l2 addressing.
 	return sendPacket(*packet);
 }
