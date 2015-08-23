@@ -4,7 +4,8 @@ Layer3::Layer3() {
 }
 
 void Layer3::init(l3_address_t localAddress) {
-	this->eventCallbackClass = new callbackClass(this);
+	//this->eventCallbackClass = new callbackClass(this);
+	this->eventCallbackClass.setLayer3(this);
 
 	memset(sendingNumberedBuffer, 0, sizeof(sendingNumberedBuffer));
 	memset(neighbours, 0, sizeof(neighbours));
@@ -911,7 +912,7 @@ boolean Layer3::sendBroadcast(void* payload, uint8_t payloadLen) {
 }
 
 EventCallbackInterface* Layer3::getCallbackInterface() {
-	return (EventCallbackInterface*) eventCallbackClass;
+	return (EventCallbackInterface*) &eventCallbackClass;
 }
 
 

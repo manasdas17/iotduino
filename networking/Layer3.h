@@ -40,6 +40,12 @@ class Layer3 {
 			callbackClass(Layer3* l3) {
 				parent = l3;
 			}
+			callbackClass() {
+			}
+
+			void setLayer3(Layer3* l3) {
+				parent = l3;
+			}
 
 			void doCallback(packet_application_numbered_cmd_t* appLayerPacket, l3_address_t address, seq_t seq);
 			virtual void fail(seq_t seq, l3_address_t remote);
@@ -69,7 +75,7 @@ class Layer3 {
 
 		Layer2rf24* l2;
 
-		callbackClass* eventCallbackClass;
+		callbackClass eventCallbackClass;
 
 		neighbourData neighbours[CONFIG_L3_NUM_NEIGHBOURS];
 	protected:
@@ -90,7 +96,6 @@ class Layer3 {
 		void Loop();
 
 		~Layer3() {
-			delete eventCallbackClass;
 		}
 
 		Layer3();
