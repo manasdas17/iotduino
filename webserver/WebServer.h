@@ -652,6 +652,8 @@ class WebServer {
 			return false;
 		}*/
 
+		client->flush();
+
 		delay(1);
 		clientStatus[client->_sock].inUse = false;
 		clientStatus[client->_sock].requestType = PAGE_NONE;
@@ -2092,6 +2094,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 			client->print(F("' maxlength='"));
 			client->print(NODE_INFO_SIZE-1); //terminating character!
 			client->print(F("'/> <input type='submit'/></td></tr></form>"));
+			client->flush();
 		}
 
 		client->println(F("</table>"));
