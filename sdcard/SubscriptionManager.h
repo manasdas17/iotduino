@@ -309,12 +309,12 @@ class SubscriptionManager {
 			uint8_t index = 0;
 			SDcard::SD_nodeInfoTableEntry_t info;
 
-			#if DEBUG
+			#ifdef DEBUG
 			Serial.print(millis());
 			Serial.print(F(": reading nodeInfo"));
 			#endif
 			for(uint8_t i = 0; i < SD_DISCOVERY_NUM_NODES; i++) {
-				#if DEBUG
+				#ifdef DEBUG
 					if(i%10==0)
 						Serial.print('.');
 				#endif

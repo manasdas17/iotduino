@@ -23,6 +23,7 @@ class RCSwitchTevionFSI07 : public DigitalIO {
 
 		//total sequence len
 		static const uint16_t lengthForBit = (long) 1000*35/24; //1000*37/24; //does not work out due to overhead!
+
 		//bit len
 		static const uint16_t lengthForTwoThird = lengthForBit / 3 * 2;
 		static const uint16_t lengthForOneTHird = lengthForBit / 3;

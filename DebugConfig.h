@@ -9,7 +9,7 @@
 #ifndef DEBUGCONFIG_H_
 #define DEBUGCONFIG_H_
 
-#define PRODUCTIVE_MEGA328P
+//#define PRODUCTIVE_MEGA328P
 
 #ifndef PRODUCTIVE_MEGA328P
 	#define RTC_ENABLE
@@ -26,16 +26,7 @@
 
 //#define TIMER_ENABLE
 
-//#ifdef PRODUCTIVE_MEGA328P
-	//#ifdef DEBUG
-		//#undef DEBUG
-	//#endif
-//#else
-	#define DEBUG 1
-//#endif
-
-
-//#ifndef PRODUCTIVE_MEGA328P
+#ifdef DEBUG
 	#define DEBUG_NETWORK_ENABLE
 	#define DEBUG_HARDWARE_ENABLE
 	#define DEBUG_SD_ENABLE
@@ -46,6 +37,6 @@
 	#define DEBUG_HANDLER_RESPONSE_ENABLE
 	#define DEBUG_HANDLER_DISCOVERY_ENABLE
 	#define DEBUG_HANDLER_SUBSCRIPTION_ENABLE
-//#endif
+#endif
 
 #endif /* DEBUGCONFIG_H_ */

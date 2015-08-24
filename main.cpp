@@ -330,7 +330,13 @@ void setup() {
 	l3.setLayer2(&l2);
 
 	dht11.init(2, 20);
+
+	#ifdef __AVR_ATmega2560__
+	rcsw.init(14, 21);
+	#else
 	rcsw.init(A6, 21);
+	#endif
+
 	motion.init(3, 50);
 	light.init(A5, 60);
 	//mytone.init(A8, 70);
@@ -366,6 +372,18 @@ void setup() {
 	hwInterface.registerDriver((HardwareDriver*) &motion);
 	hwInterface.registerDriver((HardwareDriver*) &light);
 	//hwInterface.registerDriver((HardwareDriver*) &mytone);
+
+	//test rcsw
+	//HardwareCommandResult cmd;
+	//memset(&cmd, 0, sizeof(cmd));
+	//cmd.setHardwareType(HWType_rcswitch);
+	//cmd.setAddress(rcsw.getAddress());
+	//cmd.setUint8ListNum(2);
+	//cmd.getUint8List()[0] = 3;
+	//cmd.getUint8List()[1] = 0;
+	//hwInterface.executeCommand(&cmd);
+	////
+
 
 	dispatcher.init(&l3, &hwInterface);
 
