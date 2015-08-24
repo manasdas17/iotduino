@@ -1890,7 +1890,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 	 */
 	void doPageListeFilesStart(EthernetClient* client) {
 		sendHttpOk(client);
-		sendHtmlHeader(client, PAGE_MAIN, true, true);
+		sendHtmlHeader(client, PAGE_LIST_FILES, true, true);
 		client->println(F("<table><thead><tr><th>Remote</th><th>HardwareAddress</th><th>HardwareType</th><th>Filename</th><th>RAW</th><th>Size [b]</th></tr></thead>"));
 
 		uint8_t num = 0;
