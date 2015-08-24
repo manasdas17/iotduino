@@ -12,7 +12,7 @@
 
 #include "../../interfaces/output/RCSwitchTevionFSI07.h"
 
-const void RCSwitchTevionFSI07::sendByte(char i, uint8_t pin) {
+const void __attribute__((optimize("O0"))) RCSwitchTevionFSI07::sendByte(char i, uint8_t pin) {
 	switch(i) {
 		case '1':
 			digitalWrite(pin, HIGH);
@@ -35,10 +35,10 @@ const void RCSwitchTevionFSI07::sendByte(char i, uint8_t pin) {
 	}
 }
 
-const void RCSwitchTevionFSI07::sendCode(uint32_t val) {
+const void __attribute__((optimize("O0"))) RCSwitchTevionFSI07::sendCode(uint32_t val) {
 	uint8_t pin = getPIN();
-	for(uint8_t z = 0; z < repreatNum; z++) {
-		for(int8_t i = 23; i >= 0; i--) {
+	for(uint8_t z = 0; z < repreatNum; ++z) {
+		for(int8_t i = 23; i >= 0; --i) {
 			sendByte((((val >> i) & 0b1) == 1) ? '1' : '0', pin);
 		}
 		sendByte('x', pin);
