@@ -62,6 +62,7 @@
 class SpiRAM
 {
   public:
+	//define whether to shift in 3 or 2 bytes for an address
 	enum adressLength{
 		l16bit,
 		l24bit
@@ -71,6 +72,18 @@ class SpiRAM
     void enable();
     void disable();
     char read_byte(uint32_t address);
+	/**
+	 * from 23A1024/23LC1024 satasheet
+	 * "Once the device is selected, the Write command can
+	 * be started by issuing a WRITE instruction, followed by
+	 * the 24-bit address, with the first seven MSB's of the
+	 * address being a "don't care" bit, and then the data to be
+	 * written."
+	 *
+	 * this means we are rewriting in a cyclic manner in case
+	 * of too large addresses. This lib however does not ensure
+	 * correct usage by now.
+	 */
 	void setAddress(uint32_t address);
     char write_byte(uint32_t address, char data_byte);
     void read_page(uint32_t address, char *buffer);
