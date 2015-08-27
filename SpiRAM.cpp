@@ -154,7 +154,7 @@ void SpiRAM::write_page(uint32_t address, char *buffer)
 // Stream transfer functions. Ignores page boundaries.
 void SpiRAM::read_stream(uint32_t address, char *buffer, uint32_t length)
 {
-  int i;
+  uint32_t i;
 
   // Set byte mode
   _set_mode(STREAM_MODE);
@@ -171,7 +171,7 @@ void SpiRAM::read_stream(uint32_t address, char *buffer, uint32_t length)
 
 void SpiRAM::write_stream(uint32_t address, char *buffer, uint32_t length)
 {
-  int i;
+  uint32_t i;
 
   // Set byte mode
   _set_mode(STREAM_MODE);
