@@ -63,12 +63,14 @@ class SpiRAM
 {
   public:
 	//define whether to shift in 3 or 2 bytes for an address
-	enum adressLength{
+	enum addressLengthEnum{
 		l16bit,
 		l24bit
 	};
 
-    SpiRAM(byte clock, byte ssPin, adressLength len);
+    SpiRAM() {};
+
+    SpiRAM(byte clock, byte ssPin, addressLengthEnum len);
     void enable();
     void disable();
     char read_byte(uint32_t address);
@@ -95,7 +97,7 @@ class SpiRAM
     byte _ssPin;
     void _set_mode(char mode);
 
-	adressLength addressLength;
+	addressLengthEnum addressLength;
 
 };
 

@@ -42,7 +42,7 @@
 
 // Constructor
 
-SpiRAM::SpiRAM(byte clockDiv, byte ssPin, adressLength len)
+SpiRAM::SpiRAM(byte clockDiv, byte ssPin, addressLengthEnum len)
 {
   switch(len) {
 	  case l24bit:
