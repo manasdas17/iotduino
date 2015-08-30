@@ -22,26 +22,11 @@ void Layer3::init(l3_address_t localAddress) {
 		memset(receiveQueue, 0, sizeof(receiveQueue));
 	#endif
 
-	memset(neighbours, 0, sizeof(neighbours));
-	//set hopcount to max!
-	for(uint8_t i = 0; i < CONFIG_L3_NUM_NEIGHBOURS; i++) {
-		neighbours[i].hopCount = 0xff;
-	}
-
 	this->localAddress = localAddress;
+
+	this->neighbourMgr.init(localAddress);
 }
 
-
-
-neighbourData* Layer3::getNeighbour( l3_address_t destination )
-{
-	for(uint8_t i = 0; i < CONFIG_L3_NUM_NEIGHBOURS; i++) {
-		if(neighbours[i].nodeId == destination)
-			return &neighbours[i];
-	}
-
-	return NULL;
-}
 
 boolean Layer3::sendPacket( packet_t &packet )
 {
@@ -62,7 +47,7 @@ boolean Layer3::sendPacket( packet_t &packet )
 		}
 
 		//get neighbour
-		neighbourData* neighbour = getNeighbour(packet.data.destination);
+		NeighbourManager::neighbourData_t* neighbour = neighbourMgr.getNeighbour(packet.data.destination);
 
 		//unknown.
 		if(neighbour == NULL) {
@@ -274,7 +259,7 @@ boolean Layer3::receive( void* payload )
 	}
 
 	//update the neighbour - this is no beacon.
-	updateNeighbour(packet->data.source, packet->data.source, 0);
+	neighbourMgr.updateNeighbour(packet->data.source, packet->data.source, 0);
 
 	//do we have to route the packet? - no broadcast routing.
 	if(packet->data.destination != localAddress && packet->data.destination != CONFIG_L3_ADDRESS_BROADCAST) {
@@ -423,7 +408,7 @@ boolean Layer3::routePacket( packet_t* packet )
 	//no.
 	packet->data.hopcount++;
 
-	if(getNeighbour(packet->data.destination) == NULL) {
+	if(neighbourMgr.getNeighbour(packet->data.destination) == NULL) {
 		#ifdef DEBUG_NETWORK_ENABLE
 			Serial.println(F("\tnot route to host, discarding."));
 			Serial.flush();
@@ -443,182 +428,14 @@ boolean Layer3::handleBeacon( packet_t* packet ) {
 	#endif
 
 	boolean result = true;
-	result |= updateNeighbour(packet);
-	result |= updateNeighbours((packet_beacon_t*) packet->data.payload);
+	result |= neighbourMgr.updateNeighbour(packet->data.source);
+	result |= neighbourMgr.updateNeighbours((packet_beacon_t*) packet->data.payload);
 
 	return result;
-}
-
-boolean Layer3::updateNeighbour( packet_t* packet ) {
-	return updateNeighbour(packet->data.source, packet->data.source, 0);
-}
-
-boolean Layer3::updateNeighbour( l3_address_t destination, l3_address_t nextHop, uint8_t hopCount) {
-	#ifdef DEBUG_NETWORK_ENABLE
-		Serial.print(millis());
-		Serial.print(F(": updateNeighbour()"));
-		Serial.print(F(" destination="));
-		Serial.print(destination);
-		Serial.print(F(" nextHop="));
-		Serial.print(nextHop);
-		Serial.print(F(" hopCount="));
-		Serial.println(hopCount);
-		Serial.flush();
-	#endif
-
-	if(destination == localAddress) {
-		#ifdef DEBUG_NETWORK_ENABLE
-			Serial.println(F("\tthis is us, no routing update!"));
-		#endif
-		return true;
-	}
-	if(hopCount > CONFIG_L3_MAX_HOPCOUNT) {
-		#ifdef DEBUG_NETWORK_ENABLE
-			Serial.println(F("\ttoo many hops, discard."));
-		#endif
-		return true;
-	}
-
-	neighbourData* n = getNeighbour(destination);
-
-	//we do not have it yet - create.
-	if(n == NULL) {
-		//search free index
-		uint8_t freeIndex = 0xff;
-		for(uint8_t i = 0; i < CONFIG_L3_NUM_NEIGHBOURS; i++) {
-			if(neighbours[i].nodeId == 0) {
-				freeIndex = i;
-				break;
-			}
-		}
-
-		//do we have space?
-		if(freeIndex == 0xff) {
-			return false;
-		#ifdef DEBUG_NETWORK_ENABLE
-			Serial.println(F("\ttable full."));
-			Serial.flush();
-		#endif
-		}
-
-		n = &neighbours[freeIndex];
-
-		#ifdef DEBUG_NETWORK_ENABLE
-			Serial.print(F("\tnew entry@index="));
-			Serial.print(freeIndex);
-			Serial.print(F(": "));
-			Serial.flush();
-		#endif
-	}
-	#ifdef DEBUG_NETWORK_ENABLE
-		else {
-			Serial.print(F("\texisting: "));
-			Serial.flush();
-		}
-	#endif
-
-	//update data - if better.
-	#ifdef DEBUG_NETWORK_ENABLE
-		Serial.print(F("currentHopCount="));
-		Serial.print(n->hopCount);
-		Serial.print(F(" newHopCount="));
-		Serial.print(hopCount);
-		Serial.flush();
-	#endif
-
-	if(hopCount < n->hopCount)  {
-		n->nodeId = destination;
-		n->timestamp = millis();
-		n->hopNextNodeId = nextHop;
-		n->hopCount = hopCount;
-
-		#ifdef DEBUG_NETWORK_ENABLE
-			Serial.println(F(" - updated."));
-			Serial.flush();
-		#endif
-	} else if(hopCount == n->hopCount && nextHop == n->hopNextNodeId) {
-		n->timestamp = millis();
-		#ifdef DEBUG_NETWORK_ENABLE
-			Serial.println(F(" - same information, updated timestamp."));
-			Serial.flush();
-		#endif
-	}
-	#ifdef DEBUG_NETWORK_ENABLE
-		else
-			Serial.println(F(" - not updated."));
-			Serial.flush();
-	#endif
-
-	//handled, return true.
-	return true;
-}
-
-boolean Layer3::updateNeighbours(packet_beacon_t* beacon) {
-	uint8_t num = beacon->numNeighbourInfo;
-
-	boolean result = true;
-	for(uint8_t i = 0; i < num; i++) {
-		result |= updateNeighbour(beacon->neighbours[i].nodeId, beacon->nodeId, beacon->neighbours[i].hopcount);
-	}
-
-	return result;
-}
-
-void Layer3::cleanNeighbours() {
-	#ifdef DEBUG_NETWORK_ENABLE
-		Serial.print(millis());
-		Serial.println(F(": Layer3::cleanNeighbours()"));
-		Serial.flush();
-	#endif
-
-	for(uint8_t i = 0; i < CONFIG_L3_NUM_NEIGHBOURS; i++) {
-		//do we have a valid neighbour?
-		if(neighbours[i].nodeId > 0) {
-			#ifdef DEBUG_NETWORK_ENABLE
-				Serial.print(F("\tindex="));
-				Serial.print(i);
-				Serial.print(F(" nodeId="));
-				Serial.print(neighbours[i].nodeId);
-				Serial.print(F(" timestamp="));
-				Serial.print(neighbours[i].timestamp);
-				Serial.print(F(" hops="));
-				Serial.print(neighbours[i].hopCount);
-				Serial.print(F(" nextHop="));
-				Serial.print(neighbours[i].hopNextNodeId);
-			#endif
-
-			if(millis() - neighbours[i].timestamp > CONFIG_L3_NEIGHBOUR_MAX_AGE_MS) {
-				//remove
-				memset(&neighbours[i], 0, sizeof(neighbourData));
-				neighbours[i].hopCount = 0xff;
-
-				#ifdef DEBUG_NETWORK_ENABLE
-					Serial.println(F(" cleared!"));
-					Serial.flush();
-				#endif
-			}
-			#ifdef DEBUG_NETWORK_ENABLE
-				else {
-					Serial.println();
-					Serial.flush();
-				}
-			#endif
-		}
-	}
-}
-
-uint8_t Layer3::neighboursSize() {
-	uint8_t num = 0;
-	for(uint8_t i = 0; i < CONFIG_L3_NUM_NEIGHBOURS; i++) {
-		if(neighbours[i].nodeId != 0)
-			num++;
-	}
-
-	return num;
 }
 
 boolean Layer3::sendBeacon() {
-	cleanNeighbours();
+	neighbourMgr.cleanNeighbours();
 
 	#ifdef DEBUG_NETWORK_ENABLE
 		Serial.print(millis());
@@ -647,7 +464,7 @@ boolean Layer3::sendBeacon() {
 	//neighbours[8].hopCount = 9;
 
 	//number of neighbours in table
-	uint8_t numNeighbours = neighboursSize();
+	uint8_t numNeighbours = neighbourMgr.neighboursSize();
 	//number of beacons to send
 	uint8_t numBeacons = ceil(1.0 * numNeighbours / CONFIG_L3_BEACON_NUM_INFOS);
 
@@ -669,6 +486,8 @@ boolean Layer3::sendBeacon() {
 		//sending
 		return sendPacket(packet);
 	}
+
+	NeighbourManager::neighbourData_t* neighbours = getNeighbourManager()->getNeighbours();
 
 	//iterate trough beacons
 	for(uint8_t i = 0; i < numBeacons; i++) {
@@ -748,7 +567,6 @@ boolean Layer3::addToSendingQueue( packet_t* packet ) {
 		}
 
 	//search free buffer entry
-	uint8_t freeIndex = 0xff;
 	#ifdef ENABLE_EXTERNAL_RAM
 		SPIRamManager::iterator it2 = SPIRamManager::iterator(&ram, memRegionIdSend);
 		while(it2.hasNext()) {
@@ -936,10 +754,6 @@ void Layer3::Loop() {
 		beaconLastTimestamp = millis();
 		sendBeacon();
 	}
-}
-
-neighbourData* Layer3::getNeighbours() {
-	return neighbours;
 }
 
 seq_t Layer3::sendNumbered( l3_address_t destination, seq_t seq, void* payload, uint8_t payloadLen ) {

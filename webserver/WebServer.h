@@ -1086,7 +1086,7 @@ class WebServer {
  * @return success
  */
 boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &neighbourLastKeepAlive, uint8_t &neighbourHops, uint8_t &neighbourNextHop) {
-	neighbourData* neighbours = l3.getNeighbours();
+	NeighbourManager::neighbourData_t* neighbours = l3.getNeighbourManager()->getNeighbours();
 	for(uint8_t j = 0; j < CONFIG_L3_NUM_NEIGHBOURS; j++) {
 		if(neighbours[j].nodeId == nodeId) {
 			neighbourActive = 1;

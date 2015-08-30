@@ -177,7 +177,7 @@ class SubscriptionManager {
 		 * trigger discovery.
 		 */
 		void maintainDiscoveries() {
-			neighbourData* neighbours = l3.getNeighbours();
+			NeighbourManager::neighbourData_t* neighbours = l3.getNeighbourManager()->getNeighbours();
 			if(neighbours == NULL)
 				return;
 

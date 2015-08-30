@@ -70,7 +70,6 @@ class Layer3 {
 
 		callbackClass eventCallbackClass;
 
-		neighbourData neighbours[CONFIG_L3_NUM_NEIGHBOURS];
 	protected:
 	private:
 
@@ -84,10 +83,16 @@ class Layer3 {
 		uint8_t receiveQueueFirst;
 		uint8_t receiveQueueNum;
 
+		NeighbourManager neighbourMgr;
+
 		uint32_t beaconLastTimestamp;
 
 	//functions
 	public:
+		NeighbourManager* getNeighbourManager() {
+			return &neighbourMgr;
+		}
+
 		EventCallbackInterface* getCallbackInterface();
 
 		void Loop();
@@ -137,18 +142,6 @@ class Layer3 {
 		* @return success
 		*/
 		boolean receiveQueuePop();
-
-		/**
-		* get the number of neighbours
-		* @return num of neighbours
-		*/
-		uint8_t neighboursSize();
-
-		/**
-		* get the complete neighbourtable
-		* @return neighbourData
-		*/
-		neighbourData* getNeighbours();
 
 		/**
 		* send numbered packet
@@ -239,12 +232,6 @@ class Layer3 {
 		boolean sendAck(packet_t* packet);
 
 		/**
-		* get neighbour row.
-		* @param neighbour
-		*/
-		neighbourData* getNeighbour(l3_address_t detination);
-
-		/**
 		* push into receive queue
 		* @param packet
 		* @return success
@@ -264,34 +251,6 @@ class Layer3 {
 		* @return success
 		*/
 		boolean handleBeacon(packet_t* packet);
-
-		/**
-		* update/add new neighbour
-		* @param packet
-		* @return success
-		*/
-		boolean updateNeighbour(packet_t* packet);
-
-		/**
-		* @param neighbour addrtess
-		* @param next hop
-		* @param hops
-		* @return success
-		*/
-		boolean updateNeighbour( l3_address_t destination, l3_address_t nextHop, uint8_t hopCount);
-
-		/**
-		* update neighbours
-		* @param beacon
-		* @return success
-		*/
-		boolean updateNeighbours(packet_beacon_t* beacon);
-
-		/**
-		* neighbourtable maintenance, to be called periodically
-		*/
-		void cleanNeighbours();
-
 
 }; //Routing
 
