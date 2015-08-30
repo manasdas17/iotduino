@@ -9,12 +9,12 @@ void Layer3::init(l3_address_t localAddress) {
 
 	#ifdef ENABLE_EXTERNAL_RAM
 		#ifdef DEBUG_RAM_ENABLE
-			Serial.print(F("region for l3 receive queue: "));
+			Serial.println(F("region for l3 receive queue: "));
 		#endif
 		memRegionIdReceive = ram.createRegion(sizeof(packet_t), CONFIG_L3_RECEIVE_BUFFER_LEN);
 
 		#ifdef DEBUG_RAM_ENABLE
-			Serial.print(F("region for l3 sending queue: "));
+			Serial.println(F("region for l3 sending queue: "));
 		#endif
 		memRegionIdSend = ram.createRegion(sizeof(packet_sending_queue_item_t), CONFIG_L3_SEND_BUFFER_LEN);
 	#else
@@ -47,7 +47,8 @@ boolean Layer3::sendPacket( packet_t &packet )
 		}
 
 		//get neighbour
-		NeighbourManager::neighbourData_t* neighbour = neighbourMgr.getNeighbour(packet.data.destination);
+		uint8_t index;
+		NeighbourManager::neighbourData_t* neighbour = neighbourMgr.getNeighbour(&index, packet.data.destination);
 
 		//unknown.
 		if(neighbour == NULL) {
@@ -408,7 +409,8 @@ boolean Layer3::routePacket( packet_t* packet )
 	//no.
 	packet->data.hopcount++;
 
-	if(neighbourMgr.getNeighbour(packet->data.destination) == NULL) {
+	uint8_t index;
+	if(neighbourMgr.getNeighbour(&index, packet->data.destination) == NULL) {
 		#ifdef DEBUG_NETWORK_ENABLE
 			Serial.println(F("\tnot route to host, discarding."));
 			Serial.flush();
@@ -487,8 +489,6 @@ boolean Layer3::sendBeacon() {
 		return sendPacket(packet);
 	}
 
-	NeighbourManager::neighbourData_t* neighbours = getNeighbourManager()->getNeighbours();
-
 	//iterate trough beacons
 	for(uint8_t i = 0; i < numBeacons; i++) {
 		//number of neighbours in this beacon
@@ -497,11 +497,17 @@ boolean Layer3::sendBeacon() {
 		//routeinfo
 		routeInfo_t info[neighboursInfoNum];
 		//and its data
+
 		for(uint8_t j = 0; j < neighboursInfoNum; j++) {
 			uint8_t currentNeighbourIndex = i * CONFIG_L3_BEACON_NUM_INFOS + j;
+			#ifdef ENABLE_EXTERNAL_RAM
+				NeighbourManager::neighbourData_t* currentItem = (NeighbourManager::neighbourData_t*) ram.readElementIntoBuffer(getNeighbourManager()->memRegionId, currentNeighbourIndex);
+			#else
+				NeighbourManager::neighbourData_t* currentItem = getNeighbourManager()->neighbours[currentNeighbourIndex];
+			#endif
 
-			info[j].hopcount = neighbours[currentNeighbourIndex].hopCount + 1;
-			info[j].nodeId = neighbours[currentNeighbourIndex].nodeId;
+			info[j].hopcount = currentItem->hopCount + 1;
+			info[j].nodeId = currentItem->nodeId;
 		}
 
 		//beacon datagram containing neighbourinfo
