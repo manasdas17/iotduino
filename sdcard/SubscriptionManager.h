@@ -17,12 +17,13 @@
 #include <networking/Layer3.h>
 #include <sdcard/SDcard.h>
 #include <webserver/DiscoveryListener.h>
+#include "SpiRAM.h"
 
 extern PacketDispatcher dispatcher;
 extern PacketFactory pf;
 extern Layer3 l3;
 extern SDcard sdcard;
-
+extern SPIRamManager ram;
 
 #define DISCOVERY_NUM_NODES 30
 /** delay for subscription events */
@@ -177,17 +178,18 @@ class SubscriptionManager {
 		 * trigger discovery.
 		 */
 		void maintainDiscoveries() {
-			NeighbourManager::neighbourData_t* neighbours = l3.getNeighbourManager()->getNeighbours();
-			if(neighbours == NULL)
-				return;
-
 			uint32_t now = millis();
 
 			//delay the sending.
 			if(	listenerDiscovery.state == webserverListener::START && now > DISCOVERY_REQUEST_DELAY_MILLIS && now - DISCOVERY_REQUEST_DELAY_MILLIS > lastDiscoveryRequest
 				&& now > DISCOVERY_REQUEST_PERIOD_MILLIS && now - DISCOVERY_REQUEST_PERIOD_MILLIS > lastDiscoveryRequestFullRun) {
 
-				l3_address_t remote = neighbours[nextDiscoveryRequestNeighbourIndex].nodeId;
+				#ifdef ENABLE_EXTERNAL_RAM
+					ram.readElementIntoBuffer(l3.getNeighbourManager()->memRegionId, nextDiscoveryRequestNeighbourIndex);
+					l3_address_t remote = ((NeighbourManager::neighbourData_t*) ram.buffer)->nodeId;
+				#else
+					l3_address_t remote = l3.getNeighbourManager()->neighbours[nextDiscoveryRequestNeighbourIndex].nodeId;
+				#endif
 
 				//loopback?
 				if(nextDiscoveryRequestNeighbourIndex == CONFIG_L3_NUM_NEIGHBOURS) {
