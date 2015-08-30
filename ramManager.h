@@ -40,6 +40,7 @@ class ramManager {
 			memRegion_t region;
 			uint16_t iteratorIndex;
 
+			public:
 			/**
 			 * set data & region region info
 			 */
@@ -55,7 +56,7 @@ class ramManager {
 			 * @return true if the end has not been reached
 			 */
 			boolean hasNext() {
-				return iteratorIndex < region.numElements;
+				return iteratorIndex + 1 < region.numElements;
 			}
 
 			/**
@@ -63,8 +64,6 @@ class ramManager {
 			 * only reads new data from spi ram when necessary.
 			 */
 			void* next() {
-				iteratorIndex++;
-
 				if(iteratorIndex >= region.numElements) {
 					return NULL;
 				}
@@ -72,15 +71,24 @@ class ramManager {
 				//do we have to read again?
 				uint8_t numElemPerBufferInstance = mgr->bufferSize / region.elementSize;
 				if(iteratorIndex % numElemPerBufferInstance == 0) {
-					mgr->memcpy_R(mgr->buffer, region.ramStartAddress + iteratorIndex * region.elementSize, numElemPerBufferInstance * region.elementSize);
+					//maybe, we do not need to read a full buffer.
+					uint16_t len = min(region.numElements - iteratorIndex, numElemPerBufferInstance) * region.elementSize;
+					mgr->memcpy_R(mgr->buffer, region.ramStartAddress + iteratorIndex * region.elementSize, len);
 				}
 
 				uint8_t indexInBuffer = iteratorIndex % numElemPerBufferInstance;
-				return &mgr->buffer[indexInBuffer];
+
+				iteratorIndex++;
+
+				return &mgr->buffer[indexInBuffer * region.elementSize];
 			}
 
 			uint16_t getIteratorIndex() {
 				return iteratorIndex;
+			}
+
+			void reset() {
+				iteratorIndex = 0;
 			}
 		};
 
@@ -100,18 +108,18 @@ class ramManager {
 			region0.numElements = maxRegions;
 			region0.ramStartAddress = 0;
 
-			memcpy_R(0, &region0, region0.numElements * region0.elementSize);
+			memcpy_R(0, &region0, sizeof(memRegion_t));
 
 			#ifdef DEBUG_RAM_ENABLE
-				Serial.write(millis());
+				Serial.print(millis());
 				Serial.print(F(": initialize ram SS="));
 				Serial.print(SS);
 				Serial.print(F(" adrLen="));
 				switch(adrLen) {
-					case SpiRam::l16bit:
+					case SpiRAM::l16bit:
 						Serial.print(F("16bit"));
 						break;
-					case SpiRam::l24bit:
+					case SpiRAM::l24bit:
 						Serial.print(F("24bit"));
 						break;
 					default:
@@ -119,6 +127,7 @@ class ramManager {
 				}
 				Serial.print(F(" size="));
 				Serial.println(size);
+				Serial.flush();
 			#endif
 		}
 
@@ -129,18 +138,20 @@ class ramManager {
 		 */
 		uint8_t createRegion(uint16_t elementSize, uint16_t numElements) {
 			#ifdef DEBUG_RAM_ENABLE
-				Serial.write(millis());
+				Serial.print(millis());
 				Serial.print(F(": createRegion() elemSize="));
 				Serial.print(elementSize);
 				Serial.print(F(" elemNum="));
 				Serial.println(numElements);
+				Serial.flush();
 			#endif
 
 			//buffer suitable for elment?
 			if(bufferSize < elementSize) {
 				#ifdef DEBUG_RAM_ENABLE
-					Serial.write(millis());
-					Seria.println(F(": no sufficient space."))
+					Serial.print(millis());
+					Serial.println(F(": no sufficient space."));
+					Serial.flush();
 				#endif
 				return 0;
 			}
@@ -160,15 +171,19 @@ class ramManager {
 						//no sufficient space.
 						#ifdef DEBUG_RAM_ENABLE
 							Serial.println(F("\tno sufficient space."));
+						Serial.flush();
 						#endif
 						return 0;
 					}
 
 					//clean
 					memset_R(nextFreeAddress, 0, region.elementSize * region.numElements);
+					//store region info
+					memcpy_R(i * sizeof(memRegion_t), &region, sizeof(memRegion_t));
 					#ifdef DEBUG_RAM_ENABLE
 						Serial.print(F("\t"));
 						printRegionInfo(region.id);
+						Serial.flush();
 					#endif
 					return i;
 				} else {
@@ -180,12 +195,14 @@ class ramManager {
 						Serial.print(i);
 						Serial.print(F(" in use, nextFreeAddress=0x"));
 						Serial.println(nextFreeAddress, HEX);
+						Serial.flush();
 					#endif
 				}
 			}
 
 			#ifdef DEBUG_RAM_ENABLE
 				Serial.println(F("\tno free region."));
+				Serial.flush();
 			#endif
 			return 0;
 		}
@@ -202,6 +219,7 @@ class ramManager {
 			Serial.print(r.elementSize);
 			Serial.print(F(" numElems="));
 			Serial.println(r.numElements);
+			Serial.flush();
 		}
 		#endif
 
@@ -220,9 +238,10 @@ class ramManager {
 				printRegionInfo(region.id);
 			#endif
 
-			if(index > region.numElements || region.numElements == 0) {
+			if(index >= region.numElements || region.numElements == 0) {
 				#ifdef DEBUG_RAM_ENABLE
 					Serial.println(F("\tindex not present."));
+					Serial.flush();
 				#endif
 				return false;
 			}
@@ -238,7 +257,8 @@ class ramManager {
 			#ifdef DEBUG_RAM_ENABLE
 				Serial.print(millis());
 				Serial.print(F(": writeElementToRam() "));
-				printRegionInfo(region.id);
+				printRegionInfo(regionId);
+				Serial.flush();
 			#endif
 
 			memRegion_t region;
@@ -246,6 +266,7 @@ class ramManager {
 			if(!getRegionInfo(&region, regionId)) {
 				#ifdef DEBUG_RAM_ENABLE
 					Serial.println(F("\tregion not present"));
+					Serial.flush();
 				#endif
 				return false;
 			}
@@ -253,11 +274,12 @@ class ramManager {
 			if(region.numElements <= index) {
 				#ifdef DEBUG_RAM_ENABLE
 					Serial.println(F("\tindex not present."));
+					Serial.flush();
 				#endif
 				return false;
 			}
 
-			memcpy_R(elem, region.ramStartAddress + region.elementSize * index, region.elementSize);
+			memcpy_R(region.ramStartAddress + region.elementSize * index, elem, region.elementSize);
 		}
 
 		/**
@@ -267,7 +289,7 @@ class ramManager {
 		 */
 		boolean getRegionInfo(memRegion_t* region, uint8_t regionId) {
 			memcpy_R(region, regionId * sizeof(memRegion_t), sizeof(memRegion_t));
-			if(region->id == 0 || region->numElements == 0)
+			if(region->numElements == 0)
 				return false;
 			return true;
 		}
@@ -313,9 +335,50 @@ class ramManager {
 			return destination;
 		}
 
-		#ifdef DEBUG_RAM_ENABLE
-		#endif
 
+		void printRam(uint8_t regionId) {
+			#ifdef DEBUG_RAM_ENABLE
+			Serial.print(millis());
+			Serial.print(F(": printRam() for region. "));
+			printRegionInfo(regionId);
+
+			memRegion_t region;
+			getRegionInfo(&region, regionId);
+			printRam(region.ramStartAddress, region.ramStartAddress + region.numElements * region.elementSize);
+			#endif
+		}
+
+		void printRam(uint32_t from, uint32_t to) {
+			#ifdef DEBUG_RAM_ENABLE
+				Serial.print(millis());
+				Serial.print(F(": printRam() from=0x"));
+				Serial.print(from, HEX);
+				Serial.print(F(" to=0x"));
+				Serial.println(to, HEX);
+				Serial.println(F("\t0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F"));
+				Serial.flush();
+
+				uint16_t num = 0;
+				while(from < to) {
+					if(num % 16 == 0) {
+						if(num > 0) Serial.println();
+						Serial.print(F("0x"));
+						Serial.print(from, HEX);
+						Serial.print(F(":\t"));
+						Serial.flush();
+					}
+					uint8_t tmp = ram.read_byte(from);
+					if(tmp < 0x10)
+						Serial.print('0');
+					Serial.print(tmp, HEX);
+					Serial.print(F(" "));
+					Serial.flush();
+					from++;
+					num++;
+				}
+				Serial.println();
+			#endif
+		}
 }; //ramManager
 
 #endif //__RAMMANAGER_H__
