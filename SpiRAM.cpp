@@ -62,6 +62,7 @@ SpiRAM::SpiRAM(byte clockDiv, byte ssPin, addressLengthEnum len)
 //  SPI.mode(clock);
   SPI.setClockDivider(SPI_CLOCK_DIV2);
   _ssPin = ssPin;
+  pinMode(_ssPin, OUTPUT);
 
   // Set the RAM operarion mode flag according to the chip default
   _current_mode = BYTE_MODE;
