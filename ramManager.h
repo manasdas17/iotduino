@@ -14,14 +14,14 @@
 #include "SpiRAM.h"
 
 class SPIRamManager {
-	typedef struct memRegion_struct {
-		uint16_t elementSize;
-		uint16_t numElements;
-		uint32_t ramStartAddress;
-		uint8_t id;
-	} memRegion_t;
-
 	public:
+		typedef struct memRegion_struct {
+			uint16_t elementSize;
+			uint16_t numElements;
+			uint32_t ramStartAddress;
+			uint8_t id;
+		} memRegion_t;
+
 		static const uint8_t pageSize = 32;
 		static const uint8_t bufferSize = 2 * pageSize; //buffersize is page size.
 		static const uint8_t maxRegions = 32; //reservation for memRegion structs.
@@ -46,6 +46,19 @@ class SPIRamManager {
 			 * set data & region region info
 			 */
 			iterator(SPIRamManager* mgr, uint8_t regionId);
+
+			iterator() {
+
+			}
+
+			boolean init(SPIRamManager* mgr, uint8_t regionId) {
+				this->mgr = mgr;
+				this->regionId = regionId;
+				this->iteratorIndex = 0;
+
+				return mgr->getRegionInfo(&region, regionId);
+			}
+
 
 			/**
 			 * @return true if the end has not been reached

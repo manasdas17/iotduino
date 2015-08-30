@@ -123,7 +123,9 @@ void* SPIRamManager::readElementIntoBuffer(uint8_t regionId, uint16_t index) {
 
 	#ifdef DEBUG_RAM_ENABLE
 		Serial.print(millis());
-		Serial.print(F(": putElementInfoBuffer() "));
+		Serial.print(F(": putElementInfoBuffer() index="));
+		Serial.print(index);
+		Serial.print(F(" "));
 		printRegionInfo(region.id);
 	#endif
 
@@ -326,11 +328,7 @@ boolean SPIRamManager::iterator::hasNext() {
 }
 
  SPIRamManager::iterator::iterator(SPIRamManager* mgr, uint8_t regionId) {
-	this->mgr = mgr;
-	this->regionId = regionId;
-	this->iteratorIndex = 0;
-
-	mgr->getRegionInfo(&region, regionId);
+	init(mgr, regionId);
 }
 
 void SPIRamManager::iterator::remove() {
