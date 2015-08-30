@@ -6,7 +6,14 @@ boolean Layer2rf24::receiveQueuePush( frame_t* f )
 		return false;
 
 	uint8_t index = (receiveQueueFirst + receiveQueueNum) % CONFIG_L2_RECEIVE_BUFFER_LEN;
-	memcpy(&receiveQueue[index], f, sizeof(frame_t));
+
+	#ifdef ENABLE_EXTERNAL_RAM
+		if(!ram.writeElementToRam(memRegionId, index, f))
+			return false;
+	#else
+		memcpy(&receiveQueue[index], f, sizeof(frame_t));
+	#endif
+
 	receiveQueueNum++;
 
 	return true;
@@ -22,7 +29,13 @@ boolean Layer2rf24::receiveQueuePop( frame_t* f )
 	if(receiveQueueNum <= 0)
 		return false;
 
-	memcpy(f, &receiveQueue[receiveQueueFirst], sizeof(frame_t));
+	#ifdef ENABLE_EXTERNAL_RAM
+		if(!ram.readElementIntoVar(memRegionId, receiveQueueFirst, f))
+			return false;
+	#else
+		memcpy(f, &receiveQueue[receiveQueueFirst], sizeof(frame_t));
+	#endif
+
 	receiveQueueFirst = (receiveQueueFirst + 1) % CONFIG_L2_RECEIVE_BUFFER_LEN;
 	receiveQueueNum--;
 
@@ -38,7 +51,15 @@ void Layer2rf24::init(Layer3* l3, uint8_t pin_ce, uint8_t pin_csn, uint16_t devi
 	this->pin_csn = pin_csn;
 	this->deviceAddress = deviceAddress;
 
-	memset(receiveQueue, 0, CONFIG_L2_RECEIVE_BUFFER_LEN * sizeof(frame_t));
+	#ifdef ENABLE_EXTERNAL_RAM
+		#ifdef DEBUG_RAM_ENABLE
+			Serial.print(F("region for l2 receive queue: "));
+		#endif
+		memRegionId = ram.createRegion(sizeof(frame_t), CONFIG_L2_RECEIVE_BUFFER_LEN);
+	#else
+		memset(receiveQueue, 0, CONFIG_L2_RECEIVE_BUFFER_LEN * sizeof(frame_t));
+	#endif
+
 	receiveQueueFirst = 0;
 	receiveQueueNum = 0;
 

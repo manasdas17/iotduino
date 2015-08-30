@@ -16,20 +16,13 @@
 #include "neighbourData.h"
 #include "Layer2rf24.h"
 #include "Packets.h"
+#include "ramManager.h"
 
-/** 3-Way Handshake. TBA!
-*          DEVICE A              DEVICEB2
-*          ========              ========
-*           CLOSED                CLOSED
-*              |-----SYN(seqA)----->|
-*              V                    |
-*             SYN                   |
-*              |<-ACK(seqA+1,seqB)--|
-*              |                    V
-*              |                   ACK
-*              |--SYNACK(seqB+1)--->|
-*              V                    V
-*           ACTIVE               ACTIVE
+extern SPIRamManager ram;
+
+//#undef ENABLE_EXTERNAL_RAM
+
+/**
 */
 class Layer3 {
 
@@ -81,11 +74,15 @@ class Layer3 {
 	protected:
 	private:
 
-		packet_t receiveQueue[CONFIG_L3_RECEIVE_BUFFER_LEN];
+		#ifdef ENABLE_EXTERNAL_RAM
+			uint8_t memRegionIdReceive;
+			uint8_t memRegionIdSend;
+		#else
+			packet_t receiveQueue[CONFIG_L3_RECEIVE_BUFFER_LEN];
+			packet_sending_queue_item_t sendingNumberedBuffer[CONFIG_L3_SEND_BUFFER_LEN];
+		#endif
 		uint8_t receiveQueueFirst;
 		uint8_t receiveQueueNum;
-
-		packet_sending_queue_item_t sendingNumberedBuffer[CONFIG_L3_SEND_BUFFER_LEN];
 
 		uint32_t beaconLastTimestamp;
 
@@ -127,7 +124,7 @@ class Layer3 {
 		* get next element from queue without deleting it
 		* @return packet
 		*/
-		packet_t* receiveQueuePeek();
+		//packet_t* receiveQueuePeek();
 
 		/**
 		* @param packet

@@ -7,7 +7,21 @@ void Layer3::init(l3_address_t localAddress) {
 	//this->eventCallbackClass = new callbackClass(this);
 	this->eventCallbackClass.setLayer3(this);
 
-	memset(sendingNumberedBuffer, 0, sizeof(sendingNumberedBuffer));
+	#ifdef ENABLE_EXTERNAL_RAM
+		#ifdef DEBUG_RAM_ENABLE
+			Serial.print(F("region for l3 receive queue: "));
+		#endif
+		memRegionIdReceive = ram.createRegion(sizeof(packet_t), CONFIG_L3_RECEIVE_BUFFER_LEN);
+
+		#ifdef DEBUG_RAM_ENABLE
+			Serial.print(F("region for l3 sending queue: "));
+		#endif
+		memRegionIdSend = ram.createRegion(sizeof(packet_sending_queue_item_t), CONFIG_L3_SEND_BUFFER_LEN);
+	#else
+		memset(sendingNumberedBuffer, 0, sizeof(sendingNumberedBuffer));
+		memset(receiveQueue, 0, sizeof(receiveQueue));
+	#endif
+
 	memset(neighbours, 0, sizeof(neighbours));
 	//set hopcount to max!
 	for(uint8_t i = 0; i < CONFIG_L3_NUM_NEIGHBOURS; i++) {
@@ -333,7 +347,12 @@ boolean Layer3::receiveQueuePush( packet_t* f )
 
 	//copy into queue
 	uint8_t index = (receiveQueueFirst + receiveQueueNum) % CONFIG_L3_RECEIVE_BUFFER_LEN;
-	memcpy(&receiveQueue[index], f, sizeof(packet_t));
+	#ifdef ENABLE_EXTERNAL_RAM
+		if(!ram.writeElementToRam(memRegionIdReceive, index, f))
+			return false;
+	#else
+		memcpy(&receiveQueue[index], f, sizeof(packet_t));
+	#endif
 	receiveQueueNum++;
 
 	return true;
@@ -344,20 +363,30 @@ uint8_t Layer3::receiveQueueSize()
 	return receiveQueueNum;
 }
 
-Layer3::packet_t* Layer3::receiveQueuePeek() {
-	if(receiveQueueNum <= 0)
-		return NULL;
-
-	return &receiveQueue[receiveQueueFirst];
-}
+//Layer3::packet_t* Layer3::receiveQueuePeek() {
+	//if(receiveQueueNum <= 0)
+		//return NULL;
+//
+	//#ifdef ENABLE_EXTERNAL_RAM
+		//ram.readElementIntoBuffer(memRegionId, receiveQueueFirst);
+		//return (packet_t*) ram.buffer;
+	//#else
+		//return &receiveQueue[receiveQueueFirst];
+	//#endif
+//}
 
 boolean Layer3::receiveQueuePop( packet_t* f )
 {
 	if(receiveQueueNum <= 0)
-	return false;
+		return false;
 
 	//copy data
-	memcpy(f, &receiveQueue[receiveQueueFirst], sizeof(packet_t));
+	#ifdef ENABLE_EXTERNAL_RAM
+		if(!ram.readElementIntoVar(memRegionIdReceive, receiveQueueFirst, f))
+			return false;
+	#else
+		memcpy(f, &receiveQueue[receiveQueueFirst], sizeof(packet_t));
+	#endif
 
 	//and adjust queue parameters
 	return receiveQueuePop();
@@ -687,50 +716,61 @@ boolean Layer3::addToSendingQueue( packet_t* packet ) {
 	packet_numbered_t* numberedPacket = (packet_numbered_t*) &packet->data.payload;
 	seq_t seqNumber = numberedPacket->seqNumber;
 
-	for(uint8_t i = 0; i < CONFIG_L3_SEND_BUFFER_LEN; i++) {
-		if(sendingNumberedBuffer[i].packet.data.destination == 0) {
-			//no content here.
-			continue;
+	#ifdef ENABLE_EXTERNAL_RAM
+		SPIRamManager::iterator it = SPIRamManager::iterator(&ram, memRegionIdSend);
+		while(it.hasNext()) {
+			packet_sending_queue_item_t* currentItem = (packet_sending_queue_item_t*) it.next();
+	#else
+		for(uint8_t i = 0; i < CONFIG_L3_SEND_BUFFER_LEN; i++) {
+			packet_sending_queue_item_t* currentItem = &sendingNumberedBuffer[i];
+	#endif
+			if(currentItem->packet.data.destination == 0) {
+				//no content here.
+				continue;
+			}
+
+			packet_numbered_t* numberedQueuePacket = (packet_numbered_t*) &currentItem->packet.data.payload;
+			seq_t numberedQueuePacketSeq = numberedQueuePacket->seqNumber;
+
+			if(currentItem->packet.data.destination == packet->data.destination //same destination
+				&& seqNumber == numberedQueuePacketSeq //same seq
+			) {
+
+				#ifdef DEBUG_NETWORK_ENABLE
+					Serial.print(millis());
+					Serial.println(F(": Layer3::addToSendingQueue() - duplicate, discarding."));
+					Serial.flush();
+				#endif
+
+				//break, this is a duplicate.
+				return false;
+			}
 		}
-
-		packet_numbered_t* numberedQueuePacket = (packet_numbered_t*) &sendingNumberedBuffer[i].packet.data.payload;
-		seq_t numberedQueuePacketSeq = numberedQueuePacket->seqNumber;
-
-		if(sendingNumberedBuffer[i].packet.data.destination == packet->data.destination //same destination
-			&& seqNumber == numberedQueuePacketSeq //same seq
-		) {
-
-			#ifdef DEBUG_NETWORK_ENABLE
-				Serial.print(millis());
-				Serial.println(F(": Layer3::addToSendingQueue() - duplicate, discarding."));
-				Serial.flush();
-			#endif
-
-			//break, this is a duplicate.
-			return false;
-		}
-	}
 
 	//search free buffer entry
 	uint8_t freeIndex = 0xff;
-	for(uint8_t i = 0; i < CONFIG_L3_SEND_BUFFER_LEN; i++) {
-		if(sendingNumberedBuffer[i].packet.data.destination == 0) {
-			freeIndex = i;
-			break;
+	#ifdef ENABLE_EXTERNAL_RAM
+		SPIRamManager::iterator it2 = SPIRamManager::iterator(&ram, memRegionIdSend);
+		while(it2.hasNext()) {
+			packet_sending_queue_item_t* currentItem = (packet_sending_queue_item_t*) it2.next();
+	#else
+		for(uint8_t i = 0; i < CONFIG_L3_SEND_BUFFER_LEN; i++) {
+			packet_sending_queue_item_t* currentItem = &sendingNumberedBuffer[i];
+	#endif
+			if(currentItem->packet.data.destination == 0) {
+				currentItem->lasttimestamp = millis();
+				currentItem->retransmissions = 0;
+				memcpy(&currentItem->packet, packet, sizeof(packet_t));
+
+				#ifdef ENABLE_EXTERNAL_RAM
+					it2.writeBack();
+				#endif
+
+				return true;
+			}
 		}
-	}
 
-	//did we find one?
-	if(freeIndex == 0xff) {
-		return false;
-	}
-
-	//create copy.
-	sendingNumberedBuffer[freeIndex].lasttimestamp = millis();
-	sendingNumberedBuffer[freeIndex].retransmissions = 0;
-	memcpy(&sendingNumberedBuffer[freeIndex].packet, packet, sizeof(packet_t));
-
-	return true;
+	return false;
 }
 
 void Layer3::updateSendingBuffer() {
@@ -741,60 +781,83 @@ void Layer3::updateSendingBuffer() {
 	////#endif
 
 	uint32_t now = millis();
-	for(uint8_t i = 0; i < CONFIG_L3_SEND_BUFFER_LEN; i++) {
-		//is this a packet to be retransmitted?
-		if(sendingNumberedBuffer[i].packet.data.destination != 0) {
-			//do we exceed max retransmissions?
-			if(sendingNumberedBuffer[i].retransmissions > CONFIG_L3_NUMBERED_RETRANSMISSIONS) {
-				#ifdef DEBUG_NETWORK_ENABLE
-					Serial.print(millis());
-					Serial.print(F(": resend index="));
-					Serial.print(i);
-					Serial.println(F(" retransmissions exceeded - discarding."));
-					Serial.flush();
-				#endif
+	#ifdef ENABLE_EXTERNAL_RAM
+		SPIRamManager::iterator it = SPIRamManager::iterator(&ram, memRegionIdSend);
+		while(it.hasNext()) {
+		packet_sending_queue_item_t* currentItem = (packet_sending_queue_item_t*) it.next();
+	#else
+		for(uint8_t i = 0; i < CONFIG_L3_SEND_BUFFER_LEN; i++) {
+			packet_sending_queue_item_t* currentItem = &sendingNumberedBuffer[i];
+	#endif
+			//is this a packet to be retransmitted?
+			if(currentItem->packet.data.destination != 0) {
+				//do we exceed max retransmissions?
+				if(currentItem->retransmissions > CONFIG_L3_NUMBERED_RETRANSMISSIONS) {
+					#ifdef DEBUG_NETWORK_ENABLE
+						Serial.print(millis());
+						Serial.print(F(": resend index="));
+						#ifdef ENABLE_EXTERNAL_RAM
+							Serial.print(it.getIteratorIndex() - 1);
+						#else
+							Serial.print(i);
+						#endif
+						Serial.println(F(" retransmissions exceeded - discarding."));
+						Serial.flush();
+					#endif
 
-				//clear.
-				memset(&sendingNumberedBuffer[i], 0, sizeof(packet_sending_queue_item_t));
+					//clear.
+					#ifdef ENABLE_EXTERNAL_RAM
+						it.remove();
+					#else
+						memset(&sendingNumberedBuffer[i], 0, sizeof(packet_sending_queue_item_t));
+					#endif
 
-				//next packet.
-				continue;
+					//next packet.
+					continue;
+				}
+
+				//has it timed out? - or it may also be new (timestamp 0)
+				if(currentItem->lasttimestamp == 0
+					|| (now > currentItem->lasttimestamp
+						&& now - currentItem->lasttimestamp > CONFIG_L3_NUMBERED_TIMEOUT_MS
+						&& now > CONFIG_L3_NUMBERED_TIMEOUT_MS))
+				{
+					#ifdef DEBUG_NETWORK_ENABLE
+						Serial.print(millis());
+						Serial.print(F(": resend index="));
+						#ifdef ENABLE_EXTERNAL_RAM
+							Serial.print(it.getIteratorIndex()-1);
+						#else
+							Serial.print(i);
+						#endif
+						Serial.print(F(": (re)sending #"));
+						Serial.print(currentItem->retransmissions);
+						Serial.print(F(" lastTimestamp="));
+						Serial.println(currentItem->lasttimestamp);
+						Serial.flush();
+					#endif
+
+					//linear backoff.
+					currentItem->lasttimestamp = now + currentItem->retransmissions * 20;
+					currentItem->retransmissions++;
+
+					#ifdef ENABLE_EXTERNAL_RAM
+						it.writeBack();
+					#endif
+
+					//yep, resend it.
+					//boolean result =
+					sendPacket(currentItem->packet);
+
+					//optionally delay.
+					//delay(50);
+				}
+				//#ifdef DEBUG_NETWORK_ENABLE
+					//else
+						//Serial.println(F("not timed out yet"));
+				//#endif
+
 			}
-
-			//has it timed out? - or it may also be new (timestamp 0)
-			if(sendingNumberedBuffer[i].lasttimestamp == 0
-				|| (now > sendingNumberedBuffer[i].lasttimestamp
-					&& now - sendingNumberedBuffer[i].lasttimestamp > CONFIG_L3_NUMBERED_TIMEOUT_MS
-					&& now > CONFIG_L3_NUMBERED_TIMEOUT_MS))
-			{
-				#ifdef DEBUG_NETWORK_ENABLE
-					Serial.print(millis());
-					Serial.print(F(": resend index="));
-					Serial.print(i);
-					Serial.print(F(": (re)sending #"));
-					Serial.print(sendingNumberedBuffer[i].retransmissions);
-					Serial.print(F(" lastTimestamp="));
-					Serial.println(sendingNumberedBuffer[i].lasttimestamp);
-					Serial.flush();
-				#endif
-
-				//linear backoff.
-				sendingNumberedBuffer[i].lasttimestamp = now + sendingNumberedBuffer[i].retransmissions * 20;
-				sendingNumberedBuffer[i].retransmissions++;
-
-				//yep, resend it.
-				//boolean result =
-				sendPacket(sendingNumberedBuffer[i].packet);
-
-				//optionally delay.
-				//delay(50);
-			}
-			//#ifdef DEBUG_NETWORK_ENABLE
-				//else
-					//Serial.println(F("not timed out yet"));
-			//#endif
-
-		}
 	}
 }
 
@@ -817,23 +880,34 @@ boolean Layer3::handleAck( packet_t* packet ) {
 
 
 	//search index
-	for(uint8_t i = 0; i < CONFIG_L3_SEND_BUFFER_LEN; i++) {
-		packet_numbered_t* ptr = (packet_numbered_t*) sendingNumberedBuffer[i].packet.data.payload;
-		if(ptr->seqNumber == seq) {
-			#ifdef DEBUG_NETWORK_ENABLE
-				uint16_t rtt = millis() - sendingNumberedBuffer[i].lasttimestamp;
-				Serial.print(F(" probable RTT="));
-				Serial.print(rtt);
-				Serial.println(F(" - found & cleared."));
-				Serial.flush();
-			#endif
+	#ifdef ENABLE_EXTERNAL_RAM
+		SPIRamManager::iterator it = SPIRamManager::iterator(&ram, memRegionIdSend);
+		while(it.hasNext()) {
+		packet_sending_queue_item_t* currentItem = (packet_sending_queue_item_t*) it.next();
+	#else
+		for(uint8_t i = 0; i < CONFIG_L3_SEND_BUFFER_LEN; i++) {
+			packet_sending_queue_item_t* currentItem = &sendingNumberedBuffer[i];
+	#endif
+			packet_numbered_t* ptr = (packet_numbered_t*) currentItem->packet.data.payload;
+			if(ptr->seqNumber == seq) {
+				#ifdef DEBUG_NETWORK_ENABLE
+					uint16_t rtt = millis() - currentItem->lasttimestamp;
+					Serial.print(F(" probable RTT="));
+					Serial.print(rtt);
+					Serial.println(F(" - found & cleared."));
+					Serial.flush();
+				#endif
 
-			//clear.
-			memset(&sendingNumberedBuffer[i], 0, sizeof(packet_sending_queue_item_t));
+				//clear.
+				#ifdef ENABLE_EXTERNAL_RAM
+					it.remove();
+				#else
+					memset(&sendingNumberedBuffer[i], 0, sizeof(packet_sending_queue_item_t));
+				#endif
 
-			return true;
+				return true;
+			}
 		}
-	}
 
 	#ifdef DEBUG_NETWORK_ENABLE
 		Serial.println(F(" - unknown."));

@@ -14,6 +14,9 @@
 #include <networking/LayerConfig.h>
 #include <networking/rf24/nRF24L01.h>
 #include <networking/rf24/RF24.h>
+#include <ramManager.h>
+
+extern SPIRamManager ram;
 
 class Layer3;
 
@@ -43,7 +46,11 @@ class Layer2rf24 {
 		RF24 radio;
 		uint64_t deviceAddress;
 
-		frame_t receiveQueue[CONFIG_L2_RECEIVE_BUFFER_LEN];
+		#ifdef ENABLE_EXTERNAL_RAM
+			uint8_t memRegionId;
+		#else
+			frame_t receiveQueue[CONFIG_L2_RECEIVE_BUFFER_LEN];
+		#endif
 		uint8_t receiveQueueFirst;
 		uint8_t receiveQueueNum;
 
