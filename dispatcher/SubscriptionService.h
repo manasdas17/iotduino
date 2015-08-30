@@ -12,10 +12,17 @@
 #include <networking/Layer3.h>
 #include <dispatcher/CommandHandler.h>
 #include <dispatcher/HardwareInterface.h>
+#include <ramManager.h>
+
+extern SPIRamManager ram;
 
 #ifdef ENABLE_SUBSCRIPTION_SERVICE
 
-#define numSubscriptionList 5
+#ifdef ENABLE_EXTERNAL_RAM
+	#define numSubscriptionList 10
+#else
+	#define numSubscriptionList 5
+#endif
 /** period for subscription execution */
 #define SUBSCRIPTION_CHECK_PERIOD_MILLIS (1*1000UL)
 /** period for subscription polling check */
@@ -26,11 +33,17 @@ class SubscriptionService {
 	public:
 	protected:
 	private:
-		/** internal list for subscriptions */
-		subscription_helper_t subscriptions[numSubscriptionList];
+		#ifdef ENABLE_EXTERNAL_RAM
+			uint8_t memRegionSubscriptions;
+			uint8_t memRegionSubscriptionLastExecutions;
+			uint8_t memRegionSubscriptionsTmpBuffer;
+		#else
+			/** internal list for subscriptions */
+			subscription_helper_t subscriptions[numSubscriptionList];
 
-		/** list for storing last subscription execution times */
-		uint32_t subscriptionsLastExecution[numSubscriptionList];
+			/** list for storing last subscription execution times */
+			uint32_t subscriptionsLastExecution[numSubscriptionList];
+		#endif
 
 		/**  */
 		uint32_t lastSubscriptionCheckTimestamp;
@@ -97,9 +110,6 @@ class SubscriptionService {
 		 */
 		//__attribute__((optimize("O1")))
 		SubscriptionService();
-
-		/** */
-		~SubscriptionService() {}
 
 		/**
 		 * get size of internal list

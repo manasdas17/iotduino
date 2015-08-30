@@ -41,10 +41,16 @@ boolean SubscriptionService::handleRequest(EventCallbackInterface* callback, con
 	//memset(&subscriptions, 0,  (size_t) numSubscriptionList * sizeof(subscription_helper_t));
 	//memset(&subscriptionsLastExecution, 0, (size_t) numSubscriptionList * sizeof(uint32_t));
 
-	for(uint8_t i = 0; i < numSubscriptionList; i++) {
-		subscriptions[i].address = 0;
-		subscriptionsLastExecution[i] = 0;
-	}
+	#ifdef ENABLE_EXTERNAL_RAM
+		memRegionSubscriptionLastExecutions = ram.createRegion(sizeof(uint32_t), numSubscriptionList);
+		memRegionSubscriptions = ram.createRegion(sizeof(subscription_helper_t), numSubscriptionList);
+		memRegionSubscriptionsTmpBuffer = ram.createRegion(sizeof(subscription_helper_t), numSubscriptionList);
+	#else
+		for(uint8_t i = 0; i < numSubscriptionList; i++) {
+			subscriptions[i].address = 0;
+			subscriptionsLastExecution[i] = 0;
+		}
+	#endif
 
 	lastSubscriptionCheckTimestamp = 0;
 
@@ -66,30 +72,63 @@ void SubscriptionService::executeSubscriptions() {
 
 		uint32_t now = millis();
 
-		for(uint8_t i = 0; i < numSubscriptionList; i++) {
-			if(subscriptions[i].address != 0 && now > subscriptions[i].millisecondsDelay && now - subscriptionsLastExecution[i] > subscriptions[i].millisecondsDelay) {
-				//if(subscriptions[i].address != 0 && subscriptions[i].onEvent == 0 && now - subscriptionsLastExecution[i] > subscriptions[i].millisecondsDelay) {
-				subscriptionsLastExecution[i] = now;
-				executeSubscription(&subscriptions[i]);
+		subscription_helper_t* currentItem;
+		uint32_t lastExecution;
+		#ifdef ENABLE_EXTERNAL_RAM
+			SPIRamManager::iterator it = SPIRamManager::iterator(&ram, memRegionSubscriptions);
+			while(it.hasNext()) {
+				currentItem = (subscription_helper_t*) it.next();
+				ram.readElementIntoVar(memRegionSubscriptionLastExecutions, it.getIteratorIndex()-1, &lastExecution);
+		#else
+			for(uint8_t i = 0; i < numSubscriptionList; i++) {
+				currentItem = subscriptions[i];
+				lastExecution = subscriptionsLastExecution[i];
+		#endif
+				if(currentItem->address != 0 && now > currentItem->millisecondsDelay && now - lastExecution > currentItem->millisecondsDelay) {
+					//if(subscriptions[i].address != 0 && subscriptions[i].onEvent == 0 && now - subscriptionsLastExecution[i] > subscriptions[i].millisecondsDelay) {
+
+					#ifdef ENABLE_EXTERNAL_RAM
+						ram.writeElementToRam(memRegionSubscriptionLastExecutions, it.getIteratorIndex()-1, &now);
+					#else
+						subscriptionsLastExecution[i] = now;
+					#endif
+
+					executeSubscription(currentItem);
+				}
 			}
-		}
 	}
 }
 
 uint8_t SubscriptionService::getSubscriptionInfos(l3_address_t forAddress, subscription_helper_struct* buffer, uint8_t buffer_len) const {
 	//sanity check.
-	if(buffer == NULL || buffer_len < sizeof(subscriptions)) {
+	if(buffer == NULL || buffer_len < sizeof(subscription_helper_t) * numSubscriptionList) {
 		return 0;
 	}
 
 	//iterate
 	uint8_t numFound = 0;
-	for(uint8_t i = 0; i < numSubscriptionList; i++) {
-		if(subscriptions[i].address != 0 && (forAddress == 0 || subscriptions[i].address == forAddress)) {
-			memcpy(&buffer[numFound], &subscriptions[i], sizeof(subscription_helper_t));
-			numFound++;
+
+	#ifdef ENABLE_EXTERNAL_RAM
+		subscription_helper_t tmp;
+		subscription_helper_t* currentItem = NULL;
+		SPIRamManager::iterator it = SPIRamManager::iterator(&ram, memRegionSubscriptions);
+		while(it.hasNext()) {
+			currentItem = (subscription_helper_t*) it.next();
+	#else
+		for(uint8_t i = 0; i < numSubscriptionList; i++) {
+			currentItem = subscriptions[i];
+	#endif
+			if(currentItem->address != 0 && (forAddress == 0 || currentItem->address == forAddress)) {
+				#ifdef ENABLE_EXTERNAL_RAM
+					ram.readElementIntoVar(memRegionSubscriptions, it.getIteratorIndex()-1, &tmp);
+					ram.writeElementToRam(memRegionSubscriptionsTmpBuffer, it.getIteratorIndex()-1, &tmp);
+				#else
+					memcpy(&buffer[numFound], currentItem, sizeof(subscription_helper_t));
+				#endif
+
+				numFound++;
+			}
 		}
-	}
 
 	return numFound;
 }
@@ -118,8 +157,14 @@ boolean SubscriptionService::setSubscription(subscription_helper_t* s) {
 
 	//update
 	if(index != 0xff) {
-		memcpy(&subscriptions[index], s, sizeof(subscription_helper_t));
-		subscriptionsLastExecution[index] = 0;
+		#ifdef ENABLE_EXTERNAL_RAM
+			ram.writeElementToRam(memRegionSubscriptions, index, s);
+			uint32_t tmp = 0;
+			ram.writeElementToRam(memRegionSubscriptionLastExecutions, index, &tmp);
+		#else
+			memcpy(&subscriptions[index], s, sizeof(subscription_helper_t));
+			subscriptionsLastExecution[index] = 0;
+		#endif
 		return true;
 	}
 
@@ -137,29 +182,64 @@ boolean SubscriptionService::deleteSubscription(subscription_helper_t* s) {
 		return false;
 
 	//delete
-	memset(&subscriptions[index], 0, sizeof(subscription_helper_t));
-	subscriptionsLastExecution[index] = 0;
+	#ifdef ENABLE_EXTERNAL_RAM
+		SPIRamManager::memRegion_t region;
+		ram.getRegionInfo(&region, memRegionSubscriptions);
+		ram.memset_R(region.ramStartAddress + region.elementSize * index, 0, region.elementSize);
+
+		uint32_t tmp = 0;
+		ram.writeElementToRam(memRegionSubscriptionLastExecutions, index, &tmp);
+	#else
+		memset(&subscriptions[index], 0, sizeof(subscription_helper_t));
+		subscriptionsLastExecution[index] = 0;
+	#endif
 	return true;
 }
 
 uint8_t SubscriptionService::getSubscriptionIndex(subscription_helper_t* s) {
 	if(s != NULL) {
-		for(uint8_t i = 0; i < numSubscriptionList; i++) {
-			//do we have this subscription?
-			if(subscriptions[i].address == s->address && subscriptions[i].hardwareAddress == s->hardwareAddress && subscriptions[i].hardwareType == s->hardwareType) {
-				return i;
+
+		#ifdef ENABLE_EXTERNAL_RAM
+			subscription_helper_t* currentItem = NULL;
+			SPIRamManager::iterator it = SPIRamManager::iterator(&ram, memRegionSubscriptions);
+			while(it.hasNext()) {
+				currentItem = (subscription_helper_t*) it.next();
+		#else
+			for(uint8_t i = 0; i < numSubscriptionList; i++) {
+				currentItem = subscriptions[i];
+		#endif
+				//do we have this subscription?
+				if(currentItem->address == s->address && currentItem->hardwareAddress == s->hardwareAddress && currentItem->hardwareType == s->hardwareType) {
+					#ifdef ENABLE_EXTERNAL_RAM
+						return it.getIteratorIndex()-1;
+					#else
+						return i;
+					#endif
+				}
 			}
-		}
 	}
 	return 0xff;
 }
 
 uint8_t SubscriptionService::getFreeSubscriptionIndex() {
-	for(uint8_t i = 0; i < numSubscriptionList; i++) {
-		//do we have this subscription?
-		if(subscriptions[i].address == 0)
-			return i;
-	}
+	#ifdef ENABLE_EXTERNAL_RAM
+		subscription_helper_t* currentItem = NULL;
+		SPIRamManager::iterator it = SPIRamManager::iterator(&ram, memRegionSubscriptions);
+		while(it.hasNext()) {
+			currentItem = (subscription_helper_t*) it.next();
+	#else
+		for(uint8_t i = 0; i < numSubscriptionList; i++) {
+			currentItem = subscriptions[i];
+	#endif
+			//do we have this subscription?
+			if(currentItem->address == 0) {
+				#ifdef ENABLE_EXTERNAL_RAM
+					return it.getIteratorIndex()-1;
+				#else
+					return i;
+				#endif
+			}
+		}
 	return 0xff;
 }
 
@@ -170,10 +250,14 @@ boolean SubscriptionService::handleSubscriptionInfoRequest(EventCallbackInterfac
 	subscription_info_t* subscriptionInfo = (subscription_info_t*) appPacket->payload;
 
 	//create buffer for info
-	subscription_helper_t buffer[getSubscriptionListSize()];
-	memset(buffer, 0, sizeof(buffer));
+	#ifdef ENABLE_EXTERNAL_RAM
+		uint8_t num = getSubscriptionInfos(subscriptionInfo->forAddress, NULL, 0);
+	#else
+		subscription_helper_t buffer[getSubscriptionListSize()];
+		memset(buffer, 0, sizeof(buffer));
 
-	uint8_t num = getSubscriptionInfos(subscriptionInfo->forAddress, buffer, sizeof(buffer));
+		uint8_t num = getSubscriptionInfos(subscriptionInfo->forAddress, buffer, sizeof(buffer));
+	#endif
 
 	//we have no subscriptions
 	if(num == 0) {
@@ -191,7 +275,14 @@ boolean SubscriptionService::handleSubscriptionInfoRequest(EventCallbackInterfac
 	//send one packet for each entry - currently on same sequence, should be changed. TODO!
 	for(; num > 0; num--) {
 		info->numInfosFollowing = num - 1;
-		memcpy(&info->info, &buffer[num - 1], sizeof(subscription_helper_t));
+
+		#ifdef ENABLE_EXTERNAL_RAM
+			SPIRamManager::memRegion_t region;
+			ram.getRegionInfo(&region, memRegionSubscriptionsTmpBuffer);
+			ram.memcpy_R(&info->info, region.ramStartAddress + num * region.elementSize, region.elementSize);
+		#else
+			memcpy(&info->info, &buffer[num - 1], sizeof(subscription_helper_t));
+		#endif
 
 		callback->doCallback(&newPkt, remote, seq);
 		//increase sequence
@@ -235,33 +326,41 @@ void SubscriptionService::doPollingForSubscriptions() {
 		//#endif
 
 
-		for(uint8_t i = 0; i < getSubscriptionListSize(); i++) {
-			//is this an event subscription?
-			if(subscriptions[i].onEventType != EVENT_TYPE_DISABLED) {
-				//get driver
-				HardwareDriver* drv = hwinterface->getHardwareDriver((HardwareTypeIdentifier) subscriptions[i].hardwareType, subscriptions[i].hardwareAddress);
+		#ifdef ENABLE_EXTERNAL_RAM
+			subscription_helper_t* currentItem = NULL;
+			SPIRamManager::iterator it = SPIRamManager::iterator(&ram, memRegionSubscriptions);
+			while(it.hasNext()) {
+				currentItem = (subscription_helper_t*) it.next();
+		#else
+			for(uint8_t i = 0; i < numSubscriptionList; i++) {
+				currentItem = subscriptions[i];
+		#endif
+				//is this an event subscription?
+				if(currentItem->onEventType != EVENT_TYPE_DISABLED) {
+					//get driver
+					HardwareDriver* drv = hwinterface->getHardwareDriver((HardwareTypeIdentifier) currentItem->hardwareType, currentItem->hardwareAddress);
 
-				//does it support events?
-				if(drv == NULL || !drv->canDetectEvents())
-				continue;
+					//does it support events?
+					if(drv == NULL || !drv->canDetectEvents())
+					continue;
 
-				//maintain event data in driver
-				drv->eventLoop();
+					//maintain event data in driver
+					drv->eventLoop();
 
-				//did we detect an event in last check period and does the event match? - execute subscription
-				if(drv->getLastEventTimestamp() > 0
-				&& millis() - drv->getLastEventTimestamp() < SUBSCRIPTION_POLLING_CHECK_PERIOD_MILLIS
-				&& drv->lastEventMatchesEventType(subscriptions[i].onEventType))
-				{
-					#ifdef DEBUG_HANDLER_SUBSCRIPTION_ENABLE
-					Serial.print(F("\tevent found, trigger subscription execution, matchingType="));
-					Serial.println(subscriptions[i].onEventType);
-					Serial.flush();
-					#endif
-					executeSubscription(&subscriptions[i]);
+					//did we detect an event in last check period and does the event match? - execute subscription
+					if(drv->getLastEventTimestamp() > 0
+						&& millis() - drv->getLastEventTimestamp() < SUBSCRIPTION_POLLING_CHECK_PERIOD_MILLIS
+						&& drv->lastEventMatchesEventType(currentItem->onEventType))
+					{
+						#ifdef DEBUG_HANDLER_SUBSCRIPTION_ENABLE
+						Serial.print(F("\tevent found, trigger subscription execution, matchingType="));
+						Serial.println(currentItem->onEventType);
+						Serial.flush();
+						#endif
+						executeSubscription(currentItem);
+					}
 				}
 			}
-		}
 	}
 }
 #endif
