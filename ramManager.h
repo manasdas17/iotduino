@@ -56,7 +56,7 @@ class ramManager {
 			 * @return true if the end has not been reached
 			 */
 			boolean hasNext() {
-				return iteratorIndex + 1 < region.numElements;
+				return iteratorIndex < region.numElements;
 			}
 
 			/**
@@ -69,7 +69,7 @@ class ramManager {
 				}
 
 				//do we have to read again?
-				uint8_t numElemPerBufferInstance = mgr->bufferSize / region.elementSize;
+				uint8_t numElemPerBufferInstance = getNumElemPerBufferInstance();
 				if(iteratorIndex % numElemPerBufferInstance == 0) {
 					//maybe, we do not need to read a full buffer.
 					uint16_t len = min(region.numElements - iteratorIndex, numElemPerBufferInstance) * region.elementSize;
@@ -83,8 +83,32 @@ class ramManager {
 				return &mgr->buffer[indexInBuffer * region.elementSize];
 			}
 
+			/**
+			 * @return number if elements in mgr buffer
+			 */
+			uint8_t inline getNumElemPerBufferInstance() {
+				return mgr->bufferSize / region.elementSize;
+			}
+
 			uint16_t getIteratorIndex() {
 				return iteratorIndex;
+			}
+
+			/**
+			 * write the element from the mgr buffer back into ram.
+			 * change must be done in place and the user must ensure that it is not getting dirty.
+			 */
+			boolean writeBack() {
+				if(iteratorIndex == 0)
+					return false;
+
+				//the iteratorindex has already been increased due to first read.
+				uint8_t lastElementIndex = iteratorIndex - 1;
+
+				uint8_t indexInBuffer = (lastElementIndex % getNumElemPerBufferInstance()) * region.elementSize;
+				mgr->writeElementToRam(regionId, lastElementIndex, &mgr->buffer[indexInBuffer]);
+
+				return true;
 			}
 
 			void reset() {
@@ -167,6 +191,7 @@ class ramManager {
 					region.numElements = numElements;
 					region.ramStartAddress = nextFreeAddress;
 
+					//ram full - unlikely.
 					if(nextFreeAddress + elementSize * numElements > size) {
 						//no sufficient space.
 						#ifdef DEBUG_RAM_ENABLE
@@ -207,6 +232,9 @@ class ramManager {
 			return 0;
 		}
 
+		/**
+		 * print region information.
+		 */
 		#ifdef DEBUG_RAM_ENABLE
 		void printRegionInfo(uint8_t region) {
 			memRegion_t r;
@@ -228,7 +256,7 @@ class ramManager {
 		 * @param region
 		 * @pram index of element
 		 */
-		boolean putElementIntoBuffer(uint8_t regionId, uint16_t index) {
+		void* readElementIntoBuffer(uint8_t regionId, uint16_t index) {
 			memRegion_t region;
 			getRegionInfo(&region, regionId);
 
@@ -238,16 +266,17 @@ class ramManager {
 				printRegionInfo(region.id);
 			#endif
 
+			//index not part of region or region empty
 			if(index >= region.numElements || region.numElements == 0) {
 				#ifdef DEBUG_RAM_ENABLE
 					Serial.println(F("\tindex not present."));
 					Serial.flush();
 				#endif
-				return false;
+				return NULL;
 			}
 
 			memcpy_R(buffer, region.ramStartAddress + index * region.elementSize, region.elementSize);
-			return true;
+			return buffer;
 		}
 
 		/**
@@ -256,13 +285,16 @@ class ramManager {
 		boolean writeElementToRam(uint8_t regionId, uint16_t index, void* elem) {
 			#ifdef DEBUG_RAM_ENABLE
 				Serial.print(millis());
-				Serial.print(F(": writeElementToRam() "));
+				Serial.print(F(": writeElementToRam() index="));
+				Serial.print(index);
+				Serial.print(F(" "));
 				printRegionInfo(regionId);
 				Serial.flush();
 			#endif
 
 			memRegion_t region;
 
+			//region not found
 			if(!getRegionInfo(&region, regionId)) {
 				#ifdef DEBUG_RAM_ENABLE
 					Serial.println(F("\tregion not present"));
@@ -271,6 +303,7 @@ class ramManager {
 				return false;
 			}
 
+			//index is not part of this region
 			if(region.numElements <= index) {
 				#ifdef DEBUG_RAM_ENABLE
 					Serial.println(F("\tindex not present."));
@@ -280,6 +313,7 @@ class ramManager {
 			}
 
 			memcpy_R(region.ramStartAddress + region.elementSize * index, elem, region.elementSize);
+			return true;
 		}
 
 		/**
@@ -377,6 +411,7 @@ class ramManager {
 					num++;
 				}
 				Serial.println();
+				Serial.flush();
 			#endif
 		}
 }; //ramManager
