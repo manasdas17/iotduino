@@ -43,10 +43,13 @@
 #include <webserver/HardwareResultListener.h>
 #include <webserver/RequestContent.h>
 
+#include "SpiRAM.h"
+
 extern Layer3 l3;
 extern PacketDispatcher dispatcher;
 extern PacketFactory pf;
 extern SDcard sdcard;
+extern SPIRamManager ram;
 
 //#define USE_DHCP_FOR_IP_ADDRESS
 
@@ -1086,15 +1089,22 @@ class WebServer {
  * @return success
  */
 boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &neighbourLastKeepAlive, uint8_t &neighbourHops, uint8_t &neighbourNextHop) {
-	NeighbourManager::neighbourData_t* neighbours = l3.getNeighbourManager()->getNeighbours();
-	for(uint8_t j = 0; j < CONFIG_L3_NUM_NEIGHBOURS; j++) {
-		if(neighbours[j].nodeId == nodeId) {
-			neighbourActive = 1;
-			neighbourLastKeepAlive = neighbours[j].timestamp;
-			neighbourHops = neighbours[j].hopCount;
-			neighbourNextHop = neighbours[j].hopNextNodeId;
-			return true;
-		}
+	#ifdef ENABLE_EXTERNAL_RAM
+		SPIRamManager::iterator it;
+		l3.getNeighbourManager()->getIterator(&it);
+		while(it.hasNext()) {
+			NeighbourManager::neighbourData_t* currentItem = (NeighbourManager::neighbourData_t*) it.next();
+	#else
+		for(uint8_t j = 0; j < CONFIG_L3_NUM_NEIGHBOURS; j++) {
+			NeighbourManager::neighbourData_t* currentItem = &l3.getNeighbourManager()->neighbours[j];
+	#endif
+			if(currentItem->nodeId == nodeId) {
+				neighbourActive = 1;
+				neighbourLastKeepAlive = currentItem->timestamp;
+				neighbourHops = currentItem->hopCount;
+				neighbourNextHop = currentItem->hopNextNodeId;
+				return true;
+			}
 	}
 
 	if(nodeId == l3.localAddress) {
