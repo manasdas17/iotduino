@@ -20,6 +20,8 @@
 	#endif
 #endif
 
+#define ENABLE_EXTERNAL_RAM
+
 #define ENABLE_EVENTS				//program memory heavily depends on used drivers
 #define ENABLE_SUBSCRIPTION_SERVICE //~1100 bytes progam memory
 #define ENABLE_DISCOVERY_SERVICE	//~500 bytes program memory

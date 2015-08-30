@@ -31,36 +31,33 @@
 #ifndef SpiRAM_h
 #define SpiRAM_h
 
-#define SPIRAM_LIB_VERSION  "0.3.00"
+//#define SPIRAM_LIB_VERSION  "0.3.00"
 
 #include <Arduino.h>
-#include <SPI.h>
-
 
 // SRAM opcodes
 // #define WREN  6
 // #define WRDI  4
-#define RDSR  5
-#define WRSR  1
-#define READ  3
-#define WRITE 2
+#define RAM_RDSR  5
+#define RAM_WRSR  1
+#define RAM_READ  3
+#define RAM_WRITE 2
 
 // SRAM Hold line override
-#define HOLD 1
+#define RAM_HOLD 1
 
 // SRAM modes
-#define BYTE_MODE (0x00 | HOLD)
-#define PAGE_MODE (0x80 | HOLD)
-#define STREAM_MODE (0x40 | HOLD)
+#define RAM_BYTE_MODE (0x00 | RAM_HOLD)
+#define RAM_PAGE_MODE (0x80 | RAM_HOLD)
+#define RAM_STREAM_MODE (0x40 | RAM_HOLD)
 
 // Clock speeds
-#define RAMCLK4M   0
-#define RAMCLK1M   1
-#define RAMCLK250K 2
-#define RAMCLK125K 3
+//#define RAMCLK4M   0
+//#define RAMCLK1M   1
+//#define RAMCLK250K 2
+//#define RAMCLK125K 3
 
-class SpiRAM
-{
+class SpiRAM {
   public:
 	//define whether to shift in 3 or 2 bytes for an address
 	enum addressLengthEnum{
@@ -98,9 +95,8 @@ class SpiRAM
     void _set_mode(char mode);
 
 	addressLengthEnum addressLength;
-
 };
 
-extern SpiRAM SpiRam;
+//extern SpiRAM SpiRam;
 
 #endif

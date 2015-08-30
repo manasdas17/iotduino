@@ -352,13 +352,13 @@ class SDcard {
 		}
 
 		/** empty constructor*/
-		SDcard();
+		SDcard() {};
 
 		/**
 		 * initialiser must be called before using SDcard functions
 		 * @return success
 		 */
-		boolean init();
+		boolean initSD();
 
 		/**
 		 * get node info from file.

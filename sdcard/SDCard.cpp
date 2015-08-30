@@ -28,6 +28,7 @@ boolean SDcard::openFile(const char* fileName, FileMode mode) {
 		return myFileInfo;
 	}
 
+	return false;
 }
 
 uint8_t SDcard::getNodeInfoString(uint8_t nodeId, uint8_t* buf, uint8_t bufSize) {
@@ -42,7 +43,7 @@ uint8_t SDcard::getNodeInfoString(uint8_t nodeId, uint8_t* buf, uint8_t bufSize)
 	return myFileInfo.readBytes(buf, NODE_INFO_SIZE);
 }
 
-boolean SDcard::init() {
+boolean SDcard::initSD() {
 	if (!SD.begin(PIN_SD_SS)) {
 		#ifdef DEBUG_SD_ENABLE
 			Serial.print(millis());
@@ -88,9 +89,6 @@ void SDcard::prepareDiscoveryFile() {
 			}
 		#endif
 	}
-}
- SDcard::SDcard() {
-
 }
 
 boolean SDcard::appendToFile(const char* fileName, uint8_t* buf, uint8_t bufSize) {

@@ -36,7 +36,6 @@
  * by Fred Jan Kraan, fjkraan@xs4all.nl, 2014-02-28
  */
 
-//#include <Arduino.h>
 #include <SPI.h>
 #include <SpiRAM.h>
 
@@ -65,7 +64,7 @@ SpiRAM::SpiRAM(byte clockDiv, byte ssPin, addressLengthEnum len)
   pinMode(_ssPin, OUTPUT);
 
   // Set the RAM operarion mode flag according to the chip default
-  _current_mode = BYTE_MODE;
+  _current_mode = RAM_BYTE_MODE;
 }
 
 // Enable and disable helper functions
@@ -87,11 +86,11 @@ char SpiRAM::read_byte(uint32_t address)
   char read_byte;
 
   // Set byte mode
-  _set_mode(BYTE_MODE);
+  _set_mode(RAM_BYTE_MODE);
 
   // Write address, read data
   enable();
-  SPI.transfer(READ);
+  SPI.transfer(RAM_READ);
 
   setAddress(address);
 
@@ -104,11 +103,11 @@ char SpiRAM::read_byte(uint32_t address)
 char SpiRAM::write_byte(uint32_t address, char data_byte)
 {
   // Set byte mode
-  _set_mode(BYTE_MODE);
+  _set_mode(RAM_BYTE_MODE);
 
   // Write address, read data
   enable();
-  SPI.transfer(WRITE);
+  SPI.transfer(RAM_WRITE);
   setAddress(address);
   SPI.transfer(data_byte);
   disable();
@@ -123,11 +122,11 @@ void SpiRAM::read_page(uint32_t address, char *buffer)
   int i;
 
   // Set byte mode
-  _set_mode(PAGE_MODE);
+  _set_mode(RAM_PAGE_MODE);
 
   // Write address, read data
   enable();
-  SPI.transfer(READ);
+  SPI.transfer(RAM_READ);
   setAddress(address);
   for (i = 0; i < 32; i++) {
     buffer[i] = SPI.transfer(0xFF);
@@ -140,11 +139,11 @@ void SpiRAM::write_page(uint32_t address, char *buffer)
   int i;
 
   // Set byte mode
-  _set_mode(PAGE_MODE);
+  _set_mode(RAM_PAGE_MODE);
 
   // Write address, read data
   enable();
-  SPI.transfer(WRITE);
+  SPI.transfer(RAM_WRITE);
   setAddress(address);
   for (i = 0; i < 32; i++) {
     SPI.transfer(buffer[i]);
@@ -158,11 +157,11 @@ void SpiRAM::read_stream(uint32_t address, char *buffer, uint32_t length)
   uint32_t i;
 
   // Set byte mode
-  _set_mode(STREAM_MODE);
+  _set_mode(RAM_STREAM_MODE);
 
   // Write address, read data
   enable();
-  SPI.transfer(READ);
+  SPI.transfer(RAM_READ);
   setAddress(address);
   for (i = 0; i < length; i++) {
     buffer[i] = SPI.transfer(0xFF);
@@ -175,11 +174,11 @@ void SpiRAM::write_stream(uint32_t address, char *buffer, uint32_t length)
   uint32_t i;
 
   // Set byte mode
-  _set_mode(STREAM_MODE);
+  _set_mode(RAM_STREAM_MODE);
 
   // Write address, read data
   enable();
-  SPI.transfer(WRITE);
+  SPI.transfer(RAM_WRITE);
   setAddress(address);
   for (i = 0; i < length; i++) {
     SPI.transfer(buffer[i]);
@@ -194,7 +193,7 @@ void SpiRAM::_set_mode(char mode)
   if (mode != _current_mode)
   {
     enable();
-    SPI.transfer(WRSR);
+    SPI.transfer(RAM_WRSR);
     SPI.transfer(mode);
     disable();
     _current_mode = mode;

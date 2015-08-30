@@ -6,7 +6,6 @@
  */
 #include <Arduino.h>
 #include <Globals.h>
-#include <avr/wdt.h>
 
 /**
  * read pin 4..9 inverted
@@ -319,7 +318,7 @@ void setup() {
 	#endif
 
 	#ifdef SDCARD_ENABLE
-		sdcard.init();
+		sdcard.initSD();
 
 		subscriptionManager.init();
 	#endif
