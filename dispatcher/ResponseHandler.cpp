@@ -35,8 +35,8 @@ boolean ResponseHandler::handleReponseNumbered(const seq_t seq, const packet_typ
 	#endif
 
 	//search for seq listener
-	responseListener_t* listenersList[LISTENER_NUM];
-	uint8_t listenersFound = getListener(listenersList, type, seq, remote);
+	EventCallbackInterface* listenersList[LISTENER_NUM];
+	uint8_t listenersFound = getListenerCallbacks(listenersList, type, seq, remote);
 
 	if(listenersFound == 0)
 		return false;
@@ -44,9 +44,9 @@ boolean ResponseHandler::handleReponseNumbered(const seq_t seq, const packet_typ
 	//iterate
 	for(uint8_t i = 0; i < listenersFound; i++) {
 		if(type == NACK) {
-			listenersList[i]->callbackObj->fail(seq, remote);
+			listenersList[i]->fail(seq, remote);
 		} else {
-			listenersList[i]->callbackObj->doCallback(appPacket, remote, seq);
+			listenersList[i]->doCallback(appPacket, remote, seq);
 		}
 	}
 	return true;
@@ -74,33 +74,51 @@ boolean ResponseHandler::registerListener(const uint32_t timeout, const seq_t se
 	if(callbackObject == NULL)
 		return false;
 
-	uint8_t index = getListenerSlot();
 
-	if(index == 0xff) {
-		return false;
-	}
+	#ifdef ENABLE_EXTERNAL_RAM
+		SPIRamManager::iterator it = SPIRamManager::iterator(&ram, memRegionId);
+		responseListener_t* currentItem = NULL;
+		boolean handled = false;
+		while(it.hasNext()) {
+			currentItem = (responseListener_t*) it.next();
+			if(currentItem->callbackObj == NULL) {
+				currentItem->timestamp = timeout;
+				currentItem->callbackObj = callbackObject;
+				currentItem->remote = remoteAddress;
+				currentItem->seqNumber = seqNumber;
+				currentItem->packetType = type;
 
-	listeners[index].timestamp = timeout;
-	listeners[index].callbackObj = callbackObject;
-	listeners[index].remote = remoteAddress;
-	listeners[index].seqNumber = seqNumber;
-	listeners[index].packetType = type;
+				it.writeBack();
+				handled = true;
+				break;
+			}
+		}
+
+		if(!handled)
+			return false;
+	#else
+		uint8_t index = 0xff;
+		for(uint8_t i = 0; i < LISTENER_NUM; i++) {
+			if(listeners[i].callbackObj == NULL) {
+				index= i;
+				break;
+			}
+		}
+
+		if(index == 0xff) {
+			return false;
+		}
+
+		listeners[index].timestamp = timeout;
+		listeners[index].callbackObj = callbackObject;
+		listeners[index].remote = remoteAddress;
+		listeners[index].seqNumber = seqNumber;
+		listeners[index].packetType = type;
+	#endif
 
 	activeListenersNum++;
 
 	return true;
-}
-
-uint8_t ResponseHandler::getListenerSlot() const {
-	uint8_t freeIndex = 0xff;
-	for(uint8_t i = 0; i < LISTENER_NUM; i++) {
-		if(listeners[i].callbackObj == NULL) {
-			freeIndex= i;
-			break;
-		}
-	}
-
-	return freeIndex;
 }
 
 void ResponseHandler::maintainListeners() {
@@ -118,24 +136,38 @@ void ResponseHandler::maintainListeners() {
 		Serial.flush();
 		#endif
 
-		for(uint8_t i = 0; i < LISTENER_NUM; i++) {
-			if(listeners[i].timestamp > 0 && listeners[i].timestamp < millis()) {
-				#ifdef DEBUG_HANDLER_RESPONSE_ENABLE
-					Serial.print(millis());
-					Serial.print(F(": remove due to timeout: seq="));
-					Serial.print(listeners[i].seqNumber);
-					Serial.print(F(" remote="));
-					Serial.println(listeners[i].remote);
-					Serial.flush();
-				#endif
-				listeners[i].callbackObj->fail(listeners[i].seqNumber, listeners[i].remote);
-				this->removeListener(i);
+
+		responseListener_t* currentItem = NULL;
+		#ifdef ENABLE_EXTERNAL_RAM
+			SPIRamManager::iterator it = SPIRamManager::iterator(&ram, memRegionId);
+			while(it.hasNext()) {
+				currentItem = (responseListener_t*) it.next();
+		#else
+			for(uint8_t i = 0; i < LISTENER_NUM; i++) {
+				currentItem = &listeners[i];
+		#endif
+				if(currentItem->timestamp > 0 && currentItem->timestamp < millis()) {
+					#ifdef DEBUG_HANDLER_RESPONSE_ENABLE
+						Serial.print(millis());
+						Serial.print(F(": remove due to timeout: seq="));
+						Serial.print(currentItem->seqNumber);
+						Serial.print(F(" remote="));
+						Serial.println(currentItem->remote);
+						Serial.flush();
+					#endif
+					currentItem->callbackObj->fail(currentItem->seqNumber, currentItem->remote);
+
+					#ifdef ENABLE_EXTERNAL_RAM
+						this->removeListener(it.getIteratorIndex()-1);
+					#else
+						this->removeListener(i);
+					#endif
+				}
 			}
-		}
 	}
 }
 
-uint8_t ResponseHandler::getListener(responseListener_t** listenersList, const packet_type_application_t type, const seq_t seq, const l3_address_t remote) {
+uint8_t ResponseHandler::getListenerCallbacks(EventCallbackInterface** listenersList, const packet_type_application_t type, const seq_t seq, const l3_address_t remote) {
 	#ifdef DEBUG_HANDLER_RESPONSE_ENABLE
 		Serial.print(millis());
 		Serial.print(F(": ResponseHandler::getListener() seq="));
@@ -147,12 +179,21 @@ uint8_t ResponseHandler::getListener(responseListener_t** listenersList, const p
 		Serial.flush();
 	#endif
 	uint8_t found = 0;
-	for(uint8_t i = 0; i < LISTENER_NUM; i++) {
-		if((listeners[i].packetType == type || listeners[i].seqNumber == seq) && (listeners[i].remote == remote || listeners[i].remote == 0)) {
-			listenersList[found] = &listeners[i];
-			found++;
+
+	responseListener_t* currentItem = NULL;
+	#ifdef ENABLE_EXTERNAL_RAM
+		SPIRamManager::iterator it = SPIRamManager::iterator(&ram, memRegionId);
+		while(it.hasNext()) {
+			currentItem = (responseListener_t*) it.next();
+	#else
+		for(uint8_t i = 0; i < LISTENER_NUM; i++) {
+			currentItem = &listeners[i];
+	#endif
+			if((currentItem->packetType == type || currentItem->seqNumber == seq) && (currentItem->remote == remote || currentItem->remote == 0)) {
+				listenersList[found] = currentItem->callbackObj;
+				found++;
+			}
 		}
-	}
 
 	#ifdef DEBUG_HANDLER_RESPONSE_ENABLE
 		Serial.print(F("\tfoundNum="));
@@ -170,17 +211,36 @@ boolean ResponseHandler::removeListener(uint8_t i) {
 	if(i >= LISTENER_NUM)
 		return false;
 
-	memset(&listeners[i], 0, sizeof(responseListener_t));
-	activeListenersNum--;
+	#ifdef ENABLE_EXTERNAL_RAM
+		SPIRamManager::memRegion_t region;
+		ram.getRegionInfo(&region, memRegionId);
+		ram.memset_R(region.ramStartAddress + region.elementSize * i, 0, sizeof(responseListener_t));
+	#else
+		memset(listeners[i], 0, sizeof(responseListener_t));
+	#endif
+
 	return true;
 }
 
 boolean ResponseHandler::unregisterListener(EventCallbackInterface* callbackObject) {
 	boolean result = false;
-	for(uint8_t i = 0; i < LISTENER_NUM; i++) {
-		if(listeners->callbackObj == callbackObject) {
-			result |= removeListener(i);
+
+	responseListener_t* currentItem = NULL;
+	#ifdef ENABLE_EXTERNAL_RAM
+		SPIRamManager::iterator it = SPIRamManager::iterator(&ram, memRegionId);
+		while(it.hasNext()) {
+			currentItem = (responseListener_t*) it.next();
+			if(currentItem->callbackObj == callbackObject) {
+				it.remove();
+			}
 		}
-	}
+	#else
+		for(uint8_t i = 0; i < LISTENER_NUM; i++) {
+			currentItem = &listeners[i];
+			if(currentItem->callbackObj == callbackObject) {
+				result |= removeListener(i);
+			}
+		}
+	#endif
 	return result;
 }

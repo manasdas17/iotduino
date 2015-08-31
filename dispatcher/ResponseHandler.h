@@ -12,9 +12,12 @@
 
 #include <networking/Packets.h>
 #include <dispatcher/EventCallbackInterface.h>
+#include <ramManager.h>
 
-#define LISTENER_NUM 4
-#define MAINTENANCE_PERIOD_MILLIS (15*1000) //1s
+extern SPIRamManager ram;
+
+#define LISTENER_NUM 5
+#define MAINTENANCE_PERIOD_MILLIS (15*1000)
 
 class ResponseHandler {
 	//variables
@@ -30,7 +33,11 @@ class ResponseHandler {
 		} responseListener_t;
 
 		/** listener storage */
-		responseListener_t listeners[LISTENER_NUM];
+		#ifdef ENABLE_EXTERNAL_RAM
+			uint8_t memRegionId;
+		#else
+			responseListener_t listeners[LISTENER_NUM];
+		#endif
 
 		uint8_t activeListenersNum;
 
@@ -82,9 +89,15 @@ class ResponseHandler {
 
 		ResponseHandler() {
 			activeListenersNum = 0;
-		}
 
-		~ResponseHandler() {}
+			#ifdef ENABLE_EXTERNAL_RAM
+				#ifdef DEBUG_HANDLER_RESPONSE_ENABLE
+					Serial.print(millis());
+					Serial.println(F(": creating region for responsehandler"));
+				#endif
+				memRegionId = ram.createRegion(sizeof(responseListener_t), LISTENER_NUM);
+			#endif
+		}
 
 	protected:
 		/**
@@ -105,17 +118,12 @@ class ResponseHandler {
 		 * @param seq number
 		 * @param remote address
 		 */
-		uint8_t getListener(responseListener_t** listeners, const packet_type_application_t type, const seq_t seq, const l3_address_t remote);
+		uint8_t getListenerCallbacks(EventCallbackInterface** listeners, const packet_type_application_t type, const seq_t seq, const l3_address_t remote);
 
 		/**
 		 * check callbacks for timeouts; in case of timeout, triggers FAIL() on callback
 		 */
 		void maintainListeners();
-
-		/**
-		 * @return free slot index, 255 otherwise
-		 */
-		uint8_t getListenerSlot() const;
 
 		/**
 		 * remove a listener
