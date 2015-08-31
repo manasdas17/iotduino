@@ -197,7 +197,7 @@ class NeighbourManager {
 
 				#ifdef ENABLE_EXTERNAL_RAM
 					ram.writeElementToRam(memRegionId, index, n);
-				#endif;
+				#endif
 
 				#ifdef DEBUG_NETWORK_ENABLE
 					Serial.println(F(" - updated."));
@@ -208,7 +208,7 @@ class NeighbourManager {
 
 				#ifdef ENABLE_EXTERNAL_RAM
 					ram.writeElementToRam(memRegionId, index, n);
-				#endif;
+				#endif
 
 				#ifdef DEBUG_NETWORK_ENABLE
 					Serial.println(F(" - same information, updated timestamp."));
