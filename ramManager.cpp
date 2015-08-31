@@ -180,8 +180,8 @@ uint8_t SPIRamManager::createRegion(uint16_t elementSize, uint16_t numElements) 
 
 	//search next free region
 	memRegion_t region;
-	uint32_t nextFreeAddress = 0;
-	for(uint8_t i = 0; i < maxRegions; i++) {
+	uint32_t nextFreeAddress = usableRamStartAddress;
+	for(uint8_t i = 1; i < maxRegions; i++) {
 		if(!getRegionInfo(&region, i)) {
 			//region is empty, use it.
 			region.elementSize = elementSize;
