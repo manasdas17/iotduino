@@ -321,6 +321,8 @@ void setup() {
 		sdcard.initSD();
 
 		subscriptionManager.init();
+
+		nodeInfo.init();
 	#endif
 
 	//init network

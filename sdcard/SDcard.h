@@ -220,16 +220,6 @@ class SDcard {
 		 */
 		boolean initSD();
 
-		/**
-		 * get node info from file.
-		 * structure:
-		 * Node 0:   0x00000000..0x00000000f [unused]
-		 * Node 1:   0x00000010..0x00000001f
-		 *  ...
-		 * Node 255: 0x00000ff0..0x000000fff[broadcast]
-		 */
-		uint8_t getNodeInfoString(uint8_t nodeId, uint8_t* buf, uint8_t bufSize);
-
 		uint32_t getNodeDiscoveryInfoAddress(uint8_t nodeId);
 
 		/**

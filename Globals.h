@@ -63,6 +63,9 @@ PacketFactory pf;
 
 	#include <sdcard/SubscriptionManager.h>
 	SubscriptionManager subscriptionManager;
+
+	#include <utils/NodeInfo.h>
+	NodeInfo nodeInfo;
 #endif
 
 #ifdef WEBSERVER_ENABLE

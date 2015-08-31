@@ -31,18 +31,6 @@ boolean SDcard::openFile(const char* fileName, FileMode mode) {
 	return false;
 }
 
-uint8_t SDcard::getNodeInfoString(uint8_t nodeId, uint8_t* buf, uint8_t bufSize) {
-	if(bufSize < NODE_INFO_SIZE)
-		return false;
-
-	uint32_t pos = nodeId * NODE_INFO_SIZE;
-	if(!myFileInfo.seek(pos)) {
-		return false;
-	}
-
-	return myFileInfo.readBytes(buf, NODE_INFO_SIZE);
-}
-
 boolean SDcard::initSD() {
 	if (!SD.begin(PIN_SD_SS)) {
 		#ifdef DEBUG_SD_ENABLE

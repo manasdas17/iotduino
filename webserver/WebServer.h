@@ -43,7 +43,8 @@
 #include <webserver/HardwareResultListener.h>
 #include <webserver/RequestContent.h>
 
-#include "SpiRAM.h"
+#include <ramManager.h>
+#include <utils/NodeInfo.h>
 
 extern Layer3 l3;
 extern PacketDispatcher dispatcher;
@@ -965,7 +966,7 @@ class WebServer {
 		//uint32_t rtcTime = now();
 
 		//data to display per node
-		char nodeInfoString[NODE_INFO_SIZE];
+		NodeInfo::NodeInfoTableEntry_t nodeInfoObj;
 		boolean neighbourActive;
 		uint32_t neighbourLastKeepAlive;
 		uint8_t neighbourHops;
@@ -978,7 +979,7 @@ class WebServer {
 			wdt_reset();
 
 			//get string info
-			sdcard.getNodeInfoString(i, (uint8_t*) nodeInfoString, NODE_INFO_SIZE);
+			nodeInfo.getNodeInfo((l3_address_t) i, &nodeInfoObj);
 
 			//reset data
 			neighbourActive = 0;
@@ -1006,7 +1007,7 @@ class WebServer {
 				client->print(F("<tr><td data-label='ID' class='righted'>"));
 				client->print(i);
 				client->print(F("</td><td data-label='InfoStr'>"));
-				client->print(nodeInfoString);
+				client->print(nodeInfoObj.nodeStr);
 				client->print(F("</td><td data-label='lastDicovery' class='righted'>"));
 
 				uint32_t t = infoTable.lastDiscoveryRequest;
@@ -1310,8 +1311,8 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		sendHtmlHeader(client, PAGE_GETSENSORINFO, true, false);
 
 		//general info
-		char nodeInfoString[NODE_INFO_SIZE];
-		sdcard.getNodeInfoString(idInt, (uint8_t*) nodeInfoString, NODE_INFO_SIZE);
+		NodeInfo::NodeInfoTableEntry_t nodeInfoObj;
+		nodeInfo.getNodeInfo((l3_address_t) idInt, &nodeInfoObj);
 
 		SDcard::SD_nodeInfoTableEntry_t infoTable;
 		sdcard.getDiscoveryNodeInfo(idInt, &infoTable);
@@ -1326,8 +1327,8 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		client->print(F("<h1>Sensor Info id="));
 		client->print(idInt);
 		client->print(F(" ("));
-		if(strlen(nodeInfoString) > 0) {
-			client->print(nodeInfoString);
+		if(strlen(nodeInfoObj.nodeStr) > 0) {
+			client->print(nodeInfoObj.nodeStr);
 		} else {
 			client->print(F("<i>NA</i>"));
 		}
@@ -1918,7 +1919,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 			test.rewindDirectory();
 
 			File cursor = test.openNextFile();
-			char nodeInfoString[NODE_INFO_SIZE];
+			NodeInfo::NodeInfoTableEntry_t nodeInfoObj;
 			while(cursor != NULL) {
 				#ifdef DEBUG_WEBSERVER_ENABLE
 				Serial.print('\t');
@@ -1931,7 +1932,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 					uint8_t type = hexbyte(&cursor.name()[3]);
 					uint8_t address = hexbyte(&cursor.name()[6]);
 
-					sdcard.getNodeInfoString(remote, (uint8_t*) nodeInfoString, NODE_INFO_SIZE);
+					nodeInfo.getNodeInfo((l3_address_t) remote, &nodeInfoObj);
 
 					#ifdef DEBUG_WEBSERVER_ENABLE
 					Serial.print(F("\t\t"));
@@ -1946,9 +1947,9 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 					client->print(F("<tr>"));
 					client->print(F("<td data-label='Remote'>"));
 					client->print(remote);
-					if(strlen(nodeInfoString) > 0) {
+					if(strlen(nodeInfoObj.nodeStr) > 0) {
 						client->print(F(" ("));
-						client->print(nodeInfoString);
+						client->print(nodeInfoObj.nodeStr);
 						client->print(F(")"));
 					}
 					client->print(F("</td>"));
@@ -2006,9 +2007,6 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 	}
 
 	void doPageMaintenanceNodeInfo(EthernetClient* client, RequestContent* req) {
-		const uint16_t multiplicator = 32;
-		uint8_t BUF[NODE_INFO_SIZE * multiplicator];
-		uint8_t BUF2[NODE_INFO_SIZE];
 		boolean headerIsSent = false;
 
 		if(req->hasKey(variableRemote) != -1 && req->hasKey(variableName) != -1) {
@@ -2022,8 +2020,9 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 				return;
 			}
 
-			name->toCharArray((char*) BUF2, NODE_INFO_SIZE);
-			if(!sdcard.saveNodeInfoString(idInt, BUF2, NODE_INFO_SIZE)) {
+			uint8_t BUF[NODE_INFO_SIZE];
+			name->toCharArray((char*) BUF, NODE_INFO_SIZE);
+			if(!sdcard.saveNodeInfoString(idInt, BUF, NODE_INFO_SIZE)) {
 				sendHttp500WithBody(client);
 				return;
 			} else {
@@ -2044,32 +2043,17 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		client->println(F("<div class='info'>This may take a while ;-)</div>"));
 		client->println(F("<table><thead><tr><th>ID</th><th>Info</th><th>Newinfo</th></tr></thead>"));
 		client->print(F("<tfoot><tr><th colspan='3'>"));
-		client->print(SD_DISCOVERY_NUM_NODES);
+		client->print(NodeInfo::NUM_NODES);
 		client->println(F(" Entries</th></tr></tfoot>"));
 
-		sdcard.myFileInfo.seek(0);
+		SPIRamManager::iterator it;
+		nodeInfo.getIterator(&it);
+		while(it.hasNext()) {
+			uint8_t i = it.getIteratorIndex();
+			NodeInfo::NodeInfoTableEntry_t* currentItem = (NodeInfo::NodeInfoTableEntry_t*) it.next();
+			wdt_reset();
 
-		uint8_t page = 0;
-		for(uint8_t i = 0; i < SD_DISCOVERY_NUM_NODES; i++) {
-			if(i % multiplicator == 0) {
-				sdcard.myFileInfo.readBytes(BUF, NODE_INFO_SIZE * multiplicator);
-				wdt_reset();
-				client->flush();
-				#ifdef DEBUG_WEBSERVER_ENABLE
-				Serial.print(millis());
-				Serial.print(F(": page="));
-				Serial.print(page);
-				Serial.println(F(" read."));
-				#endif
-				page++;
-			}
-
-			//#ifdef DEBUG_WEBSERVER_ENABLE
-			//Serial.print(F("node="));
-			//Serial.print(i);
-			//Serial.print(F(" page="));
-			//Serial.println(page);
-			//#endif
+//************* TODO DROPDOWN!
 
 			client->print(F("<form action='"));
 			printP(client, pageAddresses[PAGE_MAINTAIN_NODE_INFO]);
@@ -2082,21 +2066,8 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 			client->print(F("</td>"));
 
 			client->print(F("<td data-label='Info'>"));
-			//sdcard.getNodeInfoString(i, BUF2, NODE_INFO_SIZE);
 
-			uint16_t item = (uint16_t) i % multiplicator;
-			uint16_t addressInBuf = NODE_INFO_SIZE * item;
-			char* tmp = (char*) &BUF[addressInBuf];
-			//#ifdef DEBUG_WEBSERVER_ENABLE
-				//Serial.print(F("\titemNo="));
-				//Serial.print(item);
-				//Serial.print(F(" has addressInBuf=0x"));
-				//Serial.print(addressInBuf, HEX);
-				//Serial.print(F(" memoryAddress="));
-				//Serial.println(tmp);
-			//#endif
-
-			client->print(tmp);
+			client->print(currentItem->nodeStr);
 			client->print(F("</td>"));
 
 			client->print(F("<td><input type='text' name='"));
