@@ -122,6 +122,11 @@ class SPIRamManager {
 		boolean writeElementToRam(uint8_t regionId, uint16_t index, void* elem);
 
 		/**
+		 * fill element with value.
+		 */
+		boolean memsetElement(uint8_t regionId, uint16_t index, uint8_t value);
+
+		/**
 		 * get mem region information
 		 * @param region
 		 * @param regionId

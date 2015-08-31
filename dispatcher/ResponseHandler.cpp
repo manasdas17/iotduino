@@ -212,9 +212,7 @@ boolean ResponseHandler::removeListener(uint8_t i) {
 		return false;
 
 	#ifdef ENABLE_EXTERNAL_RAM
-		SPIRamManager::memRegion_t region;
-		ram.getRegionInfo(&region, memRegionId);
-		ram.memset_R(region.ramStartAddress + region.elementSize * i, 0, sizeof(responseListener_t));
+		ram.memsetElement(memRegionId, i, 0);
 	#else
 		memset(listeners[i], 0, sizeof(responseListener_t));
 	#endif

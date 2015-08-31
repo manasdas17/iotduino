@@ -183,9 +183,7 @@ boolean SubscriptionService::deleteSubscription(subscription_helper_t* s) {
 
 	//delete
 	#ifdef ENABLE_EXTERNAL_RAM
-		SPIRamManager::memRegion_t region;
-		ram.getRegionInfo(&region, memRegionSubscriptions);
-		ram.memset_R(region.ramStartAddress + region.elementSize * index, 0, region.elementSize);
+		ram.memsetElement(memRegionSubscriptions, index, 0);
 
 		uint32_t tmp = 0;
 		ram.writeElementToRam(memRegionSubscriptionLastExecutions, index, &tmp);

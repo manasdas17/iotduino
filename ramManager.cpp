@@ -189,6 +189,15 @@ uint8_t SPIRamManager::createRegion(uint16_t elementSize, uint16_t numElements) 
 			region.numElements = numElements;
 			region.ramStartAddress = nextFreeAddress;
 
+			//adjust address to page.
+			//if(nextFreeAddress % pageSize != 0) {
+				//nextFreeAddress = nextFreeAddress / pageSize + pageSize;
+//
+				//#ifdef DEBUG_RAM_ENABLE
+					//Serial.println("\tskipping bytes in favor of page alignment.");
+				//#endif
+			//}
+
 			//ram full - unlikely.
 			if(nextFreeAddress + elementSize * numElements > size) {
 				//no sufficient space.
@@ -276,6 +285,18 @@ uint16_t SPIRamManager::readElementIntoVar(uint8_t regionId, uint16_t index, voi
 	memcpy_R(buf, region.ramStartAddress + index * region.elementSize, region.elementSize);
 
 	return region.elementSize;
+}
+
+boolean SPIRamManager::memsetElement(uint8_t regionId, uint16_t index, uint8_t value) {
+	memRegion_t region;
+	getRegionInfo(&region, regionId);
+
+	if(index >= region.numElements)
+		return false;
+
+	memset_R(region.ramStartAddress + region.elementSize * index, value, region.elementSize);
+
+	return true;
 }
 
 void SPIRamManager::iterator::reset() {
