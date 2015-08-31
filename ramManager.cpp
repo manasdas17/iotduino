@@ -7,6 +7,7 @@
 
 
 #include "ramManager.h"
+#include <avr/wdt.h>
 
 void SPIRamManager::printRam(uint32_t from, uint32_t to) {
 	#ifdef DEBUG_RAM_ENABLE
@@ -68,6 +69,7 @@ void SPIRamManager::memset_R(uint32_t address, int value, uint32_t len) {
 	uint16_t fullPagesToFill = len / pageSize;
 	for(uint16_t i = 0; i < fullPagesToFill; i++) {
 		ram.write_page(address + i * pageSize, (char*) buffer);
+		wdt_reset();
 	}
 
 	uint8_t bytesToFill = len % pageSize;
