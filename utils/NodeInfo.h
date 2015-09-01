@@ -145,7 +145,7 @@ class NodeInfo
 
 			//update local string
 			buf[NODE_INFO_SIZE-1] = '\0';
-			uint8_t len = strlen((const char*) buf);
+			uint8_t len = strlen((const char*) buf)+1;
 			memcpy(elem.nodeStr, buf, len);
 
 			if(!ram.writeElementToRam(memRegionId, id, &elem)) {
