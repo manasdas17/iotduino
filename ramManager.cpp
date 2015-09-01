@@ -69,7 +69,7 @@ void SPIRamManager::memset_R(uint32_t address, int value, uint32_t len) {
 	//full buffers to write
 	uint16_t fullPagesToFill = len / bufferSize;
 	for(uint16_t i = 0; i < fullPagesToFill; i++) {
-		ram.write_stream(address + i * pageSize, (char*) buffer, bufferSize);
+		ram.write_stream(address + i * bufferSize, (char*) buffer, bufferSize);
 		wdt_reset();
 	}
 
@@ -338,7 +338,7 @@ void* SPIRamManager::iterator::next() {
 	if(iteratorIndex % numElemPerBufferInstance == 0) {
 		//maybe, we do not need to read a full buffer.
 		uint16_t len = min(region.numElements - iteratorIndex, numElemPerBufferInstance) * region.elementSize;
-		mgr->memcpy_R(mgr->buffer, region.ramStartAddress + iteratorIndex * region.elementSize, len);
+		mgr->memcpy_R(mgr->buffer, region.ramStartAddress + (uint32_t) iteratorIndex * region.elementSize, len);
 	}
 
 	uint8_t indexInBuffer = iteratorIndex % numElemPerBufferInstance;

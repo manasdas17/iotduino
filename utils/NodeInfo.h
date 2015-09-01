@@ -16,7 +16,7 @@
 
 extern SPIRamManager ram;
 
-#define NODE_INFO_SIZE (0x32)
+#define NODE_INFO_SIZE (32)
 
 class NodeInfo
 {
@@ -103,6 +103,19 @@ class NodeInfo
 			#endif
 
 			return false;
+		}
+
+		boolean updateString(uint8_t id, byte* buf, uint8_t buflen) {
+			//read current info
+			NodeInfoTableEntry_t elem;
+			ram.readElementIntoVar(memRegionId, id, &elem);
+
+			//update local string
+			buf[NODE_INFO_SIZE-1] = '\0';
+			uint8_t len = strlen((const char*) buf);
+			memcpy(elem.nodeStr, buf, len);
+
+			return ram.writeElementToRam(memRegionId, id, &elem);
 		}
 }; //NodeInfo
 

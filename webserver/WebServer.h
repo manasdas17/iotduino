@@ -777,6 +777,7 @@ class WebServer {
 		client->println(F("input { font-size: 9pt; height: 20px; margin: 0; padding: 0px; background-color: white; border: 1px solid darkgray; }"));
 		client->println(F("input[type='submit'] { width: 50px; }"));
 		client->println(F("input[type='text'] { width: 120px }"));
+		client->println(F("select { width: 120px }"));
 		client->println(F(".centered { text-align: center; }"));
 		client->println(F(".righted { text-align: right; }"));
 		client->println(F(".inline { border: none; }"));
@@ -2022,12 +2023,12 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 
 			uint8_t BUF[NODE_INFO_SIZE];
 			name->toCharArray((char*) BUF, NODE_INFO_SIZE);
-			if(!sdcard.saveNodeInfoString(idInt, BUF, NODE_INFO_SIZE)) {
+			if(!nodeInfo.updateString(idInt, BUF, NODE_INFO_SIZE)) {
 				sendHttp500WithBody(client);
 				return;
 			} else {
 				sendHttpOk(client);
-				sendHtmlHeader(client, PAGE_MAINTAIN_NODE_INFO, true, true);
+				sendHtmlHeader(client, PAGE_MAINTAIN_NODE_INFO, false, true);
 				headerIsSent = true;
 				client->print(F("<div class='info'>Updated NoteID "));
 				client->print(idInt);
