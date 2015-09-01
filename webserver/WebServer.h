@@ -2049,7 +2049,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 
 		client->print(F("<tr><td data-label='ID'><form action='"));
 		printP(client, pageAddresses[PAGE_MAINTAIN_NODE_INFO]);
-		client->print(F("' method='get'><select type='hidden' name='"));
+		client->print(F("' method='get'><select size='5' type='hidden' name='"));
 		printP(client, variableRemote);
 		client->print(F("'>"));
 

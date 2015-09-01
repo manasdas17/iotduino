@@ -23,7 +23,7 @@ class SPIRamManager {
 		} memRegion_t;
 
 		//static const uint8_t pageSize = 32;
-		static const uint8_t bufferSize = 64;
+		static const uint8_t bufferSize = 128;
 		static const uint8_t maxRegions = 32; //reservation for memRegion structs.
 		static const uint32_t usableRamStartAddress = sizeof(memRegion_t) * maxRegions;
 		SpiRAM ram;

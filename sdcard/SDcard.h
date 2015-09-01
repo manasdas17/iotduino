@@ -68,15 +68,12 @@ class SDcard {
 		} SD_subscriptionInfoTableEntry_t;
 
 		/** working object */
-		File myFileInfo;
 		File myFileDiscovery;
 
 	public:
 		/** modes */
 		enum FileMode {READ = FILE_READ, WRITE = (FILE_WRITE | O_SYNC)};
 
-		/** string node information */
-		const char* fileNameNodeInfo = {"NODEINFO.TXT"};
 		/** discovery + subscriotion buffer */
 		const char* fileNameDiscoveryInfo = {"DISCOVER.BIN"};
 
@@ -225,12 +222,6 @@ class SDcard {
 		 * @success
 		 */
 		boolean seekDiscovery(uint32_t pos);
-
-		/**
-		 * @param pos
-		 * @success
-		 */
-		boolean seekInfo(uint32_t pos);
 
 		/**
 		 * internal method for opening a file

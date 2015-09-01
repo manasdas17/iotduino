@@ -12,6 +12,8 @@
 #include <Arduino.h>
 #include <networking/Packets.h>
 #include <ramManager.h>
+#include <SD.h>
+#include <avr/wdt.h>
 
 
 extern SPIRamManager ram;
@@ -21,6 +23,9 @@ extern SPIRamManager ram;
 class NodeInfo
 {
 	public:
+		/** string node information */
+		const char* fileNameNodeInfo = {"NODEINFO.TXT"};
+
 		/** maximum number of nodeids */
 		const static uint8_t NUM_NODES = 255;
 		typedef struct SD_nodeInfoTableEntryStruct {
@@ -93,6 +98,21 @@ class NodeInfo
 
 		boolean writeInfoToSDCard() {
 			#ifdef SDCARD_ENABLE
+				SD.remove((char*) fileNameNodeInfo);
+				File fd = SD.open(fileNameNodeInfo, FILE_WRITE);
+				fd.seek(0);
+
+				SPIRamManager::iterator it = SPIRamManager::iterator(&ram, memRegionId);
+				NodeInfoTableEntry_t* currentItem = NULL;
+				while(it.hasNext()) {
+					currentItem = (NodeInfoTableEntry_t*) it.next();
+					fd.write((const uint8_t*) currentItem, sizeof(NodeInfoTableEntry_t));
+					wdt_reset();
+				}
+				fd.flush();
+				fd.close();
+
+				return true;
 			#endif
 
 			return false;
@@ -100,6 +120,19 @@ class NodeInfo
 
 		boolean readInfoFromSDCard() {
 			#ifdef SDCARD_ENABLE
+				File fd = SD.open(fileNameNodeInfo, FILE_WRITE);
+				fd.seek(0);
+				NodeInfoTableEntry_t elem;
+				for(uint16_t i = 0; i < NUM_NODES; i++) {
+					if(fd.read(&elem, sizeof(elem)) > 0) {
+						ram.writeElementToRam(memRegionId, i, &elem);
+						wdt_reset();
+					} else {
+						fd.close();
+						break;
+					}
+				}
+				fd.close();
 			#endif
 
 			return false;
@@ -115,8 +148,13 @@ class NodeInfo
 			uint8_t len = strlen((const char*) buf);
 			memcpy(elem.nodeStr, buf, len);
 
-			return ram.writeElementToRam(memRegionId, id, &elem);
+			if(!ram.writeElementToRam(memRegionId, id, &elem)) {
+				return false;
+			}
+
+			return writeInfoToSDCard();
 		}
+
 }; //NodeInfo
 
 #endif //__NODEINFO_H__

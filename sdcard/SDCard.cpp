@@ -23,9 +23,6 @@ boolean SDcard::openFile(const char* fileName, FileMode mode) {
 	if(!strcmp(fileName, fileNameDiscoveryInfo)) {
 		myFileDiscovery = SD.open(fileNameDiscoveryInfo, WRITE);
 		return myFileDiscovery;
-	} else if(!strcmp(fileName, fileNameNodeInfo)) {
-		myFileInfo = SD.open(fileNameNodeInfo, WRITE);
-		return myFileInfo;
 	}
 
 	return false;
@@ -47,7 +44,6 @@ boolean SDcard::initSD() {
 	prepareDiscoveryFile();
 
 	openFile(fileNameDiscoveryInfo, WRITE);
-	openFile(fileNameNodeInfo, WRITE);
 
 	return true;
 }
@@ -268,12 +264,6 @@ boolean SDcard::seekDiscovery(uint32_t pos) {
 	if(!myFileDiscovery)
 		return false;
 	return myFileDiscovery.seek(pos);
-}
-
-boolean SDcard::seekInfo(uint32_t pos) {
-	if(!myFileInfo)
-		return false;
-	return myFileInfo.seek(pos);
 }
 
 uint32_t SDcard::getSubscriptionInfosAddressForNodeById(uint8_t nodeId, uint8_t index) {
