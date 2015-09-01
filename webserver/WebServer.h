@@ -2041,42 +2041,44 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		}
 
 		client->println(F("<div class='info'>This may take a while ;-)</div>"));
-		client->println(F("<table><thead><tr><th>ID</th><th>Info</th><th>Newinfo</th></tr></thead>"));
+		client->println(F("<table><thead><tr><th>Node</th><th>Newinfo</th><th></th></tr></thead>"));
 		client->print(F("<tfoot><tr><th colspan='3'>"));
 		client->print(NodeInfo::NUM_NODES);
 		client->println(F(" Entries</th></tr></tfoot>"));
 
+		client->print(F("<tr><td data-label='ID'><form action='"));
+		printP(client, pageAddresses[PAGE_MAINTAIN_NODE_INFO]);
+		client->print(F("' method='get'><select type='hidden' name='"));
+		printP(client, variableRemote);
+		client->print(F("'>"));
+
 		SPIRamManager::iterator it;
 		nodeInfo.getIterator(&it);
+		uint8_t i = 0;
+		NodeInfo::NodeInfoTableEntry_t* currentItem = NULL;
 		while(it.hasNext()) {
-			uint8_t i = it.getIteratorIndex();
-			NodeInfo::NodeInfoTableEntry_t* currentItem = (NodeInfo::NodeInfoTableEntry_t*) it.next();
+			i = it.getIteratorIndex();
+			currentItem = (NodeInfo::NodeInfoTableEntry_t*) it.next();
 			wdt_reset();
 
-//************* TODO DROPDOWN!
-
-			client->print(F("<form action='"));
-			printP(client, pageAddresses[PAGE_MAINTAIN_NODE_INFO]);
-			client->print(F("' method='get'><input type='hidden' name='"));
-			printP(client, variableRemote);
-			client->print(F("' value='"));
+			client->print(F("<option value='"));
 			client->print(i);
-			client->print(F("'/><tr><td data-label='ID'>"));
+			client->print(F("'>#"));
 			client->print(i);
-			client->print(F("</td>"));
-
-			client->print(F("<td data-label='Info'>"));
-
+			client->print(F(" "));
 			client->print(currentItem->nodeStr);
-			client->print(F("</td>"));
-
-			client->print(F("<td><input type='text' name='"));
-			printP(client, variableName);
-			client->print(F("' maxlength='"));
-			client->print(NODE_INFO_SIZE-1); //terminating character!
-			client->print(F("'/> <input type='submit'/></td></tr></form>"));
+			client->println(F("</option>"));
 			client->flush();
 		}
+
+		client->print(F("</select></td>"));
+
+		client->print(F("<td><input type='text' name='"));
+		printP(client, variableName);
+		client->print(F("' maxlength='"));
+		client->print(NODE_INFO_SIZE-1); //terminating character!
+		client->print(F("'/></td><td><input type='submit'/></td></tr></form>"));
+		client->flush();
 
 		client->println(F("</table>"));
 		sendHtmlFooter(client);
