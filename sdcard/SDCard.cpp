@@ -264,19 +264,6 @@ uint32_t SDcard::getNodeDiscoveryInfoAddress(uint8_t nodeId) {
 	return nodeId * sizeof(SD_nodeInfoTableEntry_t);
 }
 
-boolean SDcard::saveNodeInfoString(uint8_t nodeId, uint8_t* buf, uint8_t bufSize) {
-	if(bufSize < NODE_INFO_SIZE)
-		return false;
-	buf[NODE_INFO_SIZE-1] = '\0';
-	uint32_t pos = nodeId * NODE_INFO_SIZE;
-	if(!myFileInfo.seek(pos)) {
-		return false;
-	}
-	boolean success = myFileInfo.write(buf, NODE_INFO_SIZE);
-	myFileInfo.flush();
-	return success;
-}
-
 boolean SDcard::seekDiscovery(uint32_t pos) {
 	if(!myFileDiscovery)
 		return false;

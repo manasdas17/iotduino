@@ -19,8 +19,6 @@
 
 /** SS pin for SD reader */
 #define PIN_SD_SS 4
-/**  node string info size per node */
-#define NODE_INFO_SIZE (0x10)
 
 /** maximum number of nodeids */
 #define SD_DISCOVERY_NUM_NODES 128
@@ -221,12 +219,6 @@ class SDcard {
 		boolean initSD();
 
 		uint32_t getNodeDiscoveryInfoAddress(uint8_t nodeId);
-
-		/**
-		 * save node info. adds terminating character.
-		 */
-		boolean saveNodeInfoString(uint8_t nodeId, uint8_t* buf, uint8_t bufSize);;
-
 
 		/**
 		 * @param pos
