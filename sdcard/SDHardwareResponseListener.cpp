@@ -34,9 +34,10 @@ void SDHardwareRequestListener::doCallback(packet_application_numbered_cmd_t* ap
 		Serial.print(cmd->type);
 		Serial.print(F(" hwAddress="));
 		Serial.println(cmd->address);
+		Serial.flush();
 	#endif
 
-	if(cmd->isRead) {
+	if(!cmd->isRead) {
 		//discard.
 		return;
 	}
