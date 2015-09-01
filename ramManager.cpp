@@ -66,15 +66,17 @@ void SPIRamManager::memcpy_R(uint32_t destination, void* source, uint32_t len) {
 void SPIRamManager::memset_R(uint32_t address, int value, uint32_t len) {
 	memset(buffer, value, bufferSize);
 
-	uint16_t fullPagesToFill = len / pageSize;
+	//full buffers to write
+	uint16_t fullPagesToFill = len / bufferSize;
 	for(uint16_t i = 0; i < fullPagesToFill; i++) {
-		ram.write_page(address + i * pageSize, (char*) buffer);
+		ram.write_stream(address + i * pageSize, (char*) buffer, bufferSize);
 		wdt_reset();
 	}
 
-	uint8_t bytesToFill = len % pageSize;
+	//remaining bytes
+	uint8_t bytesToFill = len % bufferSize;
 	for(uint8_t i = 0; i < bytesToFill; i++) {
-		ram.write_byte(address + fullPagesToFill * pageSize + i, value);
+		ram.write_byte(address + fullPagesToFill * bufferSize + i, value);
 	}
 }
 
