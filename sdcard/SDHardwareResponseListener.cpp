@@ -7,11 +7,10 @@
 
 
 #include "SDHardwareResponseListener.h"
-#include <sdcard/SDcard.h>
 #include <interfaces/input/RTC.h>
+#include <SD.h>
 
 extern RTC rtc;
-extern SDcard sdcard;
 
 #define SD_LOGGER_BINARY
 
@@ -92,5 +91,10 @@ void SDHardwareRequestListener::doCallback(packet_application_numbered_cmd_t* ap
 	#endif
 
 	//write if possible.
-	sdcard.appendToFile(filename, (uint8_t*) bytes, offset);
+	File tmp = SD.open(filename, FILE_WRITE);
+	if(!tmp)
+		return;
+
+	tmp.write(bytes, offset);
+	tmp.flush();
 }

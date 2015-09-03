@@ -15,42 +15,30 @@
 #include <dispatcher/PacketDispatcher.h>
 #include <dispatcher/PacketFactory.h>
 #include <networking/Layer3.h>
-#include <sdcard/SDcard.h>
 #include <webserver/DiscoveryListener.h>
-#include "SpiRAM.h"
+#include <SpiRAM.h>
+#include <utils/NodeInfo.h>
 
 extern PacketDispatcher dispatcher;
 extern PacketFactory pf;
 extern Layer3 l3;
-extern SDcard sdcard;
 extern SPIRamManager ram;
+extern NodeInfo nodeInfo;
 
-#define DISCOVERY_NUM_NODES 30
-/** delay for subscription events */
-//#define SUBSCRIPTION_DEFAULT_PERIOD_MILLIS (60*1000UL)
-
-/** delay for refreshing subscriptions */
-//#define SUBSCRIPTION_REFRESH_MILLIS (1*40*1000UL) //every 5 minutes
-/** delay for sending subscription requests */
-//#define SUBSCRIPTION_REQUEST_DELAY_MILLIS (100)
-/** delay after a subscription has timed out */
-//#define SUBSCRIPTION_TIMEOUT_MILLIS (1*60*1000UL) //timeout after 15 minutes
-
-/** delay between discovery requests */
-#define DISCOVERY_REQUEST_DELAY_MILLIS (2000)
-/** delay between scanning neighbourtable and trigger discovery */
-#define DISCOVERY_REQUEST_PERIOD_MILLIS (1*20*1000UL) //every 15 minutes
 
 #define DISCOVERY_TIMEOUT 2000
-
+#define DISCOVERY_REQUEST_PERIOD_MILLIS (1*20*1000UL)
+#define DISCOVERY_REQUEST_DELAY_MILLIS 2000
+#define NUM_KNOWN_NODES 256
+#define NUM_INFOS_PER_NODE 15
 
 class SubscriptionManager {
 	/** static dicoverylistener object */
 	discoveryListener listenerDiscovery;
 
 	/** saved node information */
-	l3_address_t knownNodes[DISCOVERY_NUM_NODES];
-
+	uint8_t memRegionKnownNodes;
+	uint8_t memRegionDiscoveryInfo;
 
 	/** last discovery request that has been sent */
 	uint32_t lastDiscoveryRequest;
@@ -60,6 +48,13 @@ class SubscriptionManager {
 	uint8_t nextDiscoveryRequestNeighbourIndex;
 
 	public:
+		/**  */
+		typedef struct SD_nodeDiscoveryInfoTableEntryStruct {
+			uint8_t hardwareAddress;
+			uint8_t hardwareType;
+			uint32_t rtcTimestamp;
+		} Discovery_nodeDiscoveryInfoTableEntry_t;
+
 		/**
 		 * send a discovery request to a node
 		 * @param node
@@ -81,19 +76,23 @@ class SubscriptionManager {
 			return l3.sendPacket(p);
 		}
 
+
+		void readElemIntoVar(Discovery_nodeDiscoveryInfoTableEntry_t* elem, l3_address_t remote, uint8_t i) {
+			ram.readElementIntoVar(memRegionDiscoveryInfo, NUM_INFOS_PER_NODE * remote + i, elem);
+		}
+
 		/**
 		 * initialise memory.
 		 */
 		void init() {
 			listenerDiscovery.init(0, webserverListener::START);
 
-			memset(knownNodes, 0, sizeof(knownNodes));
-
-			readKnownNodesFromSD();
-
 			lastDiscoveryRequest = 0;
 			lastDiscoveryRequestFullRun = 0;
 			nextDiscoveryRequestNeighbourIndex = 0;
+
+			memRegionKnownNodes = ram.createRegion(sizeof(l3_address_t), NUM_KNOWN_NODES);
+			memRegionDiscoveryInfo = ram.createRegion(sizeof(Discovery_nodeDiscoveryInfoTableEntry_t), NUM_KNOWN_NODES * NUM_INFOS_PER_NODE);
 		}
 
 		/**
@@ -108,59 +107,73 @@ class SubscriptionManager {
 		void maintainListeners() {
 			if(listenerDiscovery.state == webserverListener::FINISHED) {
 				//init buffer for sd storage
-				SDcard::SD_nodeDiscoveryInfoTableEntry_t buf[SD_DISCOVERY_NUM_INFOS_PER_NODE];
-				memset(buf, 0, sizeof(buf));
+				Discovery_nodeDiscoveryInfoTableEntry_t buf[NUM_INFOS_PER_NODE];
+				l3_address_t currentNodeID = listenerDiscovery.remote;
 
-				//put data into buffer
+				for(uint8_t i = 0; i < NUM_INFOS_PER_NODE; i++) {
+					ram.readElementIntoVar(memRegionDiscoveryInfo, currentNodeID * NUM_INFOS_PER_NODE + i, &buf[i]);
+				}
+
+				uint32_t timeNow = now();
+
+				//put data into buffer and store to ram if data is new.
+				uint8_t currentHwAddress = 0;
+				uint8_t currentHwType = 0;
+				//iterate over all gotten infos
 				for(uint8_t i = 0; i < listenerDiscovery.gottenInfos; i++) {
-					buf[i].hardwareAddress = listenerDiscovery.sensorInfos[i].hardwareAddress;
-					buf[i].hardwareType = listenerDiscovery.sensorInfos[i].hardwareType;
-					//buf[i].rtcTimestamp = now();
-					buf[i].rtcTimestamp = 0;
+					currentHwAddress = listenerDiscovery.sensorInfos[i].hardwareAddress;
+					currentHwType = listenerDiscovery.sensorInfos[i].hardwareType;
+
+					//search existing, free or oldest index to update.
+					uint8_t firstFreeIndex = 0xff;
+					uint8_t oldestIndex = 0xff;
+					uint32_t oldestTime = -1;
+					uint8_t toBeChangedIndex = 0xff;
+					for(uint8_t j = 0; j < NUM_INFOS_PER_NODE; j++) {
+						Discovery_nodeDiscoveryInfoTableEntry_t* currentRamItem = (Discovery_nodeDiscoveryInfoTableEntry_t*) &buf[j];
+
+						//this one is free and we have not found a free index yet
+						if(buf[j].hardwareAddress == 0 && buf[j].hardwareType == 0 && firstFreeIndex < 0xff) {
+							firstFreeIndex = j;
+							continue;
+						}
+
+						//we are still searching a suitable index
+						if(oldestTime > currentRamItem->rtcTimestamp) {
+							oldestTime = currentRamItem->rtcTimestamp;
+							oldestIndex = j;
+						}
+
+						//exact match, update this one
+						if((buf[j].hardwareAddress == currentHwAddress && buf[j].hardwareType == currentHwType)) {
+							toBeChangedIndex = j;
+							break;
+						}
+					}//search complete.
+
+					//determine index to update.
+					if(toBeChangedIndex == 0xff) {
+						if(firstFreeIndex == 0xff) {
+							//no exact match, nothing free, update oldest.
+							toBeChangedIndex = oldestIndex;
+						} else {
+							//no exact match, but a free index available
+							toBeChangedIndex = firstFreeIndex;
+						}
+						buf[toBeChangedIndex].hardwareAddress = currentHwAddress;
+						buf[toBeChangedIndex].hardwareType = currentHwType;
+					}
+
+					buf[toBeChangedIndex].rtcTimestamp = timeNow;
+
+					//write to ram
+					ram.writeElementToRam(memRegionDiscoveryInfo, currentNodeID * NUM_INFOS_PER_NODE + toBeChangedIndex, &buf[toBeChangedIndex]);
 				}
 
 				//store node info
-				SDcard::SD_nodeInfoTableEntry_t infoObj;
-				memset(&infoObj, 0, sizeof(infoObj));
-				if(!sdcard.getDiscoveryNodeInfo(listenerDiscovery.remote, &infoObj)) {
-					#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
-					Serial.println(F("\tgetInfo failed."));
-					#endif
-				}
-				if(infoObj.nodeId != listenerDiscovery.remote) {
-					#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
-					Serial.println(F("\tunknown node, adding."));
-					#endif
-					infoObj.nodeId = listenerDiscovery.remote;
-				}
-				infoObj.lastDiscoveryRequest = now();
+				nodeInfo.updateDiscoveryTime(listenerDiscovery.remote, timeNow);
 
-				//store info object
-				if(!sdcard.saveNodeInfo(listenerDiscovery.remote, &infoObj)) {
-					#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
-					Serial.println(F("\tsaving failed."));
-					#endif
-				}
-
-				//store discovery info in case of new data.
-				#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
-				Serial.println(F("\tgetting old info"));
-				#endif
-				SDcard::SD_nodeDiscoveryInfoTableEntry_t oldInfo[SD_DISCOVERY_NUM_INFOS_PER_NODE];
-				sdcard.getDiscoveryInfosForNode(listenerDiscovery.remote, oldInfo, SD_DISCOVERY_NUM_INFOS_PER_NODE);
-
-				if(memcmp(oldInfo, buf, sizeof(buf)) != 0) {
-					//not equal for the new info buffer data
-					#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
-					Serial.println(F("\tnew information, update."));
-					#endif
-					sdcard.saveDiscoveryInfos(listenerDiscovery.remote, buf, SD_DISCOVERY_NUM_INFOS_PER_NODE);
-				} else {
-					#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
-					Serial.println(F("\tnothing new."));
-					#endif
-				}
-
+				//reset listener
 				listenerDiscovery.init(0, webserverListener::START);
 				dispatcher.getResponseHandler()->unregisterListener(&listenerDiscovery);
 			} else if(listenerDiscovery.state == webserverListener::FAILED) {
@@ -169,6 +182,7 @@ class SubscriptionManager {
 					Serial.print(F(": discovery failed for node="));
 					Serial.println(listenerDiscovery.remote);
 					#endif
+				//reset listener
 				listenerDiscovery.init(0, webserverListener::START);
 				dispatcher.getResponseHandler()->unregisterListener(&listenerDiscovery);
 			}
@@ -232,6 +246,16 @@ class SubscriptionManager {
 					lastDiscoveryRequestFullRun = now;
 				}
 			}
+		}
+
+
+		/**
+		 * get an iterator for node infos
+		 * @param iterator
+		 * @return success
+		 */
+		boolean getIteratorDiscovery(SPIRamManager::iterator* it) {
+			return it->init(&ram, memRegionDiscoveryInfo);
 		}
 
 		/**
@@ -303,49 +327,6 @@ class SubscriptionManager {
 //
 			//return true;
 		//}
-
-		/**
-		 * read all node info, set active if actual information is present
-		 */
-		void readKnownNodesFromSD() {
-			uint8_t index = 0;
-			SDcard::SD_nodeInfoTableEntry_t info;
-
-			#ifdef DEBUG
-			Serial.print(millis());
-			Serial.print(F(": reading nodeInfo"));
-			#endif
-			for(uint8_t i = 0; i < SD_DISCOVERY_NUM_NODES; i++) {
-				#ifdef DEBUG
-					if(i%10==0)
-						Serial.print('.');
-				#endif
-
-				wdt_reset();
-
-				info.nodeId = 0;
-				sdcard.getDiscoveryNodeInfo(i, &info);
-
-				if(info.nodeId != 0) {
-					#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
-						Serial.println();
-						Serial.print(F("\tNodeId="));
-						Serial.print(i);
-						Serial.print(F(" lastDiscovery="));
-						Serial.println(info.lastDiscoveryRequest);
-					#endif
-					knownNodes[index] = i;
-					index++;
-				}
-			}
-			#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
-				Serial.println();
-				Serial.print(millis());
-				Serial.print(F(": readKnownNodesFromSD() foundNum="));
-				Serial.println(index);
-			#endif
-		}
-
 
 }; //SubscriptionManager
 

@@ -37,7 +37,7 @@
 #include <dispatcher/PacketDispatcher.h>
 #include <drivers/HardwareID.h>
 
-#include <sdcard/SDcard.h>
+#include <sdcard/SubscriptionManager.h>
 
 #include <webserver/DiscoveryListener.h>
 #include <webserver/HardwareResultListener.h>
@@ -49,8 +49,8 @@
 extern Layer3 l3;
 extern PacketDispatcher dispatcher;
 extern PacketFactory pf;
-extern SDcard sdcard;
 extern SPIRamManager ram;
+extern SubscriptionManager subscriptionManager;
 
 //#define USE_DHCP_FOR_IP_ADDRESS
 
@@ -973,14 +973,15 @@ class WebServer {
 		uint8_t neighbourHops;
 		uint8_t neighbourNextHop;
 
-		SDcard::SD_nodeInfoTableEntry_t infoTable;
+		NodeInfo::NodeInfoTableEntry_t infoTable;
 		////SDcard::SD_nodeDiscoveryInfoTableEntry_t discoveryInfo[SD_DISCOVERY_NUM_INFOS_PER_NODE];
 		//ietrate possible nodes
-		for(uint8_t i = 1; i < SD_DISCOVERY_NUM_NODES; i++) {
+		for(uint16_t i = 1; i < NUM_KNOWN_NODES; i++) {
 			wdt_reset();
 
 			//get string info
-			nodeInfo.getNodeInfo((l3_address_t) i, &nodeInfoObj);
+			if(nodeInfo.getNodeInfo((l3_address_t) i, &nodeInfoObj) == 0)
+				continue;
 
 			//reset data
 			neighbourActive = 0;
@@ -990,18 +991,8 @@ class WebServer {
 			//get route info
 			getRouteInfoForNode(i, neighbourActive, neighbourLastKeepAlive, neighbourHops, neighbourNextHop);
 
-			//node info
-			sdcard.getDiscoveryNodeInfo(i, &infoTable);
-
-			//////discovery info
-			////if(infoTable.nodeId != 0) {
-				////sdcard.getDiscoveryInfosForNode(i, discoveryInfo, SD_DISCOVERY_NUM_INFOS_PER_NODE);
-			////} else {
-				////memset(discoveryInfo, 0, sizeof(discoveryInfo));
-			////}
-
 			//print node info?
-			if(neighbourActive == 1 || infoTable.nodeId != 0) {
+			if(neighbourActive == 1 || nodeInfoObj.nodeId != 0) {
 				numNodes++;
 
 				//node info
@@ -1011,7 +1002,7 @@ class WebServer {
 				client->print(nodeInfoObj.nodeStr);
 				client->print(F("</td><td data-label='lastDicovery' class='righted'>"));
 
-				uint32_t t = infoTable.lastDiscoveryRequest;
+				uint32_t t = nodeInfoObj.lastDiscoveryRequest;
 				printDate(client, t);
 
 
@@ -1043,6 +1034,7 @@ class WebServer {
 				client->println(F("</td>"));
 				//tr end
 				client->println(F("</tr>"));
+				client->flush();
 			}
 		}
 
@@ -1264,11 +1256,11 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 
 		for(uint8_t i = 0; i < num; i++) {
 			#ifdef DEBUG_WEBSERVER_ENABLE
-			Serial.print(F("\t"));
-			serialPrintP(keys[i]);
-			Serial.print('=');
-			Serial.println(vals[i]);
-			Serial.flush();
+				//Serial.print(F("\t"));
+				//serialPrintP(keys[i]);
+				//Serial.print('=');
+				//Serial.println(vals[i]);
+				//Serial.flush();
 			#endif
 
 			if(i > 0)
@@ -1315,9 +1307,6 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		NodeInfo::NodeInfoTableEntry_t nodeInfoObj;
 		nodeInfo.getNodeInfo((l3_address_t) idInt, &nodeInfoObj);
 
-		SDcard::SD_nodeInfoTableEntry_t infoTable;
-		sdcard.getDiscoveryNodeInfo(idInt, &infoTable);
-
 		boolean neighbourActive = 0;
 		uint32_t neighbourLastKeepAlive = 0;
 		uint8_t neighbourHops = -1;
@@ -1354,8 +1343,6 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		client->print((millis() - neighbourLastKeepAlive) / 1000);
 		client->print(F("s</p>"));
 
-		SDcard::SD_nodeDiscoveryInfoTableEntry_t discoveryInfo[SD_DISCOVERY_NUM_INFOS_PER_NODE];
-		sdcard.getDiscoveryInfosForNode(idInt, discoveryInfo, SD_DISCOVERY_NUM_INFOS_PER_NODE);
 		client->println(F("<table><thead><tr><th>HardwareAddress</th><th>HardwareType</th><th>LastUpdated</th><th>requestSensor</th><th>writeSensor</th></tr></thead><tbody>"));
 		uint8_t numInfos = 0;
 		//conversion buffers
@@ -1363,29 +1350,32 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		char buf2[3];
 		char buf3[3];
 		uint8_t num = 0;
-		for(uint8_t i = 0; i < SD_DISCOVERY_NUM_INFOS_PER_NODE; i++) {
-			if(discoveryInfo[i].hardwareAddress > 0 && discoveryInfo[i].hardwareType > 0) {
+		SubscriptionManager::Discovery_nodeDiscoveryInfoTableEntry_t elem;
+		for(uint8_t i = 0; i < NUM_INFOS_PER_NODE; i++) {
+			subscriptionManager.readElemIntoVar(&elem, idInt, i);
+
+			if(elem.hardwareAddress > 0 && elem.hardwareType > 0) {
 				//table
 				client->print(F("<tr>"));
 				num++;
 
 				client->print(F("<td data-label='HwAdrr' class='righted'>"));
-				client->print(discoveryInfo[i].hardwareAddress);
+				client->print(elem.hardwareAddress);
 				client->print(F("</td>"));
 
 				client->print(F("<td data-label='HwType'>"));
-				printP(client, hardwareTypeStrings[discoveryInfo[i].hardwareType]);
+				printP(client, hardwareTypeStrings[elem.hardwareType]);
 				client->print(F("</td>"));
 
 				client->print(F("<td data-label='lastDiscovery' class='righted'>"));
-				printDate(client, discoveryInfo[i].rtcTimestamp);
+				printDate(client, elem.rtcTimestamp);
 				client->print(F("</td>"));
 
 				client->print(F("<td data-label='Read' class='centered'>"));
-				if(hwIsReadable((HardwareTypeIdentifier) discoveryInfo[i].hardwareType)) {
+				if(hwIsReadable((HardwareTypeIdentifier) elem.hardwareType)) {
 					itoa(idInt, buf1, 10);
-					itoa(discoveryInfo[i].hardwareAddress, buf2, 10);
-					itoa(discoveryInfo[i].hardwareType, buf3, 10);
+					itoa(elem.hardwareAddress, buf2, 10);
+					itoa(elem.hardwareType, buf3, 10);
 					const char* keys[3] = {variableRemote, variableHwAddress, variableHwType};
 					const char* vals[3] = {buf1, buf2, buf3};
 					printLink(client, pageAddresses[PAGE_REQUEST_SENSOR], keys, vals, linkNameX, 3);
@@ -1395,7 +1385,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 				client->print(F("</td>"));
 
 				client->print(F("<td data-label='Write' class='centered'>"));
-				printExecutableLinks(client, idInt, (HardwareTypeIdentifier) discoveryInfo[i].hardwareType, discoveryInfo[i].hardwareAddress);
+				printExecutableLinks(client, idInt, (HardwareTypeIdentifier) elem.hardwareType, elem.hardwareAddress);
 				client->print(F("</td>"));
 
 				client->print(F("</tr>"));
@@ -2044,7 +2034,7 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		client->println(F("<div class='info'>This may take a while ;-)</div>"));
 		client->println(F("<table><thead><tr><th>Node</th><th>Newinfo</th><th></th></tr></thead>"));
 		client->print(F("<tfoot><tr><th colspan='3'>"));
-		client->print(NodeInfo::NUM_NODES);
+		client->print(NODE_INFO_MAX);
 		client->println(F(" Entries</th></tr></tfoot>"));
 
 		client->print(F("<tr><td data-label='ID'><form action='"));

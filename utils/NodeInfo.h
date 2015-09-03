@@ -18,7 +18,8 @@
 
 extern SPIRamManager ram;
 
-#define NODE_INFO_SIZE (32)
+#define NODE_INFO_SIZE 32
+#define NODE_INFO_MAX 255
 
 class NodeInfo
 {
@@ -27,32 +28,11 @@ class NodeInfo
 		const char* fileNameNodeInfo = {"NODEINFO.TXT"};
 
 		/** maximum number of nodeids */
-		const static uint8_t NUM_NODES = 255;
 		typedef struct SD_nodeInfoTableEntryStruct {
 			uint8_t nodeId;
 			char nodeStr[NODE_INFO_SIZE];
 			uint32_t lastDiscoveryRequest;
 		} NodeInfoTableEntry_t;
-
-		/**  */
-		typedef struct SD_nodeDiscoveryInfoTableEntryStruct {
-			uint8_t hardwareAddress;
-			uint8_t hardwareType;
-			uint32_t rtcTimestamp;
-		} NodeDiscoveryInfoTableEntry_t;
-
-		/**  */
-		typedef struct SD_subscriptionInfoTableEntryStruct {
-			uint8_t hardwareAddress;
-			uint8_t hardwareType;
-			uint32_t delay;
-			uint8_t subscription_event_type_t;
-			seq_t sequence;
-			uint32_t rtcLastkeepalive;
-			uint32_t rtcLastRequest;
-			uint8_t active;
-		} NodeSubscriptionInfoTableEntry_t;
-
 
 		uint8_t memRegionId;
 
@@ -64,7 +44,7 @@ class NodeInfo
 		void init() {
 			Serial.print(millis());
 			Serial.print(F(": creating memregion for nodeInfo"));
-			memRegionId = ram.createRegion(sizeof(NodeInfoTableEntry_t), NUM_NODES);
+			memRegionId = ram.createRegion(sizeof(NodeInfoTableEntry_t), NODE_INFO_MAX);
 
 			#ifdef SDCARD_ENABLE
 			readInfoFromSDCard();
@@ -123,7 +103,7 @@ class NodeInfo
 				File fd = SD.open(fileNameNodeInfo, FILE_WRITE);
 				fd.seek(0);
 				NodeInfoTableEntry_t elem;
-				for(uint16_t i = 0; i < NUM_NODES; i++) {
+				for(uint16_t i = 0; i < NODE_INFO_MAX; i++) {
 					if(fd.read(&elem, sizeof(elem)) > 0) {
 						ram.writeElementToRam(memRegionId, i, &elem);
 						wdt_reset();
@@ -138,7 +118,7 @@ class NodeInfo
 			return false;
 		}
 
-		boolean updateString(uint8_t id, byte* buf, uint8_t buflen) {
+		boolean updateString(l3_address_t id, byte* buf, uint8_t buflen) {
 			//read current info
 			NodeInfoTableEntry_t elem;
 			ram.readElementIntoVar(memRegionId, id, &elem);
@@ -153,6 +133,17 @@ class NodeInfo
 			}
 
 			return writeInfoToSDCard();
+		}
+
+		boolean updateDiscoveryTime(l3_address_t id, uint32_t timestamp) {
+			NodeInfoTableEntry_t elem;
+
+			ram.readElementIntoVar(memRegionId, id, &elem);
+			elem.lastDiscoveryRequest = timestamp;
+
+			if(!ram.writeElementToRam(memRegionId, id, &elem)) {
+				return false;
+			}
 		}
 
 }; //NodeInfo

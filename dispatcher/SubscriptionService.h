@@ -70,6 +70,28 @@ class SubscriptionService {
 		void doPollingForSubscriptions();
 		#endif
 
+		void init() {
+			//memset(&subscriptions, 0,  (size_t) numSubscriptionList * sizeof(subscription_helper_t));
+			//memset(&subscriptionsLastExecution, 0, (size_t) numSubscriptionList * sizeof(uint32_t));
+
+			#ifdef ENABLE_EXTERNAL_RAM
+			memRegionSubscriptionLastExecutions = ram.createRegion(sizeof(uint32_t), numSubscriptionList);
+			memRegionSubscriptions = ram.createRegion(sizeof(subscription_helper_t), numSubscriptionList);
+			memRegionSubscriptionsTmpBuffer = ram.createRegion(sizeof(subscription_helper_t), numSubscriptionList);
+			#else
+			for(uint8_t i = 0; i < numSubscriptionList; i++) {
+				subscriptions[i].address = 0;
+				subscriptionsLastExecution[i] = 0;
+			}
+			#endif
+
+			lastSubscriptionCheckTimestamp = 0;
+
+			#ifdef ENABLE_EVENTS
+			lastSubscriptionPollingCheckTimestamp = 0;
+			#endif
+		}
+
 		/**
 		 * handles a new subscriptio request
 		 * @param callback

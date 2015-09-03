@@ -18,6 +18,10 @@
 class discoveryListener : public webserverListener {
 	public:
 
+	discoveryListener() {
+		memset(sensorInfos, 0, sizeof(sensorInfos));
+	}
+
 	/** # infos */
 	int8_t totalInfos;
 	/** # infos we have received yet */
