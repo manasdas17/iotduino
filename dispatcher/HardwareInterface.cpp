@@ -140,11 +140,3 @@ boolean HardwareInterface::writeHardware(HardwareDriver* driver, HardwareCommand
 
 	return driver->writeVal(cmd->getHardwareType(), cmd);
 }
-
-HardwareInterface::~HardwareInterface() {
-
-}
-
-HardwareInterface::HardwareInterface() {
-	memset(driver, 0, sizeof(driver));
-}

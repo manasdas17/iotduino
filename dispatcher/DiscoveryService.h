@@ -24,8 +24,7 @@ class DiscoveryService {
 
 	//functions
 	public:
-		DiscoveryService() {}
-		~DiscoveryService() {}
+		void init() {}
 
 		/**
 		 * set hardware interface - needed for local device hardware lookup

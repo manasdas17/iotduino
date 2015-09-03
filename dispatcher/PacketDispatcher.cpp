@@ -140,6 +140,3 @@ void PacketDispatcher::init(Layer3* networking, HardwareInterface* hwinterface) 
 		this->subscriptionService.setNetworking(networking);
 	#endif
 }
-
- PacketDispatcher::PacketDispatcher() {
-}

@@ -56,15 +56,9 @@ class HardwareInterface {
 		 */
 		HardwareDriver* getHardwareDriver(const HardwareTypeIdentifier type, const uint8_t address) const;
 
-		/**
-		 * constructor
-		 */
-		HardwareInterface();
-
-		/**
-		 * destructor
-		 */
-		~HardwareInterface();
+		void init() {
+			memset(driver, 0, sizeof(driver));
+		}
 
 		/**
 		 * register a new driver

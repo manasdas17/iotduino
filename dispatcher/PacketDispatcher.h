@@ -38,7 +38,12 @@ class PacketDispatcher {
 
 	//functions
 	public:
-		PacketDispatcher();
+		void init() {
+			commandHandler.init();
+			responseHandler.init();
+			subscriptionService.init();
+			discoveryService.init();
+		}
 
 		/**
 		 * initialise this class
@@ -46,10 +51,6 @@ class PacketDispatcher {
 		 * @param hwinterface
 		 */
 		void init(Layer3* networking, HardwareInterface* hwinterface);
-
-		~PacketDispatcher() {
-
-		}
 
 		ResponseHandler* getResponseHandler() {
 			return &responseHandler;

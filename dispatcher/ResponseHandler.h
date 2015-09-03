@@ -87,17 +87,18 @@ class ResponseHandler {
 		 */
 		void loop();
 
-		ResponseHandler() {
+		void init() {
 			activeListenersNum = 0;
 
 			#ifdef ENABLE_EXTERNAL_RAM
-				#ifdef DEBUG_HANDLER_RESPONSE_ENABLE
-					Serial.print(millis());
-					Serial.println(F(": creating region for responsehandler"));
-				#endif
-				memRegionId = ram.createRegion(sizeof(responseListener_t), LISTENER_NUM);
+			#ifdef DEBUG_HANDLER_RESPONSE_ENABLE
+			Serial.print(millis());
+			Serial.println(F(": creating region for responsehandler"));
+			#endif
+			memRegionId = ram.createRegion(sizeof(responseListener_t), LISTENER_NUM);
 			#endif
 		}
+
 
 	protected:
 		/**

@@ -319,11 +319,12 @@ void setup() {
 
 	#ifdef SDCARD_ENABLE
 		sdcard.initSD();
-
 		subscriptionManager.init();
-
 		nodeInfo.init();
 	#endif
+
+	dispatcher.init();
+	hwInterface.init();
 
 	//init network
 	l3.init(address_local);

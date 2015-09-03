@@ -38,19 +38,8 @@ class CommandHandler {
 		void handleUnnumbered( EventCallbackInterface* callback, Layer3::packet_t packet );
 
 		void setHardwareInterface(HardwareInterface* hwinterface);
-		/**
-		 * constructor
-		 */
-		CommandHandler() {
 
-		}
-
-		/**
-		 * generic destructor
-		 */
-		~CommandHandler() {
-
-		}
+		void init() {};
 
 }; //CommandHandler
 
