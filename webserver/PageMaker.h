@@ -5,8 +5,6 @@
 * Author: helge
 */
 
-#pragma once
-
 #ifndef __PAGEMAKER_H__
 #define __PAGEMAKER_H__
 
@@ -17,13 +15,14 @@
 #include <utils/NodeInfo.h>
 #include <Ethernet/EthernetClient.h>
 #include <webserver/RequestContent.h>
-
+#include <webserver/HardwareResultListener.h>
 #include <webserver/StringConstantsExtern.h>
 
 extern SPIRamManager ram;
 extern DiscoveryManager discoveryManager;
 extern NodeInfo nodeinfo;
 
+#define WEBSERVER_REQUEST_TIMEOUT_MILLIS (2*1000)
 
 enum MIME_TYPES {
 	HTML,
@@ -1152,8 +1151,8 @@ class PageMaker
 		Serial.println(client->_sock);
 		#endif
 
-		PageMaker::sendHttpOk(client);
-		PageMaker::sendHtmlHeader(client, PAGE_NODES);
+		sendHttpOk(client);
+		sendHtmlHeader(client, PAGE_NODES);
 
 		//table
 		client->println(F("<table><thead><tr><th>ID</th><th>NodeInfo</th><th>lastDiscovery</th><th>active</th><th>nextHop</th><th>#hops</th><th>routeAge</th><th>info</th></tr></thead><tbody>"));
@@ -1183,7 +1182,7 @@ class PageMaker
 			neighbourHops = -1;
 			neighbourNextHop = 0;
 			//get route info
-			PageMaker::getRouteInfoForNode(i, neighbourActive, neighbourLastKeepAlive, neighbourHops, neighbourNextHop);
+			getRouteInfoForNode(i, neighbourActive, neighbourLastKeepAlive, neighbourHops, neighbourNextHop);
 
 			//print node info?
 			if(nodeInfoObj.nodeId != 0) {
@@ -1197,7 +1196,7 @@ class PageMaker
 				client->print(F("</td><td data-label='lastDicovery' class='righted'>"));
 
 				uint32_t t = nodeInfoObj.lastDiscoveryRequest;
-				PageMaker::printDate(client, t);
+				printDate(client, t);
 
 
 				client->print(F("</td><td data-label='Active' class='righted'>"));
@@ -1219,9 +1218,9 @@ class PageMaker
 				}
 				//discover
 				client->print(F("</td><td  data-label='sensors' class='centered'><a href='"));
-				PageMaker::printP(client, pageAddresses[PAGE_GETSENSORINFO]);
+				printP(client, pageAddresses[PAGE_GETSENSORINFO]);
 				client->print(F("?"));
-				PageMaker::printP(client, variableRemote);
+				printP(client, variableRemote);
 				client->print(F("="));
 				client->print(i);
 				client->println(F("'>x</a>"));
@@ -1238,9 +1237,245 @@ class PageMaker
 		client->println(F(" entries</th></tr></tfoot></table>"));
 
 		//footer
-		PageMaker::sendHtmlFooter(client);
+		sendHtmlFooter(client);
 	}
 
+
+	/**
+	 * initiate sensor write
+	 * @param client
+	 * @param req
+	 */
+	static boolean doPageWriteSensor(EthernetClient* client, RequestContent* req, hardwareRequestListener* listenerHardwareRequest) {
+		#ifdef DEBUG
+		Serial.print(millis());
+		Serial.print(F(": doPageWriteSensor() on clientId="));
+		Serial.println(client->_sock);
+		#endif
+
+		//get request strings
+		String* id = req->getValue(variableRemote);
+		String* hwAddressStr = req->getValue(variableHwAddress);
+		String* hwtypeStr = req->getValue(variableHwType);
+		String* listTypeStr = req->getValue(variableListType);
+		String* val = req->getValue(variableVal);
+
+		HardwareCommandResult cmd;
+
+		//check if available
+		if(id == NULL || hwAddressStr == NULL || hwtypeStr == NULL || hwtypeStr == NULL || listTypeStr == NULL || val == NULL || val->length() % 2 == 1 || (val->length()-2)/2 > sizeUInt8List) {
+			sendHttp500WithBody(client);
+			return false;
+		}
+
+		//convert addresses
+		int8_t idInt = id->toInt();
+		int8_t hwaddress = hwAddressStr->toInt();
+		int8_t hwtype = hwtypeStr->toInt();
+
+		//get list numbers
+		uint8_t uint8 = 0;
+		uint8_t uint16 = 0;
+		uint8_t int8 = 0;
+		uint8_t int16 = 0;
+
+
+		int8_t numBytes = (val->length()-2) / 2;
+		if(strcmp_P((const char*) listTypeStr, linkCmdListTypeUint16) == 0) {
+			uint16 = numBytes;
+			cmd.setUint16ListNum(numBytes);
+		} else if(strcmp_P((const char*) listTypeStr, linkCmdListTypeInt8) == 0) {
+			int8 = numBytes;
+			cmd.setInt8ListNum(numBytes);
+		} else if(strcmp_P((const char*) listTypeStr, linkCmdListTypeInt16) == 0) {
+			int16 = numBytes;
+			cmd.setInt16ListNum(numBytes);
+		} else { //uint8
+			uint8 = numBytes;
+			cmd.setUint8ListNum(numBytes);
+		}
+
+		if(numBytes < 0 || 2*uint16 > sizeUInt8List || 2*int16 > sizeUInt8List || uint8 > sizeUInt8List || int8 > sizeUInt8List) {
+			sendHttp500WithBody(client);
+			return false;
+		}
+
+
+		//get value
+		val->toLowerCase();
+		char valBuf[sizeUInt8List*2+2];
+		val->toCharArray(valBuf, sizeof(valBuf));
+		for(uint8_t i = 2; i < val->length(); i += 2) {
+			sscanf((char*) &valBuf[i], "%2hhx", (char*) &cmd.getUint8List()[numBytes-1]);
+			numBytes--;
+		}
+
+		//check if all is ok.
+		if(idInt == -1 || hwaddress == -1 || hwtype == -1) {
+			sendHttp500WithBody(client);
+			return false;
+		}
+
+		Layer3::packet_t p;
+		cmd.setAddress(hwaddress);
+		cmd.setHardwareType((HardwareTypeIdentifier) hwtype);
+		seq_t sequence = pf.generateHardwareCommandWrite(&p, idInt, &cmd);
+		listenerHardwareRequest->init(idInt, (HardwareTypeIdentifier) hwtype, hwaddress, webserverListener::AWAITING_ANSWER);
+
+		boolean success = dispatcher.getResponseHandler()->registerListenerBySeq(millis()+WEBSERVER_REQUEST_TIMEOUT_MILLIS, sequence, idInt, listenerHardwareRequest);
+
+		success &= l3.sendPacket(p);
+
+		if(!success) {
+			sendHttp500WithBody(client);
+			dispatcher.getResponseHandler()->unregisterListener(listenerHardwareRequest);
+			return false;
+		}
+
+		return true;
+	}
+
+	static void doPageWriteSensor2(EthernetClient* client, hardwareRequestListener* listener) {
+		#ifdef DEBUG
+		Serial.print(millis());
+		Serial.print(F(": doPageWriteSensor2() on clientId="));
+		Serial.println(client->_sock);
+		#endif
+
+		sendHttpOk(client);
+		sendHtmlHeader(client, PAGE_WRITE_SENSOR, false, false);
+
+		client->print(F("<h1>Sensor Write id="));
+		client->print(listener->remote);
+		client->println(F("</h1>"));
+		client->print(F("<h2>hwaddress="));
+		client->print(listener->hwaddress);
+		client->print(F(" hwtype="));
+		printP(client, hardwareTypeStrings[listener->hwtype]);
+		if(listener->cmd.isRead) {
+			client->print(F(" read"));
+			} else {
+			client->print(F(" write"));
+		}
+		client->println(F("</h2>"));
+
+		sendHtmlFooter(client);
+		listener->init(0, HWType_UNKNOWN, 0, webserverListener::START);
+	}
+
+
+	/**
+	 * initiate sensor reading
+	 * @param client
+	 * @param req
+	 */
+	static boolean doPageRequestSensor(EthernetClient* client, RequestContent* req, hardwareRequestListener* hwListener) {
+		#ifdef DEBUG
+		Serial.print(millis());
+		Serial.print(F(": doPageRequestSensor() on client="));
+		Serial.println(client->_sock);
+		#endif
+
+		String* id = req->getValue(variableRemote);
+		String* hwAddressStr = req->getValue(variableHwAddress);
+		String* hwtypeStr = req->getValue(variableHwType);
+		if(id == NULL || hwAddressStr == NULL || hwtypeStr == NULL) {
+			sendHttp500WithBody(client);
+			return false;
+		}
+
+		int8_t idInt = id->toInt();
+		int8_t hwaddress = hwAddressStr->toInt();
+		int8_t hwtype = hwtypeStr->toInt();
+
+		if(idInt == -1 || hwaddress == -1 || hwtype == -1) {
+			sendHttp500WithBody(client);
+			return false;
+		}
+
+		Layer3::packet_t p;
+		seq_t sequence = pf.generateHardwareCommandRead(&p, idInt, hwaddress, (HardwareTypeIdentifier) hwtype);
+		hwListener->init(idInt, (HardwareTypeIdentifier) hwtype, hwaddress, webserverListener::AWAITING_ANSWER);
+
+		boolean success = dispatcher.getResponseHandler()->registerListenerBySeq(millis()+WEBSERVER_REQUEST_TIMEOUT_MILLIS, sequence, idInt, hwListener);
+
+		success &= l3.sendPacket(p);
+
+		if(!success) {
+			sendHttp500WithBody(client);
+			dispatcher.getResponseHandler()->unregisterListener(hwListener);
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * sensor reading has finished - print
+	 * @param client
+	 */
+	static void doPageRequestSensor2(EthernetClient* client, hardwareRequestListener* listener) {
+		#ifdef DEBUG
+		Serial.print(millis());
+		Serial.print(F(": doPageRequestSensor2() on clientId="));
+		Serial.println(client->_sock);
+		#endif
+
+		sendHttpOk(client);
+		sendHtmlHeader(client, PAGE_REQUEST_SENSOR, false);
+
+		client->print(F("<h1>Sensor Info id="));
+		client->print(listener->remote);
+		client->println(F("</h1>"));
+		client->print(F("<h2>hwaddress="));
+		client->print(listener->hwaddress);
+		client->print(F(" hwtype="));
+		printP(client, hardwareTypeStrings[listener->hwtype]);
+		if(listener->cmd.isRead) {
+			client->print(F(" read"));
+		} else {
+			client->print(F(" write"));
+		}
+		client->println(F("</h2>"));
+
+		client->println(F("<code><pre>"));
+		if(listener->cmd.numUint8 > 0) {
+			client->print(F("Uint8:\t"));
+			for(uint8_t i = 0; i < listener->cmd.numUint8; i++)	 {
+				client->print(listener->cmd.uint8list[i]);
+				client->print(F("\t"));
+			}
+			client->println(F("<br/>"));
+		}
+		if(listener->cmd.numUint16 > 0) {
+			client->print(F("Uint16:\t"));
+			for(uint8_t i = 0; i < listener->cmd.numUint16; i++) {
+				client->print(listener->cmd.uint16list[i]);
+				client->print(F("\t"));
+			}
+			client->println(F("<br/>"));
+		}
+		if(listener->cmd.numInt8 > 0) {
+			client->print(F("Int8:\t"));
+			for(uint8_t i = 0; i < listener->cmd.numInt8; i++) {
+				client->print(listener->cmd.int8list[i]);
+				client->print(F("\t"));
+			}
+			client->println(F("<br/>"));
+		}
+		if(listener->cmd.numInt16 > 0) {
+			client->print(F("Int16:\t"));
+			for(uint8_t i = 0; i < listener->cmd.numInt16; i++) {
+				client->print(listener->cmd.int16list[i]);
+				client->print(F("\t"));
+			}
+			client->println(F("<br/>"));
+		}
+		client->println(F("</pre></code>"));
+
+		sendHtmlFooter(client);
+		listener->init(0, HWType_UNKNOWN, 0, webserverListener::START);
+	}
 }; //PageMaker
 
 #endif //__PAGEMAKER_H__

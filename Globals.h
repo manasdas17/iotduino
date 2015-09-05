@@ -12,9 +12,6 @@
 #include <DebugConfig.h>
 #include <avr/wdt.h>
 
-#include <webserver/StringConstants.h>
-
-
 #ifdef ENABLE_EXTERNAL_RAM
 	#include <ramManager.h>
 	#ifdef __AVR_ATmega2560__
@@ -74,6 +71,18 @@ PacketFactory pf;
 #ifdef WEBSERVER_ENABLE
 	#include <webserver/WebServerWrapper.h>
 	WebServerWrapper webServerWrapper;
+
+	#include <webserver/StringConstants.h>
+
+	#include <Ethernet/Ethernet.h>
+	//ethernet start on defailt port 80
+	EthernetServer server(80);
+
+	byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
+	#ifndef USE_DHCP_FOR_IP_ADDRESS
+		//ip
+		byte ip[] = { 192, 168, 0, 177 };
+	#endif
 #endif
 
 
