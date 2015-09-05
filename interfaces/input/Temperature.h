@@ -14,8 +14,6 @@
 #define _TEMPERATURE_H
 
 #include <Arduino.h>
-#include <drivers/HardwareID.h>
-#include <drivers/HardwareDriver.h>
 #include <dispatcher/Commands.h>
 
 class Temperature {

@@ -43,6 +43,8 @@ boolean NodeInfo::updateDiscoveryTime(l3_address_t id, uint32_t timestamp) {
 	if(!ram.writeElementToRam(memRegionId, id, &elem)) {
 		return false;
 	}
+
+	return true;
 }
 
 boolean NodeInfo::updateString(l3_address_t id, byte* buf, uint8_t buflen) {

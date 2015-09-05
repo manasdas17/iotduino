@@ -232,7 +232,9 @@ boolean DiscoveryManager::readDataFromSDCard() {
 	}
 
 	f.close();
+	return true;
 	#endif
+	return false;
 }
 
 boolean DiscoveryManager::getIteratorDiscovery(SPIRamManager::iterator* it) {
@@ -315,5 +317,7 @@ boolean DiscoveryManager::writeDataToSDCard() {
 		Serial.println(F(": SubscriptionManager::writeDataToSDCard() finished."));
 		Serial.flush();
 		#endif
+		return true;
 		#endif
+		return false;
 }

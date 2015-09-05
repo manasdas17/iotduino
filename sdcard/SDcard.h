@@ -35,6 +35,8 @@ class SDcard {
 			Serial.print(millis());
 			Serial.println(F(": sd init done"));
 			#endif
+
+			return true;
 		}
 
 		static boolean fillFile(File* fd, uint8_t val, uint32_t destinationSize) {
