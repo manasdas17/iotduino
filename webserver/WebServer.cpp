@@ -7,16 +7,14 @@
 
 #include <webserver/WebServer.h>
 
- WebServer::WebServer() {
+void WebServer::init() {
 	for(uint8_t i = 0; i < CLIENT_INSTANCES_NUM; i++) {
 		clientStatus[i].inUse = false;
 		clientStatus[i].callback = NULL;
 		clientStatus[i].requestType = PAGE_NONE;
 		clientStatus[i].waiting = false;
 	}
-}
 
-void WebServer::init() {
 	#ifdef USE_DHCP_FOR_IP_ADDRESS
 	Ethernet.begin(mac);  // Use DHCP to get an IP address
 	#else

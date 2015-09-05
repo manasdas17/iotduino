@@ -257,199 +257,166 @@ class PageMaker
 		//sendHttpOk(client, 300);
 		sendHttpOk(client, 300, CSS, NULL, 0);
 
-		client->println(F(".info { font-family: monospace; margin-bottom: 5px; background-color: rgb(220,255,220); border: 1px darkgray dashed; padding: 5px;}"));
-		client->println(F("a, a:link, a:visited { color: #5F5F5F; text-decoration: underline; font-weight: normal; }"));
-		client->println(F("a:active { font-weight: bold; }"));
-		client->println(F("a:hover { text-decoration: none; background-color: #FFD8D8; }"));
-		//client->println(F("table, th, td, body { font-family: Arial; font-size: 9pt; }"));
-		//client->println(F("table { border: 1px lightgray dashed; vertical-align: top; padding: 4px; background-position: center; width: 800px; border-spacing: 2px; -webkit-border-horizontal-spacing: 5px; -webkit-border-vertical-spacing: 2px;}"));
-		//client->println(F("td { font-size: 9pt; border-bottom: 1px dotted; }"));
-		//client->println(F("th { font-size: 10pt; font-weight: bold; border-bottom: 2px solid }"));
-		//client->println(F(".bg1 { background-color: #fafafa; }"));
-		//client->println(F(".bg2 { background-color: #efefef; }"));
-		//client->println(F(".bg1:hover { background-color: #FFD8D8; }"));
-		//client->println(F(".bg2:hover { background-color: #FFD8D8; }"));
-		client->println(F(".warning { color: red; }"));
-		client->println(F(".ok { color: green; }"));
-		//client->println(F("hr { border:none; height: 1px; background-color: black; }"));
-		client->println(F("input { font-size: 9pt; height: 20px; margin: 0; padding: 0px; background-color: white; border: 1px solid darkgray; }"));
-		client->println(F("input[type='submit'] { width: 50px; }"));
-		client->println(F("input[type='text'] { width: 120px }"));
-		client->println(F("select { width: 120px }"));
-		client->println(F(".centered { text-align: center; }"));
-		client->println(F(".righted { text-align: right; }"));
-		client->println(F(".inline { border: none; }"));
-
-		client->print(F("tbody tr:nth-child(even) {"));
-		client->print(F("  background-color: #eee;"));
-		client->print(F("}"));
-		client->print(F(""));
-		client->print(F("tbody tr:nth-child(odd) {"));
-		client->print(F("  background-color: #fff;"));
-		client->print(F("}"));
-		client->print(F(""));
-		client->print(F("tbody tr:hover {"));
-		client->print(F("  background-color: #ffdcdc;"));
-		client->print(F("}"));
-		client->print(F(""));
-		client->print(F("body {"));
-		client->print(F("  margin-left: 0px;"));
-		client->print(F("  margin-bottom: 0px;"));
-		client->print(F("  font-family: arial;"));
-		client->print(F("  font-size: 12pt;"));
-		client->print(F("  color: #000000;"));
-		client->print(F("  background-color: #dddddd;"));
-		client->print(F("}"));
-		client->print(F(""));
-		client->print(F("div.datum {"));
-		client->print(F("  position: absolute;"));
-		client->print(F("  top: 15px;"));
-		client->print(F("  left: 400px;"));
-		client->print(F("  text-align: right;"));
-		client->print(F("  font-size: 10px;"));
-		client->print(F("}"));
-		client->print(F(""));
-		client->print(F("div.frame {"));
-		client->print(F("  position: absolute;"));
-		client->print(F("  top: 42px;"));
-		client->print(F("  left: 10px;"));
-		//client->print(F("  right: 10px;"));
-		client->print(F("  border: 1px solid #000;"));
-		client->print(F("  background-color: #ffffff;"));
-		client->print(F("  padding: 20px 30px 10px;"));
-		client->print(F("}"));
-		client->print(F(""));
-		client->print(F("h1 {"));
-		client->print(F("  font-size: 15pt;"));
-		client->print(F("}"));
-		client->print(F(""));
-		client->print(F("h1:first-letter {"));
-		client->print(F("  color: #dd0000;"));
-		client->print(F("}"));
-		client->print(F(""));
-		client->print(F("div.content {"));
-		client->print(F("  margin: 20px 0px 20px;"));
-		client->print(F("  border: 1px dotted #000;"));
-		client->print(F("  background-color: #fafafa;"));
-		client->print(F("  padding: 10px 10px 10px;"));
-		client->print(F("}"));
-		client->print(F(""));
-		client->print(F("div.pos {"));
-		client->print(F("  z-index: 10;"));
-		client->print(F("  position: absolute;"));
-		client->print(F("  top: 20px;"));
-		client->print(F("  left: 30px;"));
-		client->print(F("}"));
-		client->print(F(""));
-		client->print(F("#tabs ul {"));
-		client->print(F("  margin-left: 0px;"));
-		client->print(F("  padding-left: 0px;"));
-		client->print(F("  display: inline;"));
-		client->print(F("}"));
-		client->print(F(""));
-		client->print(F("#tabs ul li {"));
-		client->print(F("  margin-left: 0px;"));
-		client->print(F("  margin-right: 5px;"));
-		client->print(F("  margin-bottom: 0px;"));
-		client->print(F("  padding: 2px 6px 5px;"));
-		client->print(F("  border: 1px solid #000;"));
-		client->print(F("  list-style: none;"));
-		client->print(F("  display: inline;"));
-		client->print(F("  background-color: #cccccc;"));
-		client->print(F("}"));
-		client->print(F(""));
-		client->print(F("#tabs ul li.here {"));
-		client->print(F("  border-bottom: 1px solid #ffffff;"));
-		client->print(F("  list-style: none;"));
-		client->print(F("  display: inline;"));
-		client->print(F("  background-color: #ffffff;"));
-		client->print(F("}"));
-		client->print(F(""));
-		client->print(F("#tabs ul li:hover {"));
-		client->print(F("  background-color: #eeeeee;"));
-		client->print(F("}"));
-		client->print(F(""));
-		client->print(F("/*nav-links*/"));
-		client->print(F("#tabs a, a:link, a:visited, a:active {"));
-		client->print(F("  color: #000000;"));
-		client->print(F("  font-weight: bold;"));
-		client->print(F("  text-decoration: none;"));
-		client->print(F("}"));
-		client->print(F(""));
-		client->print(F("#tabs a:hover {"));
-		client->print(F("  color: #dd0000;"));
-		client->print(F("  text-decoration: none;"));
-		client->print(F("}"));
-		client->print(F(""));
-		client->print(F("/**Responsivetablewithcss*AdeBudiman-art.visuadlesigner@gmail.com*2015*/"));
-		client->print(F("table {"));
-		client->print(F("  border: 1px solid #ccc;"));
-		client->print(F("  width: 100%;"));
-		client->print(F("  margin: 0px;"));
-		client->print(F("  padding: 0px;"));
-		client->print(F("  border-collapse: collapse;"));
-		client->print(F("  border-spacing: 0px;"));
-		client->print(F("}"));
-		client->print(F(""));
-		client->print(F("table tr {"));
-		client->print(F("  border: 1px solid #ddd;"));
-		client->print(F("  padding: 5px;"));
-		client->print(F("}"));
-		client->print(F(""));
-		client->print(F("table th, table td {"));
-		client->print(F("  padding: 10px;"));
-		client->print(F("  text-align: center;"));
-		client->print(F("}"));
-		client->print(F(""));
-		client->print(F("table th {"));
-		client->print(F("  text-transform: uppercase;"));
-		client->print(F("  font-size: 14px;"));
-		client->print(F("  letter-spacing: 1px;"));
-		client->print(F("}"));
-		client->print(F(""));
-		client->print(F("@media screen and (max-width: 1024px) {"));
-		client->print(F("  table {"));
-		client->print(F("    border: 10px;"));
-		client->print(F("  }"));
-		client->print(F(""));
-		client->print(F("  table thead {"));
-		client->print(F("    display: none;"));
-		client->print(F("  }"));
-		client->print(F(""));
-		client->print(F("  table tr {"));
-		client->print(F("    margin-bottom: 10px;"));
-		client->print(F("    display: block !important;;"));
-		client->print(F("    border-bottom: 2px solid #ddd;"));
-		client->print(F("  }"));
-		client->print(F(""));
-		client->print(F("  table td {"));
-		client->print(F("    display: block !important;;"));
-		client->print(F("    text-align: right;"));
-		client->print(F("    font-size: 13px;"));
-		client->print(F("    border-bottom: 1px dotted #ccc;"));
-		client->print(F("  }"));
-		client->print(F(""));
-		client->print(F("  table td:last-child {"));
-		client->print(F("    border-bottom: 0px;"));
-		client->print(F("  }"));
-		client->print(F(""));
-		client->print(F("  table td:before {"));
-		client->print(F("    content: attr(data-label);"));
-		client->print(F("    float: left;"));
-		client->print(F("    text-transform: uppercase;"));
-		client->print(F("    font-weight: bold;"));
-		client->print(F("  }"));
-		client->print(F("}"));
+		client->println(
+			F(".info { font-family: monospace; margin-bottom: 5px; background-color: rgb(220,255,220); border: 1px darkgray dashed; padding: 5px;}"
+			"a, a:link, a:visited { color: #5F5F5F; text-decoration: underline; font-weight: normal; }"
+			"a:active { font-weight: bold; }"
+			"a:hover { text-decoration: none; background-color: #FFD8D8; }"
+			".warning { color: red; }"
+			".ok { color: green; }"
+			"input { font-size: 9pt; height: 20px; margin: 0; padding: 0px; background-color: white; border: 1px solid darkgray; }"
+			"input[type='submit'] { width: 50px; }"
+			"input[type='text'] { width: 120px }"
+			"select { width: 120px }"
+			".centered { text-align: center; }"
+			".righted { text-align: right; }"
+			".inline { border: none; }"
+			"tbody tr:nth-child(even) {"
+			"  background-color: #eee;"
+			"}"
+			"tbody tr:nth-child(odd) {"
+			"  background-color: #fff;"
+			"}"
+			"tbody tr:hover {"
+			"  background-color: #ffdcdc;"
+			"}"
+			"body {"
+			"  margin-left: 0px;"
+			"  margin-bottom: 0px;"
+			"  font-family: arial;"
+			"  font-size: 12pt;"
+			"  color: #000000;"
+			"  background-color: #dddddd;"
+			"}"
+			"div.datum {"
+			"  position: absolute;"
+			"  top: 15px;"
+			"  left: 400px;"
+			"  text-align: right;"
+			"  font-size: 10px;"
+			"}"
+			"div.frame {"
+			"  position: absolute;"
+			"  top: 42px;"
+			"  left: 10px;"
+			"  border: 1px solid #000;"
+			"  background-color: #ffffff;"
+			"  padding: 20px 30px 10px;"
+			"}"
+			"h1 {"
+			"  font-size: 15pt;"
+			"}"
+			"h1:first-letter {"
+			"  color: #dd0000;"
+			"}"
+			"div.content {"
+			"  margin: 20px 0px 20px;"
+			"  border: 1px dotted #000;"
+			"  background-color: #fafafa;"
+			"  padding: 10px 10px 10px;"
+			"}"
+			"div.pos {"
+			"  z-index: 10;"
+			"  position: absolute;"
+			"  top: 20px;"
+			"  left: 30px;"
+			"}"
+			"#tabs ul {"
+			"  margin-left: 0px;"
+			"  padding-left: 0px;"
+			"  display: inline;"
+			"}"
+			"#tabs ul li {"
+			"  margin-left: 0px;"
+			"  margin-right: 5px;"
+			"  margin-bottom: 0px;"
+			"  padding: 2px 6px 5px;"
+			"  border: 1px solid #000;"
+			"  list-style: none;"
+			"  display: inline;"
+			"  background-color: #cccccc;"
+			"}"
+			"#tabs ul li.here {"
+			"  border-bottom: 1px solid #ffffff;"
+			"  list-style: none;"
+			"  display: inline;"
+			"  background-color: #ffffff;"
+			"}"
+			"#tabs ul li:hover {"
+			"  background-color: #eeeeee;"
+			"}"
+			"/*nav-links*/"
+			"#tabs a, a:link, a:visited, a:active {"
+			"  color: #000000;"
+			"  font-weight: bold;"
+			"  text-decoration: none;"
+			"}"
+			"#tabs a:hover {"
+			"  color: #dd0000;"
+			"  text-decoration: none;"
+			"}"
+			"/**Responsivetablewithcss*AdeBudiman-art.visuadlesigner@gmail.com*2015*/"
+			"table {"
+			"  border: 1px solid #ccc;"
+			"  width: 100%;"
+			"  margin: 0px;"
+			"  padding: 0px;"
+			"  border-collapse: collapse;"
+			"  border-spacing: 0px;"
+			"}"
+			"table tr {"
+			"  border: 1px solid #ddd;"
+			"  padding: 5px;"
+			"}"
+			"table th, table td {"
+			"  padding: 10px;"
+			"  text-align: center;"
+			"}"
+			"table th {"
+			"  text-transform: uppercase;"
+			"  font-size: 14px;"
+			"  letter-spacing: 1px;"
+			"}"
+			"@media screen and (max-width: 1024px) {"
+			"  table {"
+			"    border: 10px;"
+			"  }"
+			"  table thead {"
+			"    display: none;"
+			"  }"
+			"  table tr {"
+			"    margin-bottom: 10px;"
+			"    display: block !important;;"
+			"    border-bottom: 2px solid #ddd;"
+			"  }"
+			"  table td {"
+			"    display: block !important;"
+			"    text-align: right;"
+			"    font-size: 13px;"
+			"    border-bottom: 1px dotted #ccc;"
+			"  }"
+			"  table td:last-child {"
+			"    border-bottom: 0px;"
+			"  }"
+			"  table td:before {"
+			"    content: attr(data-label);"
+			"    float: left;"
+			"    text-transform: uppercase;"
+			"    font-weight: bold;"
+			"  }"
+			"}"));
 
 		client->flush();
 	}
 
+	/** add trailing 0 to numbers <10 */
 	static void trailing0(EthernetClient* client, uint8_t a) {
 		if(a < 10) {
 			client->print(F("0"));
 		}
 	}
 
+	/** pretty print unix timestamp "YYY-MM-DD HH:ii:ss" */
 	static void printDate(EthernetClient* client, uint32_t t) {
 		client->print(year(t));
 		client->print(F("-"));
@@ -507,6 +474,7 @@ class PageMaker
 		return false;
 	}
 
+	/** is this hardware type readable? */
 	static boolean hwIsReadable(HardwareTypeIdentifier type) {
 		switch(type) {
 			case HWType_rcswitch:
@@ -517,6 +485,7 @@ class PageMaker
 		}
 	}
 
+	/** print out links for execuratble actions */
 	static void printExecutableLinks(EthernetClient* client, l3_address_t remote, HardwareTypeIdentifier type, uint8_t address) {
 		//conversion buffers
 		char buf1[3];
@@ -638,6 +607,7 @@ class PageMaker
 		}
 	}
 
+	/** print kink with arguments */
 	static void printLink(EthernetClient* client, const char* baseUrl, const char** keys, const char** vals, const char* name, uint8_t num) {
 		//#ifdef DEBUG_WEBSERVER_ENABLE
 		//Serial.print(millis());

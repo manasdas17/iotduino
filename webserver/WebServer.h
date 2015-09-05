@@ -77,6 +77,7 @@ class WebServer {
 	#endif
 	typedef char BUFFER[STRING_BUFFER_SIZE];
 
+	/** keep track of client request */
 	typedef struct clientInstances_struct {
 		PAGES requestType;
 		boolean waiting;
@@ -93,18 +94,15 @@ class WebServer {
 	/** static hardwarerequestlistener object */
 	hardwareRequestListener listenerHardwareRequest;
 
-	WebServer();
-
+	/**  initialise ethernet server and variables */
 	void init();
 
 	// Http header token delimiters
 	const char *pSpDelimiters = " \r\n";
-	const char *pStxDelimiter = "\002";    // STX - ASCII start of text character
+	//const char *pStxDelimiter = "\002";    // STX - ASCII start of text character
 
-	#ifdef DEBUG_WEBSERVER_ENABLE
+	/** print flash string to serial */
 	void serialPrintP(const char* str);
-	#endif
-
 
 	/**
 	 * Read HTTP request, setting Uri Index, the requestContent and returning the method type.
