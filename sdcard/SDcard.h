@@ -37,6 +37,30 @@ class SDcard {
 			#endif
 		}
 
+		static boolean fillFile(File* fd, uint8_t val, uint32_t destinationSize) {
+			if(!fd)
+				return false;
+
+			uint8_t buflen = 64;
+			uint8_t buf[buflen];
+			memset(&buf, val, buflen);
+
+			while(fd->size() < destinationSize) {
+				if(destinationSize - fd->size() > buflen) {
+					if(fd->write(buf, buflen) != buflen)
+						return false;
+				} else {
+					if(!fd->write(val)) {
+						return false;
+					}
+				}
+			}
+
+			fd->flush();
+			return true;
+
+		}
+
 };
 
 #endif /* SDCARD_H_ */

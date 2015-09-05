@@ -18,6 +18,8 @@
 #include <webserver/DiscoveryListener.h>
 #include <SpiRAM.h>
 #include <utils/NodeInfo.h>
+#include <sdcard/SDcard.h>
+#include <SD.h>
 
 extern PacketDispatcher dispatcher;
 extern PacketFactory pf;
@@ -31,6 +33,8 @@ extern NodeInfo nodeInfo;
 #define DISCOVERY_REQUEST_DELAY_MILLIS 2000
 #define NUM_KNOWN_NODES 256
 #define NUM_INFOS_PER_NODE 15
+
+#define DISCOVERY_SD_WRITE_PERIOD_MILLIS (60*1000UL)
 
 class SubscriptionManager {
 	/** static dicoverylistener object */
@@ -46,6 +50,10 @@ class SubscriptionManager {
 	uint32_t lastDiscoveryRequestFullRun;
 	/** next neighbour id to process */
 	uint8_t nextDiscoveryRequestNeighbourIndex;
+
+	uint32_t lastSDWrite;
+
+	char* filenameDiscovery = "DICOVERY.BIN";
 
 	public:
 		/**  */
@@ -76,7 +84,12 @@ class SubscriptionManager {
 			return l3.sendPacket(p);
 		}
 
-
+		/**
+		 * read am element into buffer
+		 * @param elem buffer
+		 * @param remote node
+		 * @praram i index
+		 */
 		void readElemIntoVar(Discovery_nodeDiscoveryInfoTableEntry_t* elem, l3_address_t remote, uint8_t i) {
 			ram.readElementIntoVar(memRegionDiscoveryInfo, NUM_INFOS_PER_NODE * remote + i, elem);
 		}
@@ -85,7 +98,14 @@ class SubscriptionManager {
 		 * initialise memory.
 		 */
 		void init() {
+			#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
+			Serial.print(millis());
+			Serial.println(F(": SubscriptionManager::init() node="));
+			Serial.flush();
+			#endif
 			listenerDiscovery.init(0, webserverListener::START);
+
+			lastSDWrite = 0;
 
 			lastDiscoveryRequest = 0;
 			lastDiscoveryRequestFullRun = 0;
@@ -93,6 +113,8 @@ class SubscriptionManager {
 
 			memRegionKnownNodes = ram.createRegion(sizeof(l3_address_t), NUM_KNOWN_NODES);
 			memRegionDiscoveryInfo = ram.createRegion(sizeof(Discovery_nodeDiscoveryInfoTableEntry_t), NUM_KNOWN_NODES * NUM_INFOS_PER_NODE);
+
+			readDataFromSDCard();
 		}
 
 		/**
@@ -102,8 +124,19 @@ class SubscriptionManager {
 			//maintainSubscriptions();
 			maintainDiscoveries();
 			maintainListeners();
+
+			uint32_t timeNow = millis();
+			if(timeNow > DISCOVERY_SD_WRITE_PERIOD_MILLIS && lastSDWrite < timeNow - DISCOVERY_SD_WRITE_PERIOD_MILLIS) {
+				//write
+				lastSDWrite = timeNow;
+				writeDataToSDCard();
+				nodeInfo.writeInfoToSDCard();
+			}
 		}
 
+		/**
+		 * update listeners - this especially processes answers
+		 */
 		void maintainListeners() {
 			if(listenerDiscovery.state == webserverListener::FINISHED) {
 				//init buffer for sd storage
@@ -256,6 +289,125 @@ class SubscriptionManager {
 		 */
 		boolean getIteratorDiscovery(SPIRamManager::iterator* it) {
 			return it->init(&ram, memRegionDiscoveryInfo);
+		}
+
+		boolean readDataFromSDCard() {
+			#ifdef SDCARD_ENABLE
+			#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
+			Serial.print(millis());
+			Serial.println(F(": SubscriptionManager::readDataFromSDCard()"));
+			Serial.flush();
+			#endif
+
+			File f = SD.open(filenameDiscovery, FILE_READ);
+
+			if(!f) {
+				return false;
+			}
+
+			Discovery_nodeDiscoveryInfoTableEntry_t elem;
+			uint16_t i = 0;
+			while(f.read(&elem, sizeof(Discovery_nodeDiscoveryInfoTableEntry_t)) == sizeof(Discovery_nodeDiscoveryInfoTableEntry_t)) {
+				if(elem.hardwareAddress != 0 && elem.hardwareType != 0) {
+					ram.writeElementToRam(memRegionDiscoveryInfo, i, &elem);
+				}
+
+				#ifdef SDCARD_ENABLE
+				if(i % 100 == 0) {
+					Serial.print(i);
+					Serial.print('/');
+					Serial.println(1UL * NUM_INFOS_PER_NODE * NUM_KNOWN_NODES);
+				}
+				#endif
+
+				wdt_reset();
+				i++;
+			}
+
+			f.close();
+			#endif
+		}
+
+		/**
+		 * store disovery info to file.
+		 */
+		boolean writeDataToSDCard() {
+			#ifdef SDCARD_ENABLE
+			#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
+			Serial.print(millis());
+			Serial.println(F(": SubscriptionManager::writeDataToSDCard()"));
+			Serial.flush();
+			#endif
+
+			SPIRamManager::iterator it;
+			getIteratorDiscovery(&it);
+
+			//delete old info
+			SD.remove(filenameDiscovery);
+
+			//reopen file for write
+			File f = SD.open(filenameDiscovery, FILE_WRITE);
+
+			if(!f) {
+				return false;
+			}
+
+			if(!SDcard::fillFile(&f, 0, sizeof(Discovery_nodeDiscoveryInfoTableEntry_t) * NUM_INFOS_PER_NODE * NUM_KNOWN_NODES))
+				return false;
+
+			Discovery_nodeDiscoveryInfoTableEntry_t* elem = NULL;
+			while(it.hasNext()) {
+				elem = (Discovery_nodeDiscoveryInfoTableEntry_t*) it.next();
+
+				if(elem->hardwareAddress != 0 && elem->hardwareType != 0) {
+					uint32_t pos = (it.getIteratorIndex()-1) * sizeof(Discovery_nodeDiscoveryInfoTableEntry_t);
+					if(!f.seek(pos)) {
+						#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
+							Serial.print(millis());
+							Serial.print(F(": NodeInfo::writeDataToSDCard() seek to pos="));
+							Serial.print(pos);
+							Serial.print(F("failed for index="));
+							Serial.println(it.getIteratorIndex()-1);
+							Serial.flush();
+						#endif
+						continue;
+					}
+
+					if(f.write((uint8_t*) elem, sizeof(Discovery_nodeDiscoveryInfoTableEntry_t)) == 0) {
+						#ifdef DEBUG
+							Serial.print(millis());
+							Serial.print(F(": NodeInfo::writeDataToSDCard() write at pos="));
+							Serial.print(pos);
+							Serial.print(F("failed for index="));
+							Serial.println(it.getIteratorIndex()-1);
+							Serial.flush();
+						#endif
+					}
+				}
+				wdt_reset();
+			}
+			//SPIRamManager::memRegion_t region;
+			//ram.getRegionInfo(&region, memRegionDiscoveryInfo);
+			//uint8_t numElemsPerBufferPage = ram.bufferSize / sizeof(Discovery_nodeDiscoveryInfoTableEntry_t);
+			//uint16_t remaining = NUM_KNOWN_NODES * NUM_INFOS_PER_NODE;
+			//uint32_t currentAddress = region.ramStartAddress;
+			//while(remaining > 0) {
+				//uint16_t remainingForThisBufferPage = min(numElemsPerBufferPage, remaining);
+				//ram.memcpy_R(ram.buffer, currentAddress,  remainingForThisBufferPage * region.elementSize);
+				//f.write(ram.buffer, remainingForThisBufferPage * region.elementSize);
+//
+				//remaining -= remainingForThisBufferPage;
+			//}
+
+
+			f.flush();
+			f.close();
+			#ifdef DEBUG_SUBSCRIPTION_MGR_ENABLE
+			Serial.print(millis());
+			Serial.println(F(": SubscriptionManager::writeDataToSDCard() finished."));
+			Serial.flush();
+			#endif
+			#endif
 		}
 
 		/**

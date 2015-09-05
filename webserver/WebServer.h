@@ -992,7 +992,7 @@ class WebServer {
 			getRouteInfoForNode(i, neighbourActive, neighbourLastKeepAlive, neighbourHops, neighbourNextHop);
 
 			//print node info?
-			if(neighbourActive == 1 || nodeInfoObj.nodeId != 0) {
+			if(nodeInfoObj.nodeId != 0) {
 				numNodes++;
 
 				//node info
