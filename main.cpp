@@ -38,6 +38,361 @@ void getAddress() {
 	#endif
 }
 
+void setup() {
+	Serial.begin(115200);
+	#ifdef DEBUG
+
+	Serial.println("start test...");
+	Serial.flush();
+
+	randomSeed(analogRead(1));
+
+	Serial.print(F("pin miso="));
+	Serial.print(MISO);
+	Serial.print(F(", pin mosi="));
+	Serial.print(MOSI);
+	Serial.print(F(", pin sck="));
+	Serial.print(SCK);
+	Serial.print(F(", pin ce="));
+	Serial.print(PIN_CE);
+	Serial.print(F(", pin csn(ss)="));
+	Serial.println(PIN_CSN);
+	#endif
+
+	//enable watchdog
+	wdt_enable(WDTO_8S);
+
+	//get address config
+	getAddress();
+
+	#ifdef WEBSERVER_ENABLE
+		webServerWrapper.init();
+	#endif
+
+	#ifdef SDCARD_ENABLE
+		sdcard.initSD();
+		discoveryManager.init();
+		nodeInfo.init();
+	#endif
+
+	dispatcher.init();
+	hwInterface.init();
+
+	//init network
+	l3.init(address_local);
+	l2.init(&l3, PIN_CE, PIN_CSN, address_local);
+	l3.setLayer2(&l2);
+
+	dht11.init(2, 20);
+
+	#ifdef __AVR_ATmega2560__
+	rcsw.init(14, 21);
+	#else
+	rcsw.init(A6, 21);
+	#endif
+
+	motion.init(3, 50);
+	light.init(A5, 60);
+	//mytone.init(A8, 70);
+
+	#ifdef RTC_ENABLE
+		rtc.init(90);
+		uint32_t tmp = rtc.read();
+		setTime(tmp);
+		Serial.print(millis());
+		Serial.print(F(": time updated to: "));
+		Serial.print(tmp);
+		Serial.print(F(" = "));
+
+		tmElements_t tmElems;
+		breakTime(tmp, tmElems);
+		Serial.print((uint16_t) 1970 + tmElems.Year);
+		Serial.print(F("/"));
+		Serial.print(tmElems.Month);
+		Serial.print(F("/"));
+		Serial.print(tmElems.Day);
+		Serial.print(F(" "));
+		Serial.print(tmElems.Hour);
+		Serial.print(F(":"));
+		Serial.print(tmElems.Minute);
+		Serial.print(F(":"));
+		Serial.println(tmElems.Second);
+
+		hwInterface.registerDriver((HardwareDriver*) &rtc);
+	#endif
+
+	hwInterface.registerDriver((HardwareDriver*) &dht11);
+	hwInterface.registerDriver((HardwareDriver*) &rcsw);
+	hwInterface.registerDriver((HardwareDriver*) &motion);
+	hwInterface.registerDriver((HardwareDriver*) &light);
+	//hwInterface.registerDriver((HardwareDriver*) &mytone);
+
+	dispatcher.init(&l3, &hwInterface);
+
+	#ifdef SDCARD_LOGGER_ENABLE
+		dispatcher.getResponseHandler()->registerListenerByPacketType(0, HARDWARE_COMMAND_RES, 0, &sdlistener);
+	#endif
+
+	#ifdef TIMER_ENABLE
+	timer.init();
+	#endif
+
+	/*/test rcsw
+	//HardwareCommandResult cmd;
+	//memset(&cmd, 0, sizeof(cmd));
+	//cmd.setHardwareType(HWType_rcswitch);
+	//cmd.setAddress(rcsw.getAddress());
+	//cmd.setUint8ListNum(2);
+	//cmd.getUint8List()[0] = 3;
+	//cmd.getUint8List()[1] = 0;
+	//hwInterface.executeCommand(&cmd);
+	///*/
+
+
+	/*
+	SDcard::SD_nodeDiscoveryInfoTableEntry_t infos[2];
+	infos[0].hardwareAddress = 0xAA;
+	infos[0].hardwareType = 0xBB;
+	infos[0].rtcTimestamp = 0xCC;
+	infos[1].hardwareAddress = 0xDD;
+	infos[1].hardwareType = 0xEE;
+	infos[1].rtcTimestamp = 0xFF;
+	sdcard.saveDiscoveryInfos(1, infos, 2);
+
+	SDcard::SD_nodeDiscoveryInfoTableEntry_t discovery[SD_DISCOVERY_NUM_INFOS_PER_NODE];
+	sdcard.getDiscoveryInfosForNode(1, discovery, SD_DISCOVERY_NUM_INFOS_PER_NODE);
+	Serial.print(discovery[0].hardwareAddress);
+	Serial.print(F(" "));
+	Serial.print(discovery[0].hardwareType);
+	Serial.print(F(" "));
+	Serial.println(discovery[0].rtcTimestamp);
+	Serial.print(discovery[1].hardwareAddress);
+	Serial.print(F(" "));
+	Serial.print(discovery[1].hardwareType);
+	Serial.print(F(" "));
+	Serial.println(discovery[1].rtcTimestamp);
+	Serial.flush();
+	*/
+
+/*
+	#ifdef SDCARD_ENABLE
+		char buf[17];
+		memset(buf, 0, sizeof(buf));
+		Serial.print(millis());
+		Serial.print(F(": nodeinfo"));
+		if(sdcard.getNodeInfo(l3.localAddress, (uint8_t*) buf, sizeof(buf))) {
+			buf[16] = '\0';
+			Serial.print(F("=\""));
+			Serial.print(buf);
+			Serial.println(F("\""));
+			} else {
+			Serial.println(F(" not available"));
+		}
+
+		dispatcher.getResponseHandler()->registerListenerByPacketType(0, HARDWARE_COMMAND_RES, 0, &sdlistener);
+
+		packet_application_numbered_cmd_t appPacket;
+		memset(&appPacket, 0, sizeof(appPacket));
+		appPacket.packetType = HARDWARE_COMMAND_RES;
+		command_t* hwcmd = (command_t*) appPacket.payload;
+		hwcmd->address = 10;
+		hwcmd->type = HWType_rtc;
+		hwcmd->numUint8 = 4;
+		uint32_t now = rtc.read();
+		hwcmd->uint8list[0] = now >> 24;
+		hwcmd->uint8list[1] = (now >> 16) & 0xff;
+		hwcmd->uint8list[2] = (now >> 8) & 0xff;
+		hwcmd->uint8list[3] = now & 0xff;
+		dispatcher.handleNumbered(13, HARDWARE_COMMAND_RES, 123, &appPacket);
+		//sdlistener.doCallback(&appPacket, 17, 1234);
+	#endif
+*/
+
+/*
+	//mySimpleTimer = SimpleTimer::instance();
+
+	//Serial.println("### testHardwareCommand: Tone ###");
+	//Serial.flush();
+	//testHardwareCommandTone();
+//
+//
+	//Serial.println("### testHardwareCommand: Light ###");
+	//Serial.flush();
+	//testHardwareCommand(0, HWType_light, true);
+	//testHardwareCommand(0, HWType_light, true);
+	//testHardwareCommand(0, HWType_light, true);
+//
+	//Serial.println("### testHardwareCommand: Temperature ###");
+	//Serial.flush();
+	//testHardwareCommand(0, HWType_temprature, true);
+//
+	//Serial.println("### testHardwareCommand: Motion ###");
+	//Serial.flush();
+	//testHardwareCommand(0, HWType_motion, true);
+//
+	//Serial.println("### testHardwareCommandRead ###");
+	//Serial.flush();
+	//testHardwareCommandRead();
+//
+	//Serial.println("### testDiscovery ###");
+	//Serial.flush();
+	//testDiscovery();
+//
+	//Serial.println("### testSubscriptionSet ###");
+	//Serial.flush();
+	//testSubscriptionSet();
+//
+	//Serial.println("### testSubscriptionInfo ###");
+	//Serial.flush();
+	//testSubscriptionInfo();
+//
+	//Serial.println("### testSubscriptionExecution ###");
+	//Serial.flush();
+	//testSubscriptionExecution();
+//
+	//Serial.println("### testSubscriptionPolling ###");
+	//Serial.flush();
+	//testSubscriptionPolling();
+//
+	//Serial.println("### testSubscriptionPolling Light ###");
+	//Serial.flush();
+	//testSubscriptionPollingLight();
+//
+	////turn off LED
+	//pinMode(LED_BUILTIN, LOW);*/
+}
+
+void loop() {
+	//do networking.
+	l3.Loop();
+
+	//do handling.
+	dispatcher.loop();
+
+	#ifdef WEBSERVER_ENABLE
+		webServerWrapper.loop();
+	#endif
+
+	//watchdog reset.
+	wdt_reset();
+
+	#ifdef SDCARD_ENABLE
+		discoveryManager.loop();
+	#endif
+}
+
+/***
+	if(millis() - lastBeaconT > 60*1000UL) {
+		lastBeaconT = millis();
+		l3->sendBeacon();
+	}
+	l2->receive();
+	while(l2->receiveQueueSize() > 0) {
+		Layer2rf24::frame_t f;
+		l2->receiveQueuePop(&f);
+		l3->receive((uint8_t*) &f.data.payload);
+	}
+	l3->updateSendingBuffer();
+
+	delay(5000);
+
+	//did we find more than one neighbour?
+	if(isServer && l3->neighboursSize() > 1) {
+		Layer3::packet_t p;
+		packet_numbered_t payload;
+		payload.payloadLen = 0;
+		payload.seqNumber = 1234L;
+		l3->createPacketGeneric(&p, address_remote, PACKET_NUMBERED, (uint8_t*) &payload, sizeof(payload));
+
+		//manipulate neighbourtable for routing!
+		for(uint8_t i = 0; i < CONFIG_L3_NUM_NEIGHBOURS; i++) {
+			if(l3->neighbours[i].nodeId == address_remote) {
+				l3->neighbours[i].hopCount = 1;
+				l3->neighbours[i].hopNextNodeId = address_relay;
+				l3->neighbours[i].timestamp = millis();
+
+				break;
+			}
+		}
+
+		l3->sendPacket(p);
+****/
+/***
+	//create beacon
+	packet_beacon_t beacon;
+	memset(&beacon, 0, sizeof(packet_beacon_t));
+	routeInfo_t routeInfo[3];
+	routeInfo[0].nodeId = 123;
+	routeInfo[0].hopcount = 3;
+	routeInfo[1].nodeId = 465;
+	routeInfo[1].hopcount = 4;
+	routeInfo[2].nodeId = 465; //not an actual real test example, but should do for testing.
+	routeInfo[2].hopcount = 2;
+
+	beacon.nodeId = address_remote;
+	memcpy(beacon.neighbours, routeInfo, sizeof(routeInfo));
+	beacon.numNeighbourInfo = 3;
+
+	Layer3::packet_t packet_beacon;
+	memset(&packet_beacon, 0, sizeof(Layer3::packet_t));
+	packet_beacon.data.destination = CONFIG_L3_ADDRESS_BROADCAST;
+	packet_beacon.data.hopcount = 0;
+	packet_beacon.data.payloadLen = sizeof(beacon);
+	memcpy(packet_beacon.data.payload, &beacon, sizeof(beacon));
+	packet_beacon.data.source = address_local;
+	packet_beacon.data.type = PACKET_BEACON;
+
+	//receive beacon frame
+	Layer2rf24::frame_t f1;
+	l2->createFrame(&f1, (Layer2rf24::address_t) CONFIG_L2_ADDR_BROADCAST, sizeof(packet_beacon), (uint8_t*) &packet_beacon );
+	l2->receiveQueuePush(&f1);
+
+	Layer2rf24::frame_t f2;
+	l2->receiveQueuePop(&f2);
+	l3->receive(f2.data.payload);
+
+	//create packet for forwarding
+	Layer3::packet_t packetForward;
+	packetForward.data.destination = 465;
+	packetForward.data.source = address_local;
+	packetForward.data.payloadLen = 0;
+	packetForward.data.hopcount = 0;
+	packetForward.data.type = PACKET_UNNUMBERED;
+	l3->receive((uint8_t*) &packetForward);
+
+	Layer3::packet_t packetForward2;
+	packetForward2.data.destination = 465;
+	packetForward2.data.source = address_local;
+	packetForward2.data.payloadLen = 0;
+	packetForward2.data.hopcount = CONFIG_L3_MAX_HOPCOUNT;
+	packetForward2.data.type = PACKET_UNNUMBERED;
+	l3->receive((uint8_t*) &packetForward2);
+
+	//create numbered packet.
+	packet_numbered_t numbered;
+	numbered.payloadLen = 0;
+	numbered.seqNumber = 12346UL;
+
+	Layer3::packet_t packetNumbered;
+	l3->createPacketGeneric(&packetNumbered, 465, PACKET_NUMBERED, (uint8_t*) &numbered, sizeof(packet_numbered_t));
+
+	l3->sendPacket(packetNumbered);
+	l3->updateSendingBuffer();
+
+
+	//ack packet
+	packet_ack_t ack;
+	ack.ack = 12346UL;
+
+	Layer3::packet_t packetAck;
+	l3->createPacketGeneric(&packetAck, address_local, PACKET_ACK, (uint8_t*) &ack, sizeof(packet_ack_t));
+	l3->receive((uint8_t*) &packetAck);
+
+
+	delay(5000);
+***/
+
+
 /*
 //#ifndef PRODUCTIVE_MEGA328P
 //void testHardwareCommandRead() {
@@ -286,356 +641,3 @@ void getAddress() {
 	//dispatcher.loop();
 //}
 //#endif*/
-void setup() {
-	Serial.begin(115200);
-	#ifdef DEBUG
-
-	Serial.println("start test...");
-	Serial.flush();
-
-	randomSeed(analogRead(1));
-
-	Serial.print(F("pin miso="));
-	Serial.print(MISO);
-	Serial.print(F(", pin mosi="));
-	Serial.print(MOSI);
-	Serial.print(F(", pin sck="));
-	Serial.print(SCK);
-	Serial.print(F(", pin ce="));
-	Serial.print(PIN_CE);
-	Serial.print(F(", pin csn(ss)="));
-	Serial.println(PIN_CSN);
-	#endif
-
-	//enable watchdog
-	wdt_enable(WDTO_8S);
-
-	//get address config
-	getAddress();
-
-	#ifdef WEBSERVER_ENABLE
-		webServer.init();
-	#endif
-
-	#ifdef SDCARD_ENABLE
-		sdcard.initSD();
-		discoveryManager.init();
-		nodeInfo.init();
-	#endif
-
-	dispatcher.init();
-	hwInterface.init();
-
-	//init network
-	l3.init(address_local);
-	l2.init(&l3, PIN_CE, PIN_CSN, address_local);
-	l3.setLayer2(&l2);
-
-	dht11.init(2, 20);
-
-	#ifdef __AVR_ATmega2560__
-	rcsw.init(14, 21);
-	#else
-	rcsw.init(A6, 21);
-	#endif
-
-	motion.init(3, 50);
-	light.init(A5, 60);
-	//mytone.init(A8, 70);
-
-	#ifdef RTC_ENABLE
-		rtc.init(90);
-		uint32_t tmp = rtc.read();
-		setTime(tmp);
-		Serial.print(millis());
-		Serial.print(F(": time updated to: "));
-		Serial.print(tmp);
-		Serial.print(F(" = "));
-
-		tmElements_t tmElems;
-		breakTime(tmp, tmElems);
-		Serial.print((uint16_t) 1970 + tmElems.Year);
-		Serial.print(F("/"));
-		Serial.print(tmElems.Month);
-		Serial.print(F("/"));
-		Serial.print(tmElems.Day);
-		Serial.print(F(" "));
-		Serial.print(tmElems.Hour);
-		Serial.print(F(":"));
-		Serial.print(tmElems.Minute);
-		Serial.print(F(":"));
-		Serial.println(tmElems.Second);
-
-		hwInterface.registerDriver((HardwareDriver*) &rtc);
-	#endif
-
-	hwInterface.registerDriver((HardwareDriver*) &dht11);
-	hwInterface.registerDriver((HardwareDriver*) &rcsw);
-	hwInterface.registerDriver((HardwareDriver*) &motion);
-	hwInterface.registerDriver((HardwareDriver*) &light);
-	//hwInterface.registerDriver((HardwareDriver*) &mytone);
-
-	//test rcsw
-	//HardwareCommandResult cmd;
-	//memset(&cmd, 0, sizeof(cmd));
-	//cmd.setHardwareType(HWType_rcswitch);
-	//cmd.setAddress(rcsw.getAddress());
-	//cmd.setUint8ListNum(2);
-	//cmd.getUint8List()[0] = 3;
-	//cmd.getUint8List()[1] = 0;
-	//hwInterface.executeCommand(&cmd);
-	////
-
-
-	dispatcher.init(&l3, &hwInterface);
-
-	#ifdef SDCARD_LOGGER_ENABLE
-		dispatcher.getResponseHandler()->registerListenerByPacketType(0, HARDWARE_COMMAND_RES, 0, &sdlistener);
-	#endif
-
-	#ifdef TIMER_ENABLE
-	timer.init();
-	#endif
-
-	/*
-	SDcard::SD_nodeDiscoveryInfoTableEntry_t infos[2];
-	infos[0].hardwareAddress = 0xAA;
-	infos[0].hardwareType = 0xBB;
-	infos[0].rtcTimestamp = 0xCC;
-	infos[1].hardwareAddress = 0xDD;
-	infos[1].hardwareType = 0xEE;
-	infos[1].rtcTimestamp = 0xFF;
-	sdcard.saveDiscoveryInfos(1, infos, 2);
-
-	SDcard::SD_nodeDiscoveryInfoTableEntry_t discovery[SD_DISCOVERY_NUM_INFOS_PER_NODE];
-	sdcard.getDiscoveryInfosForNode(1, discovery, SD_DISCOVERY_NUM_INFOS_PER_NODE);
-	Serial.print(discovery[0].hardwareAddress);
-	Serial.print(F(" "));
-	Serial.print(discovery[0].hardwareType);
-	Serial.print(F(" "));
-	Serial.println(discovery[0].rtcTimestamp);
-	Serial.print(discovery[1].hardwareAddress);
-	Serial.print(F(" "));
-	Serial.print(discovery[1].hardwareType);
-	Serial.print(F(" "));
-	Serial.println(discovery[1].rtcTimestamp);
-	Serial.flush();
-	*/
-
-/*
-	#ifdef SDCARD_ENABLE
-		char buf[17];
-		memset(buf, 0, sizeof(buf));
-		Serial.print(millis());
-		Serial.print(F(": nodeinfo"));
-		if(sdcard.getNodeInfo(l3.localAddress, (uint8_t*) buf, sizeof(buf))) {
-			buf[16] = '\0';
-			Serial.print(F("=\""));
-			Serial.print(buf);
-			Serial.println(F("\""));
-			} else {
-			Serial.println(F(" not available"));
-		}
-
-		dispatcher.getResponseHandler()->registerListenerByPacketType(0, HARDWARE_COMMAND_RES, 0, &sdlistener);
-
-		packet_application_numbered_cmd_t appPacket;
-		memset(&appPacket, 0, sizeof(appPacket));
-		appPacket.packetType = HARDWARE_COMMAND_RES;
-		command_t* hwcmd = (command_t*) appPacket.payload;
-		hwcmd->address = 10;
-		hwcmd->type = HWType_rtc;
-		hwcmd->numUint8 = 4;
-		uint32_t now = rtc.read();
-		hwcmd->uint8list[0] = now >> 24;
-		hwcmd->uint8list[1] = (now >> 16) & 0xff;
-		hwcmd->uint8list[2] = (now >> 8) & 0xff;
-		hwcmd->uint8list[3] = now & 0xff;
-		dispatcher.handleNumbered(13, HARDWARE_COMMAND_RES, 123, &appPacket);
-		//sdlistener.doCallback(&appPacket, 17, 1234);
-	#endif
-*/
-
-/*
-	//mySimpleTimer = SimpleTimer::instance();
-
-	//Serial.println("### testHardwareCommand: Tone ###");
-	//Serial.flush();
-	//testHardwareCommandTone();
-//
-//
-	//Serial.println("### testHardwareCommand: Light ###");
-	//Serial.flush();
-	//testHardwareCommand(0, HWType_light, true);
-	//testHardwareCommand(0, HWType_light, true);
-	//testHardwareCommand(0, HWType_light, true);
-//
-	//Serial.println("### testHardwareCommand: Temperature ###");
-	//Serial.flush();
-	//testHardwareCommand(0, HWType_temprature, true);
-//
-	//Serial.println("### testHardwareCommand: Motion ###");
-	//Serial.flush();
-	//testHardwareCommand(0, HWType_motion, true);
-//
-	//Serial.println("### testHardwareCommandRead ###");
-	//Serial.flush();
-	//testHardwareCommandRead();
-//
-	//Serial.println("### testDiscovery ###");
-	//Serial.flush();
-	//testDiscovery();
-//
-	//Serial.println("### testSubscriptionSet ###");
-	//Serial.flush();
-	//testSubscriptionSet();
-//
-	//Serial.println("### testSubscriptionInfo ###");
-	//Serial.flush();
-	//testSubscriptionInfo();
-//
-	//Serial.println("### testSubscriptionExecution ###");
-	//Serial.flush();
-	//testSubscriptionExecution();
-//
-	//Serial.println("### testSubscriptionPolling ###");
-	//Serial.flush();
-	//testSubscriptionPolling();
-//
-	//Serial.println("### testSubscriptionPolling Light ###");
-	//Serial.flush();
-	//testSubscriptionPollingLight();
-//
-	////turn off LED
-	//pinMode(LED_BUILTIN, LOW);*/
-}
-
-void loop() {
-	//do networking.
-	l3.Loop();
-
-	//do handling.
-	dispatcher.loop();
-
-	#ifdef WEBSERVER_ENABLE
-		webServer.loop();
-	#endif
-
-	//watchdog reset.
-	wdt_reset();
-
-	#ifdef SDCARD_ENABLE
-		discoveryManager.loop();
-	#endif
-}
-
-/***
-	if(millis() - lastBeaconT > 60*1000UL) {
-		lastBeaconT = millis();
-		l3->sendBeacon();
-	}
-	l2->receive();
-	while(l2->receiveQueueSize() > 0) {
-		Layer2rf24::frame_t f;
-		l2->receiveQueuePop(&f);
-		l3->receive((uint8_t*) &f.data.payload);
-	}
-	l3->updateSendingBuffer();
-
-	delay(5000);
-
-	//did we find more than one neighbour?
-	if(isServer && l3->neighboursSize() > 1) {
-		Layer3::packet_t p;
-		packet_numbered_t payload;
-		payload.payloadLen = 0;
-		payload.seqNumber = 1234L;
-		l3->createPacketGeneric(&p, address_remote, PACKET_NUMBERED, (uint8_t*) &payload, sizeof(payload));
-
-		//manipulate neighbourtable for routing!
-		for(uint8_t i = 0; i < CONFIG_L3_NUM_NEIGHBOURS; i++) {
-			if(l3->neighbours[i].nodeId == address_remote) {
-				l3->neighbours[i].hopCount = 1;
-				l3->neighbours[i].hopNextNodeId = address_relay;
-				l3->neighbours[i].timestamp = millis();
-
-				break;
-			}
-		}
-
-		l3->sendPacket(p);
-****/
-/***
-	//create beacon
-	packet_beacon_t beacon;
-	memset(&beacon, 0, sizeof(packet_beacon_t));
-	routeInfo_t routeInfo[3];
-	routeInfo[0].nodeId = 123;
-	routeInfo[0].hopcount = 3;
-	routeInfo[1].nodeId = 465;
-	routeInfo[1].hopcount = 4;
-	routeInfo[2].nodeId = 465; //not an actual real test example, but should do for testing.
-	routeInfo[2].hopcount = 2;
-
-	beacon.nodeId = address_remote;
-	memcpy(beacon.neighbours, routeInfo, sizeof(routeInfo));
-	beacon.numNeighbourInfo = 3;
-
-	Layer3::packet_t packet_beacon;
-	memset(&packet_beacon, 0, sizeof(Layer3::packet_t));
-	packet_beacon.data.destination = CONFIG_L3_ADDRESS_BROADCAST;
-	packet_beacon.data.hopcount = 0;
-	packet_beacon.data.payloadLen = sizeof(beacon);
-	memcpy(packet_beacon.data.payload, &beacon, sizeof(beacon));
-	packet_beacon.data.source = address_local;
-	packet_beacon.data.type = PACKET_BEACON;
-
-	//receive beacon frame
-	Layer2rf24::frame_t f1;
-	l2->createFrame(&f1, (Layer2rf24::address_t) CONFIG_L2_ADDR_BROADCAST, sizeof(packet_beacon), (uint8_t*) &packet_beacon );
-	l2->receiveQueuePush(&f1);
-
-	Layer2rf24::frame_t f2;
-	l2->receiveQueuePop(&f2);
-	l3->receive(f2.data.payload);
-
-	//create packet for forwarding
-	Layer3::packet_t packetForward;
-	packetForward.data.destination = 465;
-	packetForward.data.source = address_local;
-	packetForward.data.payloadLen = 0;
-	packetForward.data.hopcount = 0;
-	packetForward.data.type = PACKET_UNNUMBERED;
-	l3->receive((uint8_t*) &packetForward);
-
-	Layer3::packet_t packetForward2;
-	packetForward2.data.destination = 465;
-	packetForward2.data.source = address_local;
-	packetForward2.data.payloadLen = 0;
-	packetForward2.data.hopcount = CONFIG_L3_MAX_HOPCOUNT;
-	packetForward2.data.type = PACKET_UNNUMBERED;
-	l3->receive((uint8_t*) &packetForward2);
-
-	//create numbered packet.
-	packet_numbered_t numbered;
-	numbered.payloadLen = 0;
-	numbered.seqNumber = 12346UL;
-
-	Layer3::packet_t packetNumbered;
-	l3->createPacketGeneric(&packetNumbered, 465, PACKET_NUMBERED, (uint8_t*) &numbered, sizeof(packet_numbered_t));
-
-	l3->sendPacket(packetNumbered);
-	l3->updateSendingBuffer();
-
-
-	//ack packet
-	packet_ack_t ack;
-	ack.ack = 12346UL;
-
-	Layer3::packet_t packetAck;
-	l3->createPacketGeneric(&packetAck, address_local, PACKET_ACK, (uint8_t*) &ack, sizeof(packet_ack_t));
-	l3->receive((uint8_t*) &packetAck);
-
-
-	delay(5000);
-***/

@@ -12,6 +12,9 @@
 #include <DebugConfig.h>
 #include <avr/wdt.h>
 
+#include <webserver/StringConstants.h>
+
+
 #ifdef ENABLE_EXTERNAL_RAM
 	#include <ramManager.h>
 	#ifdef __AVR_ATmega2560__
@@ -69,8 +72,8 @@ PacketFactory pf;
 #endif
 
 #ifdef WEBSERVER_ENABLE
-	#include <webserver/WebServer.h>
-	WebServer webServer;
+	#include <webserver/WebServerWrapper.h>
+	WebServerWrapper webServerWrapper;
 #endif
 
 
