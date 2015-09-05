@@ -37,7 +37,7 @@
 #include <dispatcher/PacketDispatcher.h>
 #include <drivers/HardwareID.h>
 
-#include <sdcard/SubscriptionManager.h>
+#include <sdcard/DiscoveryManager.h>
 
 #include <webserver/DiscoveryListener.h>
 #include <webserver/HardwareResultListener.h>
@@ -50,7 +50,7 @@ extern Layer3 l3;
 extern PacketDispatcher dispatcher;
 extern PacketFactory pf;
 extern SPIRamManager ram;
-extern SubscriptionManager subscriptionManager;
+extern DiscoveryManager discoveryManager;
 
 //#define USE_DHCP_FOR_IP_ADDRESS
 
@@ -1350,9 +1350,9 @@ boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &
 		char buf2[3];
 		char buf3[3];
 		uint8_t num = 0;
-		SubscriptionManager::Discovery_nodeDiscoveryInfoTableEntry_t elem;
+		DiscoveryManager::Discovery_nodeDiscoveryInfoTableEntry_t elem;
 		for(uint8_t i = 0; i < NUM_INFOS_PER_NODE; i++) {
-			subscriptionManager.readElemIntoVar(&elem, idInt, i);
+			discoveryManager.readElemIntoVar(&elem, idInt, i);
 
 			if(elem.hardwareAddress > 0 && elem.hardwareType > 0) {
 				//table

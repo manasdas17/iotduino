@@ -61,8 +61,8 @@ PacketFactory pf;
 		SDHardwareRequestListener sdlistener;
 	#endif
 
-	#include <sdcard/SubscriptionManager.h>
-	SubscriptionManager subscriptionManager;
+	#include <sdcard/DiscoveryManager.h>
+	DiscoveryManager discoveryManager;
 
 	#include <utils/NodeInfo.h>
 	NodeInfo nodeInfo;

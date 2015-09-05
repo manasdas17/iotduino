@@ -319,7 +319,7 @@ void setup() {
 
 	#ifdef SDCARD_ENABLE
 		sdcard.initSD();
-		subscriptionManager.init();
+		discoveryManager.init();
 		nodeInfo.init();
 	#endif
 
@@ -525,7 +525,7 @@ void loop() {
 	wdt_reset();
 
 	#ifdef SDCARD_ENABLE
-		subscriptionManager.loop();
+		discoveryManager.loop();
 	#endif
 }
 
