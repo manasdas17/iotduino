@@ -83,7 +83,7 @@ bool RTC::read(tmElements_t &tm) {
 		tm.Year = y2kYearToTm((bcd2dec(Wire.receive())));
 	#endif
 
-	setTime(tm.Hour, tm.Minute, tm.Second, tm.Day, tm.Month, tm.Year);
+	setTime(makeTime(tm));
 
 	if (sec & 0x80)
 		return false; // clock is halted
