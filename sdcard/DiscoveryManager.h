@@ -42,7 +42,6 @@ class DiscoveryManager {
 	discoveryListener listenerDiscovery;
 
 	/** saved node information */
-	uint8_t memRegionKnownNodes;
 	uint8_t memRegionDiscoveryInfo;
 
 	/** last discovery request that has been sent */
@@ -70,6 +69,20 @@ class DiscoveryManager {
 		 * @return success
 		 */
 		boolean sendDiscoveryRequest(l3_address_t node);
+
+		/**
+		 * delete node info
+		 * @param node
+		 * @return success
+		 */
+		boolean deleteInfo(l3_address_t node) {
+			boolean result = true;
+			for(uint8_t i = 0; i < NUM_INFOS_PER_NODE; i++) {
+				result &= ram.memsetElement(memRegionDiscoveryInfo, node * NUM_INFOS_PER_NODE, 0);
+			}
+
+			return result;
+		}
 
 		/**
 		 * read am element into buffer wrapper

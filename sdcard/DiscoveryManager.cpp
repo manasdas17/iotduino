@@ -37,7 +37,6 @@ void DiscoveryManager::init() {
 	lastDiscoveryRequestFullRun = 0;
 	nextDiscoveryRequestNeighbourIndex = 0;
 
-	memRegionKnownNodes = ram.createRegion(sizeof(l3_address_t), NUM_KNOWN_NODES);
 	memRegionDiscoveryInfo = ram.createRegion(sizeof(Discovery_nodeDiscoveryInfoTableEntry_t), NUM_KNOWN_NODES * NUM_INFOS_PER_NODE);
 
 	readDataFromSDCard();

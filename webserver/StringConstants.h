@@ -60,6 +60,7 @@ PGM_P pageTitles[] = {
 uint8_t pageBelongsToMenu[] = {0, 1, 3, 3, 0, 3, 3, 7, 8};
 
 const char variableRemote[] PROGMEM = {"remote"};
+const char variableDelete[] PROGMEM = {"delete"};
 const char variableHwAddress[] PROGMEM = {"hwaddress"};
 const char variableHwType[] PROGMEM = {"hwtype"};
 const char variableVal[] PROGMEM = {"val"};

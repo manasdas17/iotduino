@@ -436,44 +436,6 @@ class PageMaker
 		client->print(second(t));
 	}
 
-	/**
-	 * get route infos for a node if available
-	 * @param nodeId
-	 * @param neighbourActive
-	 * @param neighbourLastKeepAlive
-	 * @param neighbourHops
-	 * @param neighbourNextHop
-	 * @return success
-	 */
-	static boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &neighbourLastKeepAlive, uint8_t &neighbourHops, uint8_t &neighbourNextHop) {
-		#ifdef ENABLE_EXTERNAL_RAM
-			SPIRamManager::iterator it;
-			l3.getNeighbourManager()->getIterator(&it);
-			while(it.hasNext()) {
-				NeighbourManager::neighbourData_t* currentItem = (NeighbourManager::neighbourData_t*) it.next();
-		#else
-			for(uint8_t j = 0; j < CONFIG_L3_NUM_NEIGHBOURS; j++) {
-				NeighbourManager::neighbourData_t* currentItem = &l3.getNeighbourManager()->neighbours[j];
-		#endif
-				if(currentItem->nodeId == nodeId) {
-					neighbourActive = 1;
-					neighbourLastKeepAlive = currentItem->timestamp;
-					neighbourHops = currentItem->hopCount;
-					neighbourNextHop = currentItem->hopNextNodeId;
-					return true;
-				}
-		}
-
-		if(nodeId == l3.localAddress) {
-			//this is us!
-			neighbourActive = 1;
-			neighbourLastKeepAlive = millis();
-			neighbourHops = 0;
-			neighbourNextHop = l3.localAddress;
-		}
-		return false;
-	}
-
 	/** is this hardware type readable? */
 	static boolean hwIsReadable(HardwareTypeIdentifier type) {
 		switch(type) {
@@ -1114,7 +1076,7 @@ class PageMaker
 	 * node overview (from routing table)
 	 * @param client
 	 */
-	 static void doPageNodes(EthernetClient* client) {
+	 static void doPageNodes(EthernetClient* client, RequestContent* req) {
 		#ifdef DEBUG
 		Serial.print(millis());
 		Serial.print(F(": doPageNodes() on client="));
@@ -1124,8 +1086,19 @@ class PageMaker
 		sendHttpOk(client);
 		sendHtmlHeader(client, PAGE_NODES);
 
+		//delete a node?
+		if(req->hasKey(variableRemote) >= 0 && req->hasKey(variableDelete) >= 0) {
+			String* id = req->getValue(variableRemote);
+			l3_address_t idInt = id->toInt();
+			if(nodeInfo.deleteInfo(idInt) && discoveryManager.deleteInfo(idInt)) {
+				client->print(F("<div class='info'>Info for NoteID "));
+				client->print(idInt);
+				client->print(F(" deleted.</div>"));
+			}
+		}
+
 		//table
-		client->println(F("<table><thead><tr><th>ID</th><th>NodeInfo</th><th>lastDiscovery</th><th>active</th><th>nextHop</th><th>#hops</th><th>routeAge</th><th>info</th></tr></thead><tbody>"));
+		client->println(F("<table><thead><tr><th>ID</th><th>NodeInfo</th><th>lastDiscovery</th><th>active</th><th>nextHop</th><th>#hops</th><th>routeAge</th><th>delete</th><th>info</th></tr></thead><tbody>"));
 		uint8_t numNodes = 0;
 		uint32_t nowSystem = millis();
 		//uint32_t rtcTime = now();
@@ -1186,8 +1159,22 @@ class PageMaker
 				} else {
 					client->print(F(" <i>loopback</i>"));
 				}
+				client->print(F("</td>"));
+
+				//delete
+				client->print(F("<td data-label='delete' class='centered'><a href='"));
+				printP(client, pageAddresses[PAGE_NODES]);
+				client->print(F("?"));
+				printP(client, variableRemote);
+				client->print(F("="));
+				client->print(i);
+				client->print(F("&"));
+				printP(client, variableDelete);
+				client->println(F("' onclick=\"return confirm('This will delete all node infos. Are you sure?')\">x</a>"));
+				client->println(F("</td>"));
+
 				//discover
-				client->print(F("</td><td  data-label='sensors' class='centered'><a href='"));
+				client->print(F("<td  data-label='sensors' class='centered'><a href='"));
 				printP(client, pageAddresses[PAGE_GETSENSORINFO]);
 				client->print(F("?"));
 				printP(client, variableRemote);
@@ -1195,6 +1182,7 @@ class PageMaker
 				client->print(i);
 				client->println(F("'>x</a>"));
 				client->println(F("</td>"));
+
 				//tr end
 				client->println(F("</tr>"));
 				client->flush();
@@ -1202,7 +1190,7 @@ class PageMaker
 		}
 
 		//num entries
-		client->print(F("</tbody><tfoot><tr><th colspan='8'>"));
+		client->print(F("</tbody><tfoot><tr><th colspan='9'>"));
 		client->print(numNodes);
 		client->println(F(" entries</th></tr></tfoot></table>"));
 
@@ -1445,6 +1433,44 @@ class PageMaker
 
 		sendHtmlFooter(client);
 		listener->init(0, HWType_UNKNOWN, 0, webserverListener::START);
+	}
+
+	/**
+	 * get route infos for a node if available
+	 * @param nodeId
+	 * @param neighbourActive
+	 * @param neighbourLastKeepAlive
+	 * @param neighbourHops
+	 * @param neighbourNextHop
+	 * @return success
+	 */
+	static boolean getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &neighbourLastKeepAlive, uint8_t &neighbourHops, uint8_t &neighbourNextHop) {
+		#ifdef ENABLE_EXTERNAL_RAM
+			SPIRamManager::iterator it;
+			l3.getNeighbourManager()->getIterator(&it);
+			while(it.hasNext()) {
+				NeighbourManager::neighbourData_t* currentItem = (NeighbourManager::neighbourData_t*) it.next();
+		#else
+			for(uint8_t j = 0; j < CONFIG_L3_NUM_NEIGHBOURS; j++) {
+				NeighbourManager::neighbourData_t* currentItem = &l3.getNeighbourManager()->neighbours[j];
+		#endif
+				if(currentItem->nodeId == nodeId) {
+					neighbourActive = 1;
+					neighbourLastKeepAlive = currentItem->timestamp;
+					neighbourHops = currentItem->hopCount;
+					neighbourNextHop = currentItem->hopNextNodeId;
+					return true;
+				}
+		}
+
+		if(nodeId == l3.localAddress) {
+			//this is us!
+			neighbourActive = 1;
+			neighbourLastKeepAlive = millis();
+			neighbourHops = 0;
+			neighbourNextHop = l3.localAddress;
+		}
+		return false;
 	}
 }; //PageMaker
 

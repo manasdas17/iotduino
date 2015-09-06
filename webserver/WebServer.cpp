@@ -290,7 +290,7 @@ void WebServer::doClientHandling(EthernetClient* client) {
 	if(strcmp_P(uriChars, pageAddresses[PAGE_MAIN]) == 0) {
 		PageMaker::doPageStart(client);
 	} else if(strcmp_P(uriChars, pageAddresses[PAGE_NODES]) == 0) {
-		PageMaker::doPageNodes(client);
+		PageMaker::doPageNodes(client, &req);
 	} else if(strcmp_P(uriChars, pageAddresses[PAGE_CSS]) == 0) {
 		PageMaker::doPageCss(client);
 	} else if(strcmp_P(uriChars, pageAddresses[PAGE_LIST_FILES]) == 0) {

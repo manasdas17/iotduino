@@ -45,6 +45,15 @@ class NodeInfo
 		void init();
 
 		/**
+		 * delete node info
+		 * @param nodeid
+		 * @return success
+		 */
+		boolean deleteInfo(l3_address_t nodeId) {
+			return ram.memsetElement(memRegionId, nodeId, 0);
+		}
+
+		/**
 		 * get node info entry
 		 * @pram id
 		 * @pram elem

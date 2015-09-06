@@ -41,6 +41,7 @@ extern PGM_P pageTitles[];
 extern uint8_t pageBelongsToMenu[];
 
 extern const char variableRemote[] PROGMEM;
+extern const char variableDelete[] PROGMEM;
 extern const char variableHwAddress[] PROGMEM;
 extern const char variableHwType[] PROGMEM;
 extern const char variableVal[] PROGMEM;
