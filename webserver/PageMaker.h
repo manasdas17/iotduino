@@ -158,20 +158,21 @@ class PageMaker
 		client->flush();
 	}
 
+
 	/**
 	 * html head
 	 * @param client
 	 */
 	static void sendHtmlHeader(EthernetClient* client, uint8_t pageId, boolean refresh = true, boolean printTitle = true) {
 		client->println(F("<!DOCTYPE HTML>\n"));
-		client->print(F("<html><header><link rel='stylesheet' href='css' type='text/css'><title>"));
+		client->print(F("<html><head><link rel='stylesheet' href='css' type='text/css'><title>"));
 		printP(client, pageTitles[pageId]);
 		client->print(F("</title>"));
 
 		if(refresh)
 			client->print(F("<meta http-equiv='refresh' content='300'>"));
 
-		client->println(F("</header><body>"));
+		client->println(F("</head><body>"));
 
 		sendHtmlMenu(client, pageId);
 
@@ -892,6 +893,7 @@ class PageMaker
 		sendHttpOk(client);
 		sendHtmlHeader(client, PAGE_LIST_FILES, true, true);
 		client->println(F("<table><thead><tr><th>Remote</th><th>HardwareAddress</th><th>HardwareType</th><th>Filename</th><th>RAW</th><th>Size [b]</th></tr></thead>"));
+		client->flush();
 
 		uint8_t num = 0;
 
@@ -1396,40 +1398,7 @@ class PageMaker
 		}
 		client->println(F("</h2>"));
 
-		client->println(F("<code><pre>"));
-		if(listener->cmd.numUint8 > 0) {
-			client->print(F("Uint8:\t"));
-			for(uint8_t i = 0; i < listener->cmd.numUint8; i++)	 {
-				client->print(listener->cmd.uint8list[i]);
-				client->print(F("\t"));
-			}
-			client->println(F("<br/>"));
-		}
-		if(listener->cmd.numUint16 > 0) {
-			client->print(F("Uint16:\t"));
-			for(uint8_t i = 0; i < listener->cmd.numUint16; i++) {
-				client->print(listener->cmd.uint16list[i]);
-				client->print(F("\t"));
-			}
-			client->println(F("<br/>"));
-		}
-		if(listener->cmd.numInt8 > 0) {
-			client->print(F("Int8:\t"));
-			for(uint8_t i = 0; i < listener->cmd.numInt8; i++) {
-				client->print(listener->cmd.int8list[i]);
-				client->print(F("\t"));
-			}
-			client->println(F("<br/>"));
-		}
-		if(listener->cmd.numInt16 > 0) {
-			client->print(F("Int16:\t"));
-			for(uint8_t i = 0; i < listener->cmd.numInt16; i++) {
-				client->print(listener->cmd.int16list[i]);
-				client->print(F("\t"));
-			}
-			client->println(F("<br/>"));
-		}
-		client->println(F("</pre></code>"));
+		prettyPrintCommandResult(client, &listener->cmd);
 
 		sendHtmlFooter(client);
 		listener->init(0, HWType_UNKNOWN, 0, webserverListener::START);
@@ -1471,6 +1440,184 @@ class PageMaker
 			neighbourNextHop = l3.localAddress;
 		}
 		return false;
+	}
+
+
+	static void prettyPrintCommandResultGeneric(EthernetClient* client, command_t* cmd) {
+		//fallback
+		client->println(F("<code><pre>"));
+		if(cmd->numUint8 > 0) {
+			client->print(F("Uint8:\t"));
+			for(uint8_t i = 0; i < cmd->numUint8; i++)	 {
+				client->print(cmd->uint8list[i]);
+				client->print(F("\t"));
+			}
+			client->println(F("<br/>"));
+		}
+		if(cmd->numUint16 > 0) {
+			client->print(F("Uint16:\t"));
+			for(uint8_t i = 0; i < cmd->numUint16; i++) {
+				client->print(cmd->uint16list[i]);
+				client->print(F("\t"));
+			}
+			client->println(F("<br/>"));
+		}
+		if(cmd->numInt8 > 0) {
+			client->print(F("Int8:\t"));
+			for(uint8_t i = 0; i < cmd->numInt8; i++) {
+				client->print(cmd->int8list[i]);
+				client->print(F("\t"));
+			}
+			client->println(F("<br/>"));
+		}
+		if(cmd->numInt16 > 0) {
+			client->print(F("Int16:\t"));
+			for(uint8_t i = 0; i < cmd->numInt16; i++) {
+				client->print(cmd->int16list[i]);
+				client->print(F("\t"));
+			}
+			client->println(F("<br/>"));
+		}
+		client->println(F("</pre></code>"));
+	}
+
+	static void prettyPrintCommandResult(EthernetClient* client, command_t* cmd) {
+		switch(cmd->type) {
+			case HWTYPE_led:
+				if(cmd->uint8list[0] == 1) {
+					client->print(F("on"));
+					} else {
+					client->print(F("off"));
+				}
+				break;
+
+			case HWType_button:
+				if(cmd->uint8list[0] == 1) {
+					client->print(F("pressed"));
+				} else {
+					client->print(F("not pressed"));
+				}
+				break;
+
+			case HWType_humidity:
+				client->print(F("<script type='text/javascript' src='https://www.google.com/jsapi'></script>"
+				"<script type='text/javascript'>"
+				"google.load('visualization', '1', {packages:['gauge']});"
+				"google.setOnLoadCallback(drawChart);"
+				"function drawChart() {"
+					"	var data = google.visualization.arrayToDataTable(["
+					"	['Label', 'Value'],"
+					"	['Humidity', "));
+					client->print(cmd->uint8list[0]);
+					client->print(F("]"
+					"	]);"
+					"	var options = {"
+						"		width: 120, height: 120,"
+						"		yellowFrom: 0, yellowTo: 30,"
+						"		minorTicks: 5,"
+						"		min: 0,"
+						"		max: 100"
+					"	};"
+					"	var chart = new google.visualization.Gauge(document.getElementById('chart_div'));"
+					"	chart.draw(data, options);"
+				"}"
+				"</script>"
+				"<div id='chart_div' style='width: 120px; height: 120px;'></div>"));
+				break;
+
+			case HWType_pressure:
+				{
+					uint16_t hPaVal = cmd->uint16list[0] / 100;
+					client->print(F("<script type='text/javascript' src='https://www.google.com/jsapi'></script>"
+					"<script type='text/javascript'>"
+					"google.load('visualization', '1', {packages:['gauge']});"
+					"google.setOnLoadCallback(drawChart);"
+					"function drawChart() {"
+						"	var data = google.visualization.arrayToDataTable(["
+						"	['Label', 'Value'],"
+						"	['Pressure', "));
+						client->print(hPaVal);
+						client->print(F("]"
+						"	]);"
+						"	var options = {"
+							"		width: 120, height: 120,"
+							"		greenFrom: 1013, greenTo:1090,"
+							"		yellowFrom: 950, yellowTo: 1013,"
+							"		redFrom: 870, redTo: 950,"
+							"		minorTicks: 10,"
+							"		min: 870,"
+							"		max: 1090"
+						"	};"
+						"	var chart = new google.visualization.Gauge(document.getElementById('chart_div'));"
+						"	chart.draw(data, options);"
+					"}"
+					"</script>"
+					"<div id='chart_div' style='width: 120px; height: 120px;'></div>"));
+				}
+				break;
+
+			case HWType_temprature:
+					client->print(F("<script type='text/javascript' src='https://www.google.com/jsapi'></script>"
+						"<script type='text/javascript'>"
+						"google.load('visualization', '1', {packages:['gauge']});"
+						"google.setOnLoadCallback(drawChart);"
+						"function drawChart() {"
+						"	var data = google.visualization.arrayToDataTable(["
+						"	['Label', 'Value'],"
+						"	['Temperature', "));
+					client->print(cmd->uint8list[0]);
+					client->print(F("]"
+						"	]);"
+						"	var options = {"
+						"		width: 120, height: 120,"
+						"		greenFrom: 18, greenTo:25,"
+						"		yellowFrom: 25, yellowTo: 30,"
+						"		redFrom: 30, redTo: 50,"
+						"		minorTicks: 5,"
+						"		min: -10,"
+						"		max: 40"
+						"	};"
+						"	var chart = new google.visualization.Gauge(document.getElementById('chart_div'));"
+						"	chart.draw(data, options);"
+						"}"
+						"</script>"
+						"<div id='chart_div' style='width: 120px; height: 120px;'></div>"));
+				break;
+
+			case HWType_rtc:
+				{
+					uint32_t tmp = 0;
+					tmp = (uint32_t) cmd->uint8list[0] << 24;
+					tmp |= (uint32_t) cmd->uint8list[1] << 16;
+					tmp |= (uint16_t) cmd->uint8list[2] << 8;
+					tmp |= cmd->uint8list[3];
+					printDate(client, tmp);
+				}
+				break;
+
+			case HWType_motion:
+				if(cmd->uint8list[0] == 1) {
+					client->print(F("motion detected"));
+				} else {
+					client->print(F("no motion"));
+				}
+				break;
+
+			case HWType_light:
+				{
+					int32_t tmp = 0;
+					tmp = cmd->int16list[0];
+
+					uint8_t level = tmp * 100 / 1024;
+					uint8_t levelNot = 100 - level;
+
+					client->print(level);
+					client->print(F(" %"));
+				}
+				break;
+			default:
+				prettyPrintCommandResultGeneric(client, cmd);
+		}
 	}
 }; //PageMaker
 
