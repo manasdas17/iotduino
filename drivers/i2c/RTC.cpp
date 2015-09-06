@@ -35,6 +35,7 @@ time_t RTC::get() {
 }
 
 bool RTC::set(time_t t) {
+  setTime(t);
   tmElements_t tm;
   breakTime(t, tm);
   tm.Second |= 0x80;  // stop the clock
@@ -81,6 +82,9 @@ bool RTC::read(tmElements_t &tm) {
 		tm.Month = bcd2dec(Wire.receive() );
 		tm.Year = y2kYearToTm((bcd2dec(Wire.receive())));
 	#endif
+
+	setTime(tm.Hour, tm.Minute, tm.Second, tm.Day, tm.Month, tm.Year);
+
 	if (sec & 0x80)
 		return false; // clock is halted
 	return true;
@@ -169,6 +173,9 @@ bool RTC::getDate(const char *str, tmElements_t* tm)
 void RTC::init(uint8_t hwaddress) {
 	I2C::init(DS1307_CTRL_ID, hwaddress);
 
+	//try to read - this sets existance flag.
+	read();
+
 	if(!chipPresent()) {
 		tmElements_t tm;
 		if (getDate(__DATE__, &tm) && getTime(__TIME__, &tm)) {
@@ -187,11 +194,11 @@ boolean RTC::writeVal(HardwareTypeIdentifier type, HardwareCommandResult* result
 	if(result->getUint8ListNum() < 4)
 		return false;
 	uint32_t time = 0;
-	//MSB first
-	time |= ((uint32_t) result->getUint8List()[4]) << 24;
-	time |= ((uint32_t) result->getUint8List()[4]) << 16;
-	time |= ((uint32_t) result->getUint8List()[4]) << 8;
-	time |= ((uint32_t) result->getUint8List()[4]);
+	//MSB first in data
+	time |= ((uint32_t) result->getUint8List()[3]) << 24;
+	time |= ((uint32_t) result->getUint8List()[2]) << 16;
+	time |= ((uint32_t) result->getUint8List()[1]) << 8;
+	time |= ((uint32_t) result->getUint8List()[0]);
 
 	RTC::set(time);
 
@@ -199,6 +206,7 @@ boolean RTC::writeVal(HardwareTypeIdentifier type, HardwareCommandResult* result
 }
 
 boolean RTC::readVal(HardwareTypeIdentifier type, HardwareCommandResult* result) {
+	read();
 	uint32_t timeNow = now();
 
 	result->setReadRequest(1);

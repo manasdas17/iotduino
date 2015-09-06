@@ -40,24 +40,48 @@ void getAddress() {
 
 void setup() {
 	Serial.begin(115200);
-	#ifdef DEBUG
-
-	Serial.println("start test...");
-	Serial.flush();
 
 	randomSeed(analogRead(1));
 
-	Serial.print(F("pin miso="));
-	Serial.print(MISO);
-	Serial.print(F(", pin mosi="));
-	Serial.print(MOSI);
-	Serial.print(F(", pin sck="));
-	Serial.print(SCK);
-	Serial.print(F(", pin ce="));
-	Serial.print(PIN_CE);
-	Serial.print(F(", pin csn(ss)="));
-	Serial.println(PIN_CSN);
+	#ifdef DEBUG
+		Serial.println("start test...");
+		Serial.flush();
+		Serial.print(F("pin miso="));
+		Serial.print(MISO);
+		Serial.print(F(", pin mosi="));
+		Serial.print(MOSI);
+		Serial.print(F(", pin sck="));
+		Serial.print(SCK);
+		Serial.print(F(", pin ce="));
+		Serial.print(PIN_CE);
+		Serial.print(F(", pin csn(ss)="));
+		Serial.println(PIN_CSN);
 	#endif
+
+	#ifdef RTC_ENABLE
+		rtc.init(90);
+		uint32_t tmp = rtc.read();
+		setTime(tmp);
+		Serial.print(millis());
+		Serial.print(F(": time is: "));
+		Serial.print(tmp);
+		Serial.print(F(" = "));
+
+		tmElements_t tmElems;
+		breakTime(tmp, tmElems);
+		Serial.print((uint16_t) 1970 + tmElems.Year);
+		Serial.print(F("/"));
+		Serial.print(tmElems.Month);
+		Serial.print(F("/"));
+		Serial.print(tmElems.Day);
+		Serial.print(F(" "));
+		Serial.print(tmElems.Hour);
+		Serial.print(F(":"));
+		Serial.print(tmElems.Minute);
+		Serial.print(F(":"));
+		Serial.println(tmElems.Second);
+	#endif
+
 
 	//enable watchdog
 	wdt_enable(WDTO_8S);
@@ -96,28 +120,6 @@ void setup() {
 	//mytone.init(A8, 70);
 
 	#ifdef RTC_ENABLE
-		rtc.init(90);
-		uint32_t tmp = rtc.read();
-		setTime(tmp);
-		Serial.print(millis());
-		Serial.print(F(": time updated to: "));
-		Serial.print(tmp);
-		Serial.print(F(" = "));
-
-		tmElements_t tmElems;
-		breakTime(tmp, tmElems);
-		Serial.print((uint16_t) 1970 + tmElems.Year);
-		Serial.print(F("/"));
-		Serial.print(tmElems.Month);
-		Serial.print(F("/"));
-		Serial.print(tmElems.Day);
-		Serial.print(F(" "));
-		Serial.print(tmElems.Hour);
-		Serial.print(F(":"));
-		Serial.print(tmElems.Minute);
-		Serial.print(F(":"));
-		Serial.println(tmElems.Second);
-
 		hwInterface.registerDriver((HardwareDriver*) &rtc);
 	#endif
 
