@@ -154,8 +154,8 @@ uint16_t BMP085::readPressure() {
 }
 
 void BMP085::readPressure( HardwareCommandResult* hwresult ) {
-	hwresult->setUint8ListNum(1);
-	hwresult->getUint8List()[0] = readPressure();
+	hwresult->setUint16ListNum(1);
+	hwresult->getUint16List()[0] = readPressure();
 }
 
 int8_t BMP085::readTemperature() {
