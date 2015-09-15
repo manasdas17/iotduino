@@ -9,8 +9,8 @@
 #define __PAGEMAKER_H__
 
 #include <Arduino.h>
+#include <Configuration.h>
 #include <SD.h>
-#include <networking/LayerConfig.h>
 #include <sdcard/DiscoveryManager.h>
 #include <utils/NodeInfo.h>
 #include <Ethernet/EthernetClient.h>
@@ -40,6 +40,39 @@ enum PAGES {
 	PAGE_WRITE_SENSOR,		//6
 	PAGE_LIST_FILES,		//7
 	PAGE_MAINTAIN_NODE_INFO	//8
+};
+
+
+enum errorCode_t {
+	INTERNAL_ERROR = -10,
+	INTERNAL_ERROR_RAM = -12,
+	INTERNAL_ERROR_LIST_FULL = -15,
+
+	INTERNAL_ERROR_SD = -20,
+	INTERNAL_ERROR_SD_FILE_NOT_FOUND = -21,
+	INTERNAL_ERROR_SD_FILE_OPEN_FAILED = -22,
+
+	HARDWARE_ERROR = -50,
+	HARDWARE_ERROR_REGISTER_FAILED = -51,
+	HARDWARE_ERROR_DEVICE_NOT_FOUND = -60,
+	HARDWARE_ERROR_METHOD_NOT_IMPLEMENTED = -61,
+	HARDWARE_ERROR_NO_EVENTS = -62,
+
+	NODEINFO_ERROR = -70,
+
+	WEBSERVER_ERROR = -80,
+	WEBSERVER_INVALID_PARAMS = -81,
+	WEBSERVER_UNKNOWN_URI = -82,
+	WEBSERVER_TIMED_OUT = -83,
+
+	NETWORK_ERROR = -100,
+	NETWORK_ERROR_L2 = -110,
+	NETWORK_ERROR_L2_HW = -111,
+	NETWORK_ERROR_L3 = -120,
+	NETWORK_ERROR_L3_NO_ROUTE = -121,
+	NETWORK_ERROR_TIMED_OUT = -122,
+
+	ERROR_UNKNOWN = -127
 };
 
 class PageMaker
@@ -80,26 +113,62 @@ class PageMaker
 	 * 404 page
 	 * @param client
 	 */
-	static void sendHttp404WithBody(EthernetClient* client) {
+	static void sendHttp404WithBody(EthernetClient* client, int16_t ERRNO = ERROR_UNKNOWN) {
 		client->println(F("HTTP/1.1 404 Not Found"));
 		client->println(F("Content-Type: text/html"));
 		//client->println(F("Content-Length: 16"));
 		client->println(F("Connection: close"));  // the connection will be closed after completion of the response
 		client->println();
-		client->println(F("404 - Not found."));
-	}
+		sendHtmlHeader(client, 0, false, false);
+		client->print(F("<h1>404 Not found</h1><p>"));
+		printErrnoStr(client, ERRNO);
+		client->print(F("</p>"));
+		sendHtmlFooter(client);	}
 
 	/**
 	 * 500 page
 	 * @param client
 	 */
-	static void sendHttp500WithBody(EthernetClient* client) {
+	static void sendHttp500WithBody(EthernetClient* client, int16_t ERRNO = ERROR_UNKNOWN) {
 		client->println(F("HTTP/1.1 500 Internal error"));
 		client->println(F("Content-Type: text/html"));
 		//client->println(F("Content-Length: 19"));
 		client->println(F("Connection: close"));  // the connection will be closed after completion of the response
 		client->println();
-		client->println(F("500 Internal error. <a href='/'>return to main.</a>"));
+		sendHtmlHeader(client, 0, false, false);
+		client->print(F("<h1>500 Internal error</h1><p>"));
+		printErrnoStr(client, ERRNO);
+		client->print(F("</p>"));
+		sendHtmlFooter(client);
+	}
+
+	static void printErrnoStr(EthernetClient* client, int16_t ERRNO) {
+		if(ERRNO >= 0)
+			return;
+
+		if(ERRNO > -20) {
+			client->print(F("INTERNAL ERROR"));
+			return;
+		}
+		if(ERRNO > -50) {
+			client->print(F("SD CARD ERROR"));
+			return;
+		}
+		if(ERRNO > -70) {
+			client->print(F("HARDWARE ERROR"));
+			return;
+		}
+		if(ERRNO > -80) {
+			client->print(F("NODEINFO ERROR"));
+			return;
+		}
+		if(ERRNO > -100) {
+			client->print(F("WEBSERVER ERROR"));
+			return;
+		}
+
+		client->print(F("NETWORK ERROR"));
+
 	}
 
 	/**
@@ -617,7 +686,7 @@ class PageMaker
 
 		//yay!
 		if(req == NULL) {
-			sendHttp500WithBody(client);
+			sendHttp500WithBody(client, WEBSERVER_INVALID_PARAMS);
 			return;
 		}
 
@@ -625,7 +694,7 @@ class PageMaker
 		uint8_t idInt = id->toInt();
 
 		if(id == NULL) {
-			sendHttp500WithBody(client);
+			sendHttp500WithBody(client, WEBSERVER_INVALID_PARAMS);
 			return;
 		}
 
@@ -774,14 +843,14 @@ class PageMaker
 	static void doPageListFile(EthernetClient* client, const char* filename, const char* filetype) {
 
 		if(!SD.exists((char*) filename)) {
-			sendHttp500WithBody(client);
+			sendHttp500WithBody(client, INTERNAL_ERROR_SD_FILE_NOT_FOUND);
 			return;
 		}
 
 		File f = SD.open(filename);
 
 		if(!f) {
-			sendHttp500WithBody(client);
+			sendHttp500WithBody(client, INTERNAL_ERROR_SD_FILE_OPEN_FAILED);
 			return;
 		}
 
@@ -829,7 +898,7 @@ class PageMaker
 			const uint16_t bufSize = sizeUInt8List + 4;
 
 			if(f.size() % bufSize != 0) {
-				sendHttp500WithBody(client);
+				sendHttp500WithBody(client, INTERNAL_ERROR_SD);
 				return;
 			}
 
@@ -1005,14 +1074,14 @@ class PageMaker
 
 			String* name = req->getValue(variableName);
 			if(name->length() > NODE_INFO_SIZE) {
-				sendHttp500WithBody(client);
+				sendHttp500WithBody(client, WEBSERVER_INVALID_PARAMS);
 				return;
 			}
 
 			uint8_t BUF[NODE_INFO_SIZE];
 			name->toCharArray((char*) BUF, NODE_INFO_SIZE);
 			if(!nodeInfo.updateString(idInt, BUF, NODE_INFO_SIZE)) {
-				sendHttp500WithBody(client);
+				sendHttp500WithBody(client, NODEINFO_ERROR);
 				return;
 			} else {
 				sendHttpOk(client);
@@ -1224,7 +1293,7 @@ class PageMaker
 
 		//check if available
 		if(id == NULL || hwAddressStr == NULL || hwtypeStr == NULL || hwtypeStr == NULL || listTypeStr == NULL || val == NULL || val->length() % 2 == 1 || (val->length()-2)/2 > sizeUInt8List) {
-			sendHttp500WithBody(client);
+			sendHttp500WithBody(client, WEBSERVER_INVALID_PARAMS);
 			return false;
 		}
 
@@ -1256,7 +1325,7 @@ class PageMaker
 		}
 
 		if(numBytes < 0 || 2*uint16 > sizeUInt8List || 2*int16 > sizeUInt8List || uint8 > sizeUInt8List || int8 > sizeUInt8List) {
-			sendHttp500WithBody(client);
+			sendHttp500WithBody(client, WEBSERVER_INVALID_PARAMS);
 			return false;
 		}
 
@@ -1272,7 +1341,7 @@ class PageMaker
 
 		//check if all is ok.
 		if(idInt == -1 || hwaddress == -1 || hwtype == -1) {
-			sendHttp500WithBody(client);
+			sendHttp500WithBody(client, WEBSERVER_INVALID_PARAMS);
 			return false;
 		}
 
@@ -1287,7 +1356,7 @@ class PageMaker
 		success &= l3.sendPacket(p);
 
 		if(!success) {
-			sendHttp500WithBody(client);
+			sendHttp500WithBody(client, NETWORK_ERROR);
 			dispatcher.getResponseHandler()->unregisterListener(listenerHardwareRequest);
 			return false;
 		}
@@ -1340,7 +1409,7 @@ class PageMaker
 		String* hwAddressStr = req->getValue(variableHwAddress);
 		String* hwtypeStr = req->getValue(variableHwType);
 		if(id == NULL || hwAddressStr == NULL || hwtypeStr == NULL) {
-			sendHttp500WithBody(client);
+			sendHttp500WithBody(client, WEBSERVER_INVALID_PARAMS);
 			return false;
 		}
 
@@ -1349,7 +1418,7 @@ class PageMaker
 		int8_t hwtype = hwtypeStr->toInt();
 
 		if(idInt == -1 || hwaddress == -1 || hwtype == -1) {
-			sendHttp500WithBody(client);
+			sendHttp500WithBody(client, WEBSERVER_INVALID_PARAMS);
 			return false;
 		}
 
@@ -1362,7 +1431,7 @@ class PageMaker
 		success &= l3.sendPacket(p);
 
 		if(!success) {
-			sendHttp500WithBody(client);
+			sendHttp500WithBody(client, NETWORK_ERROR);
 			dispatcher.getResponseHandler()->unregisterListener(hwListener);
 			return false;
 		}
@@ -1609,7 +1678,7 @@ class PageMaker
 					tmp = cmd->int16list[0];
 
 					uint8_t level = tmp * 100 / 1024;
-					uint8_t levelNot = 100 - level;
+					//uint8_t levelNot = 100 - level;
 
 					client->print(level);
 					client->print(F(" %"));

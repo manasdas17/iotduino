@@ -7,6 +7,8 @@
 
 #include <webserver/WebServer.h>
 
+const char* WebServer::pSpDelimiters = " \r\n";
+
 void WebServer::init() {
 	for(uint8_t i = 0; i < CLIENT_INSTANCES_NUM; i++) {
 		clientStatus[i].inUse = false;
@@ -224,7 +226,7 @@ void WebServer::loop() {
 				handleFinishedCallback(&client);
 			} else if(clientStatus[i].callback != NULL && clientStatus[i].callback != NULL && (clientStatus[i].callback->state == webserverListener::FAILED || millis() - clientStatus[i].timestamp > WEBSERVER_REQUEST_TIMEOUT_MILLIS)) {
 				//no answer.
-				PageMaker::sendHttp500WithBody(&client);
+				PageMaker::sendHttp500WithBody(&client, WEBSERVER_TIMED_OUT);
 			}
 		}
 
@@ -249,7 +251,7 @@ void WebServer::handleFinishedCallback(EthernetClient* client) {
 		PageMaker::doPageWriteSensor2(client, (hardwareRequestListener*) clientStatus[client->_sock].callback);
 	} else {
 		//unknown request
-		PageMaker::sendHttp500WithBody(client);
+		PageMaker::sendHttp500WithBody(client, WEBSERVER_UNKNOWN_URI);
 	}
 
 	closeClient(client);
@@ -318,7 +320,7 @@ void WebServer::doClientHandling(EthernetClient* client) {
 			clientStatus[client->_sock].timestamp = millis();
 		}
 	} else {
-		PageMaker::sendHttp404WithBody(client);
+		PageMaker::sendHttp404WithBody(client, WEBSERVER_UNKNOWN_URI);
 	}
 
 	#ifdef DEBUG_WEBSERVER_ENABLE
