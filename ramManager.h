@@ -10,7 +10,7 @@
 #define __RAMMANAGER_H__
 
 #include <Arduino.h>
-#include <DebugConfig.h>
+#include <Configuration.h>
 #include "SpiRAM.h"
 
 class SPIRamManager {
@@ -23,8 +23,8 @@ class SPIRamManager {
 		} memRegion_t;
 
 		//static const uint8_t pageSize = 32;
-		static const uint8_t bufferSize = 128;
-		static const uint8_t maxRegions = 32; //reservation for memRegion structs.
+		static const uint8_t bufferSize = RAM_MGR_BUF_SIZE;
+		static const uint8_t maxRegions = RAM_MGR_MAX_REGIONS; //reservation for memRegion structs.
 		static const uint32_t usableRamStartAddress = sizeof(memRegion_t) * maxRegions;
 		SpiRAM ram;
 		uint32_t size;
@@ -94,6 +94,7 @@ class SPIRamManager {
 		 * initializer.
 		 */
 		SPIRamManager(uint8_t SS, SpiRAM::addressLengthEnum adrLen, uint32_t size);
+		//SPIRamManager(uint8_t SS, uint8_t adrLen, uint32_t size) : SPIRamManager(SS, (SpiRAM::addressLengthEnum) adrLen, size) {};
 
 		/**
 		 * create a memory region. searches next free.

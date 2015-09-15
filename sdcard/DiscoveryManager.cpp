@@ -1,6 +1,8 @@
 #include "DiscoveryManager.h"
 
 
+const char* DiscoveryManager::filenameDiscovery = {DISCOVERY_SD_FILENAME};
+
 
 
 boolean DiscoveryManager::sendDiscoveryRequest(l3_address_t node) {
@@ -252,7 +254,7 @@ boolean DiscoveryManager::writeDataToSDCard() {
 		getIteratorDiscovery(&it);
 
 		//delete old info
-		SD.remove(filenameDiscovery);
+		SD.remove((char*) filenameDiscovery);
 
 		//reopen file for write
 		File f = SD.open(filenameDiscovery, FILE_WRITE);

@@ -94,6 +94,4 @@ extern const char strHWType_tone[] PROGMEM;
 /** string representations of hwtypes */
 extern PGM_P hardwareTypeStrings[];
 
-
-
 #endif /* STRINGCONSTANTSEXTERN_H_ */

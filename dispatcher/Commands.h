@@ -9,11 +9,9 @@
 #if !defined(_HARDWARERESULT_H)
 #define _HARDWARERESULT_H
 
+#include <Configuration.h>
 #include <networking/Packets.h> //used for sanity check
 #include <drivers/HardwareID.h> //types are referenced
-
-#define sizeUInt8List 8 //enough size for 4 16bit vars.
-
 
 typedef struct hwCommand {
 	HardwareTypeIdentifier type;
@@ -33,11 +31,6 @@ typedef struct hwCommand {
 	};
 } command_t; //Maximum length CONFIG_L3_PACKET_NUMBERED_MAX_LEN
 
-
-//sanity check.
-#if (CONFIG_L3_PACKET_NUMBERED_MAX_LEN < (7 + sizeUInt8List*1))
-	#error maximum payload len exceeded.
-#endif
 
 /**
  * this class is a representation of a hardware read/write command.

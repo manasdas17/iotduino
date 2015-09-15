@@ -10,6 +10,7 @@
 #define __SUBSCRIPTIONMANAGER_H__
 
 #include <Arduino.h>
+#include <Configuration.h>
 #include <avr/wdt.h>
 #include <dispatcher/EventCallbackInterface.h>
 #include <dispatcher/PacketDispatcher.h>
@@ -28,15 +29,6 @@ extern Layer3 l3;
 extern SPIRamManager ram;
 extern NodeInfo nodeInfo;
 
-
-#define DISCOVERY_TIMEOUT 2000
-#define DISCOVERY_REQUEST_PERIOD_MILLIS (1*20*1000UL)
-#define DISCOVERY_REQUEST_DELAY_MILLIS 2000
-#define NUM_KNOWN_NODES 256
-#define NUM_INFOS_PER_NODE 15
-
-#define DISCOVERY_SD_WRITE_PERIOD_MILLIS (60*1000UL)
-
 class DiscoveryManager {
 	/** static dicoverylistener object */
 	discoveryListener listenerDiscovery;
@@ -53,7 +45,7 @@ class DiscoveryManager {
 
 	uint32_t lastSDWrite;
 
-	char* filenameDiscovery = "DICOVERY.BIN";
+	static const char* filenameDiscovery;
 
 	public:
 		/**  */

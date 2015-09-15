@@ -11,7 +11,7 @@
 
 #include <Arduino.h>
 #include <SPI.h>
-#include <networking/LayerConfig.h>
+#include <Configuration.h>
 #include <networking/rf24/nRF24L01.h>
 #include <networking/rf24/RF24.h>
 #include <ramManager.h>

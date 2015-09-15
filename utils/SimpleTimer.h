@@ -33,6 +33,7 @@
 //#else
 //#include <WProgram.h>
 //#endif
+#include <Configuration.h>
 
 //made singleton by helge on 2015-05-17
 #include <utils/singleton.h>
@@ -44,7 +45,7 @@ class SimpleTimer {
 
 public:
     // maximum number of timers
-    const static int MAX_TIMERS = 10;
+    const static int MAX_TIMERS = TIMER_MAX_TIMERS;
 
     // setTimer() constants
     const static int RUN_FOREVER = 0;

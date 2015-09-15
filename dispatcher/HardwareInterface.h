@@ -10,11 +10,11 @@
 #define __HARDWAREINTERFACE_H__
 
 #include <Arduino.h>
+#include <Configuration.h>
 #include <drivers/HardwareDriver.h>
 #include <drivers/HardwareID.h>
 #include <dispatcher/Commands.h>
 
-#define driverPointerListSize 6
 class HardwareInterface {
 	private:
 		//const static driverPointerListSize = 5;

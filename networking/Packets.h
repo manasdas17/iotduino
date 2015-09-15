@@ -22,7 +22,10 @@
 #define __PACKETS_H__
 
 #include <Arduino.h>
-#include "LayerConfig.h"
+#include <Configuration.h>
+
+enum l3_packetType {PACKET_ACK, PACKET_NUMBERED, PACKET_UNNUMBERED, PACKET_BEACON};
+
 
 /** type for packet identifiers numbers*/
 typedef uint16_t seq_t;

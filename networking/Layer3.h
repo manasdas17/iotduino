@@ -12,7 +12,7 @@
 #include <Arduino.h>
 #include <dispatcher/EventCallbackInterface.h>
 #include <dispatcher/Commands.h>
-#include "LayerConfig.h"
+#include <Configuration.h>
 #include "neighbourData.h"
 #include "Layer2rf24.h"
 #include "Packets.h"

@@ -16,9 +16,6 @@
 
 extern SPIRamManager ram;
 
-#define LISTENER_NUM 5
-#define MAINTENANCE_PERIOD_MILLIS (15*1000)
-
 class ResponseHandler {
 	//variables
 	public:

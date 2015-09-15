@@ -10,6 +10,7 @@
 #define __NODEINFO_H__
 
 #include <Arduino.h>
+#include <Configuration.h>
 #include <networking/Packets.h>
 #include <ramManager.h>
 #include <sdcard/SDcard.h>
@@ -19,14 +20,11 @@
 
 extern SPIRamManager ram;
 
-#define NODE_INFO_SIZE 32
-#define NODE_INFO_MAX 255
-
 class NodeInfo
 {
 	public:
 		/** string node information */
-		const char* fileNameNodeInfo = {"NODEINFO.TXT"};
+		static const char* fileNameNodeInfo;
 
 		/** maximum number of nodeids */
 		typedef struct SD_nodeInfoTableEntryStruct {

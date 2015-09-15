@@ -9,24 +9,13 @@
 #ifndef __SUBSCRIPTIONSERVICE_H__
 #define __SUBSCRIPTIONSERVICE_H__
 
+#include <Configuration.h>
 #include <networking/Layer3.h>
 #include <dispatcher/CommandHandler.h>
 #include <dispatcher/HardwareInterface.h>
 #include <ramManager.h>
 
 extern SPIRamManager ram;
-
-#ifdef ENABLE_SUBSCRIPTION_SERVICE
-
-#ifdef ENABLE_EXTERNAL_RAM
-	#define numSubscriptionList 10
-#else
-	#define numSubscriptionList 5
-#endif
-/** period for subscription execution */
-#define SUBSCRIPTION_CHECK_PERIOD_MILLIS (1*1000UL)
-/** period for subscription polling check */
-#define SUBSCRIPTION_POLLING_CHECK_PERIOD_MILLIS (200) //250
 
 class SubscriptionService {
 	//variables
@@ -224,7 +213,5 @@ class SubscriptionService {
 	private:
 
 }; //SubscriptionService
-
-#endif
 
 #endif //__SUBSCRIPTIONSERVICE_H__

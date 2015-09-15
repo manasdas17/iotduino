@@ -10,10 +10,9 @@
 #define SDCARD_H_
 
 #include <Arduino.h>
+#include <Configuration.h>
 #include <SD.h>
 
-/** SS pin for SD reader */
-#define PIN_SD_SS 4
 
 class SDcard {
 	//private:

@@ -2,9 +2,9 @@
 #ifndef NEIGHBOURDATA_H_
 #define NEIGHBOURDATA_H_
 
-#include "LayerConfig.h"
-#include "Layer3.h"
-#include "ramManager.h"
+#include <Configuration.h>
+#include <networking/Layer3.h>
+#include <ramManager.h>
 
 extern SPIRamManager ram;
 

@@ -61,8 +61,8 @@ class SpiRAM {
   public:
 	//define whether to shift in 3 or 2 bytes for an address
 	enum addressLengthEnum{
-		l16bit,
-		l24bit
+		l16bit = 16,
+		l24bit = 24
 	};
 
     SpiRAM() {};

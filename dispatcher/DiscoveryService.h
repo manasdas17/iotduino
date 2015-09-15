@@ -9,11 +9,10 @@
 #ifndef __DISCOVERYSERVICE_H__
 #define __DISCOVERYSERVICE_H__
 
+#include <Configuration.h>
 #include <networking/Packets.h>
 #include <dispatcher/EventCallbackInterface.h>
 #include <dispatcher/HardwareInterface.h>
-
-#define INTERFACES_BUF_SIZE 16
 
 class DiscoveryService {
 	//variables

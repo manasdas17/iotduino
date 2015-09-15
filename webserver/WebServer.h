@@ -98,7 +98,7 @@ class WebServer {
 	void init();
 
 	// Http header token delimiters
-	const char *pSpDelimiters = " \r\n";
+	static const char *pSpDelimiters;
 	//const char *pStxDelimiter = "\002";    // STX - ASCII start of text character
 
 	/** print flash string to serial */

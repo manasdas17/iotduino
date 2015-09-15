@@ -136,5 +136,4 @@ PGM_P hardwareTypeStrings[] = {	strHWType_UNKNOWN,
 	strHWType_light,
 strHWType_tone};
 
-
 #endif /* STRINGCONSTANTS_H_ */
