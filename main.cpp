@@ -81,6 +81,16 @@ void setup() {
 
 	#ifdef DEBUG
 		Serial.println("start test...");
+		Serial.print(F(" CE="));
+		Serial.print(PIN_CE);
+		Serial.print(F(" CSN="));
+		Serial.print(PIN_CSN);
+		Serial.print(F(" MISO="));
+		Serial.print(MISO);
+		Serial.print(F(" MOSI="));
+		Serial.print(MOSI);
+		Serial.print(F(" SCK="));
+		Serial.println(SCK);
 	#endif
 
 	#ifdef RTC_ENABLE
@@ -132,7 +142,7 @@ void setup() {
 	l2.init(&l3, PIN_CE, PIN_CSN, address_local);
 	l3.setLayer2(&l2);
 
-	dht11.init(2, 20);
+	dht11.init(A2, 20);
 
 	#ifdef __AVR_ATmega2560__
 	rcsw.init(14, 21);
@@ -140,8 +150,9 @@ void setup() {
 	rcsw.init(A6, 21);
 	#endif
 
-	motion.init(3, 50);
-	light.init(A5, 60);
+	bmp180.init(80);
+	motion.init(A3, 50);
+	light.init(A7, 60);
 	//mytone.init(A8, 70);
 
 	#ifdef RTC_ENABLE
@@ -152,6 +163,7 @@ void setup() {
 	hwInterface.registerDriver((HardwareDriver*) &rcsw);
 	hwInterface.registerDriver((HardwareDriver*) &motion);
 	hwInterface.registerDriver((HardwareDriver*) &light);
+	hwInterface.registerDriver((HardwareDriver*) &bmp180);
 	//hwInterface.registerDriver((HardwareDriver*) &mytone);
 
 	dispatcher.init(&l3, &hwInterface);

@@ -86,7 +86,7 @@ class BMP085 : public I2C, public Pressure, public Temperature {
 		}
 
 		void init(uint8_t hwaddress) {
-			I2C::init(hwaddress, BMP085_ADDRESS);
+			I2C::init(BMP085_ADDRESS, hwaddress);
 			Wire.begin();
 			bmp085Calibration();
 		}
@@ -114,6 +114,10 @@ class BMP085 : public I2C, public Pressure, public Temperature {
 			this->addImplementedInterface(arr, maxLen, HWType_pressure);
 			return this->addImplementedInterface(arr, maxLen, HWType_temprature);
 		}
+
+	private:
+	virtual boolean writeVal(HardwareTypeIdentifier type, HardwareCommandResult* result) {return false;};
+
 };
 
 #endif  //_BMP085_H
