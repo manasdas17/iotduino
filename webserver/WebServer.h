@@ -27,6 +27,8 @@
 #define WEBSERVER_H_
 
 #include <Arduino.h>
+#include <Configuration.h>
+
 #include <SPI.h>
 #include <Ethernet/Ethernet.h>
 #include <dispatcher/EventCallbackInterface.h>
@@ -58,8 +60,6 @@ extern NodeInfo nodeinfo;
 extern EthernetServer server;
 extern byte mac[];
 extern byte ip[];
-
-//#define USE_DHCP_FOR_IP_ADDRESS
 
 /** webserver */
 class WebServer {

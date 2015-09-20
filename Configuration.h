@@ -184,12 +184,13 @@ typedef uint16_t l3_address_t;
 /* webserver */
 /*************/
 #define WEBSERVER_PORT 80
-#define WEBSERVER_MAC "0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED"
-#define WEBSERVER_IP "192, 168, 0, 177"
-#ifndef WEBSERVER_IP
-	#define USE_DHCP_FOR_IP_ADDRESS
-#endif
+#define WEBSERVER_IP0 192
+#define WEBSERVER_IP1 168
+#define WEBSERVER_IP2 0
+#define WEBSERVER_IP3 177
+//#define USE_DHCP_FOR_IP_ADDRESS
 
+#define STRING_BUFFER_SIZE 128
 
 
 

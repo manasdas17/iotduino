@@ -96,7 +96,7 @@ class PageMaker
 		uint8_t buffer[32];
 		size_t bufferEnd = 0;
 
-		while (buffer[bufferEnd++] = pgm_read_byte(str++)){
+		while ((buffer[bufferEnd++] = pgm_read_byte(str++))){
 			if (bufferEnd == 32) {
 				client->write(buffer, 32);
 				bufferEnd = 0;

@@ -10,6 +10,9 @@
 #define STRINGCONSTANTS_H_
 
 #include <avr/pgmspace.h>
+#include <Configuration.h>
+
+#ifdef WEBSERVER_ENABLE
 
 const char pageAddressMain[] PROGMEM = {"/"};
 const char pageAddressGetSensorInfo[] PROGMEM = {"/getSensorInfo"};
@@ -136,4 +139,5 @@ PGM_P hardwareTypeStrings[] = {	strHWType_UNKNOWN,
 	strHWType_light,
 strHWType_tone};
 
+#endif
 #endif /* STRINGCONSTANTS_H_ */

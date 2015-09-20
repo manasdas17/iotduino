@@ -10,9 +10,8 @@
 #define REQUESTCONTENT_H_
 
 #include <Arduino.h>
+#include <Configuration.h>
 #include <avr/pgmspace.h>
-
-#define STRING_BUFFER_SIZE 128
 
 /**
  * simple map.

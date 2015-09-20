@@ -71,11 +71,8 @@ PacketFactory pf;
 	#include <Ethernet/Ethernet.h>
 	EthernetServer server(WEBSERVER_PORT);
 
-	byte mac[] = { WEBSERVER_MAC };
-	#ifndef USE_DHCP_FOR_IP_ADDRESS
-		//ip
-		byte ip[] = { WEBSERVER_IP };
-	#endif
+	byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
+	byte ip[] =  { WEBSERVER_IP0, WEBSERVER_IP1, WEBSERVER_IP2, WEBSERVER_IP3 };
 #endif
 
 
