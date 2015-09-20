@@ -59,6 +59,8 @@ SpiRAM::SpiRAM(byte clockDiv, byte ssPin, addressLengthEnum len)
 
   // Set the spi mode using the requested clock speed
 //  SPI.mode(clock);
+//4 is the usual one.
+  //SPI.setClockDivider(SPI_CLOCK_DIV4);
   SPI.setClockDivider(SPI_CLOCK_DIV2);
   _ssPin = ssPin;
   pinMode(_ssPin, OUTPUT);

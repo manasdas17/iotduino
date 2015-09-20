@@ -11,6 +11,11 @@
 
 #include <DebugConfig.h>
 
+//only for scrappy source parser - may be removed
+//#define __AVR_ATmega328p__
+//#undef __AVR_ATmega2560__
+//*
+
 
 /** modules */
 #ifdef __AVR_ATmega2560__
@@ -39,7 +44,7 @@
 	#define RAM_MGR_ADDRESS_WIDTH (SpiRAM::l24bit)
 	#define RAM_MGR_RAM_LEN 128000
 #else
-#define RAM_MGR_SS_PIN A4
+#define RAM_MGR_SS_PIN A1
 #define RAM_MGR_ADDRESS_WIDTH (SpiRAM::l16bit)
 #define RAM_MGR_RAM_LEN 32768
 #endif
@@ -62,6 +67,14 @@
 //#define ADDRESS_PIN6
 //#define ADDRESS_PIN7
 
+//nrf24
+#define PIN_CE A0
+
+#ifdef __AVR_ATmega2560__
+	#define PIN_CSN 53
+#else
+	#define PIN_CSN 10
+#endif
 
 /************/
 /* nodeinfo */
@@ -101,9 +114,6 @@
 /******/
 /* L2 */
 /******/
-#define PIN_CE A0
-#define PIN_CSN SS
-
 #include <networking/rf24/RF24.h>
 #define CONFIG_RF_PA_LEVEL RF24_PA_LOW
 #define CONFIG_RF_CHANNEL 70
@@ -139,7 +149,7 @@
 	#define CONFIG_L3_SEND_BUFFER_LEN 5
 #endif
 
-#define CONFIG_L3_NUMBERED_RETRANSMISSIONS 3
+#define CONFIG_L3_NUMBERED_RETRANSMISSIONS 1
 #define CONFIG_L3_NUMBERED_TIMEOUT_MS (1000)
 
 typedef uint16_t l3_seq_t;

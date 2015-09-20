@@ -40,6 +40,7 @@ PacketFactory pf;
 #include <interfaces/output/RCSwitchTevionFSI07.h>
 #include <interfaces/input/MotionDetector.h>
 #include <interfaces/input/Light.h>
+#include <drivers/i2c/Adafruit_BMP085.h>
 
 #ifdef RTC_ENABLE
 	#include <interfaces/input/RTC.h>
@@ -77,6 +78,7 @@ PacketFactory pf;
 
 
 DHT11 dht11;
+Adafruit_BMP085 bmp180;
 RCSwitchTevionFSI07 rcsw;
 MotionDetector motion;
 Light light;

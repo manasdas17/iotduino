@@ -18,6 +18,8 @@ typedef struct hwCommand {
 	uint8_t isRead;
 	uint8_t address;
 
+	uint8_t isEventType; //TODO!
+
 	uint8_t numUint8;
 	uint8_t numUint16;
 	uint8_t numInt8;
