@@ -24,9 +24,7 @@
 #include <dispatcher/PacketDispatcher.h>
 #include <dispatcher/PacketFactory.h>
 
-uint16_t address_local;
-#define PIN_CE A0
-#define PIN_CSN SS
+l3_address_t address_local;
 Layer2rf24 l2;
 Layer3 l3;
 PacketDispatcher dispatcher;
