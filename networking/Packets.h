@@ -105,13 +105,13 @@ typedef struct packet_application_unnumbered_cmd_struct {
 typedef struct discoveryInfo_helper_struct {
 	uint8_t hardwareAddress;
 	int8_t hardwareType;
-	#ifdef ENABLE_EVENTS
-		uint8_t canDetectEvents;
-	#endif
+	//#ifdef ENABLE_EVENTS
+		uint8_t canDetectEvents; //keep this for compatibility.
+	//#endif
 } packet_application_numbered_discovery_info_helper_t;
 
 /** struct for hardware discovery information */
-#define PACKET_APP_NUMBERED_DISCOVERY_DRIVERS_NUM (CONFIG_L3_PACKET_NUMBERED_MAX_LEN - 1) / sizeof(packet_application_numbered_discovery_info_helper_t)
+#define PACKET_APP_NUMBERED_DISCOVERY_DRIVERS_NUM (((CONFIG_L3_PACKET_NUMBERED_MAX_LEN - 2) / sizeof(packet_application_numbered_discovery_info_helper_t)) - 1)
 typedef struct discoveryInfo_struct {
 	uint8_t numTotalSensors;
 	uint8_t numSensors;

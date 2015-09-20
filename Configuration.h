@@ -51,6 +51,7 @@
 /* HARDWARE */
 /************/
 #define SERIAL_SPEED 115200
+#define MAX_INTERFACES_PER_DRIVER 5 //used in discovery service
 
 #define ADDRESS_PIN0 4
 #define ADDRESS_PIN1 5

@@ -17,19 +17,18 @@ uint8_t DiscoveryService::getDriverInterfacesAll(packet_application_numbered_dis
 	HardwareDriver** drivers = hardwareInterface->getHardwareDrivers();
 	uint8_t numDrivers = 0;
 
-	#define tempArraySize 5
-	HardwareTypeIdentifier tempArray[tempArraySize];
+	HardwareTypeIdentifier tempArray[MAX_INTERFACES_PER_DRIVER];
 	uint8_t driverListSize = hardwareInterface->getHardwareDriversListSize();
 	for(uint8_t i = 0; i < driverListSize; i++) {
 		if(drivers[i] != NULL) {
 			//this is a driver.
 			memset(tempArray, 0, sizeof(tempArray));
-			void* result = drivers[i]->getImplementedInterfaces(tempArray, tempArraySize);
+			void* result = drivers[i]->getImplementedInterfaces(tempArray, MAX_INTERFACES_PER_DRIVER);
 
 			//did we get a valid result?
 			if(result != NULL) {
 				//iterate interfaces.
-				for(uint8_t j = 0; j < tempArraySize && numDrivers < bufSize; j++) {
+				for(uint8_t j = 0; j < MAX_INTERFACES_PER_DRIVER && numDrivers < bufSize; j++) {
 					if(tempArray[j] != 0) {
 						//this is an interface.
 						info[numDrivers].hardwareAddress = drivers[i]->getAddress();
@@ -69,7 +68,7 @@ boolean DiscoveryService::handleInfoRequest(EventCallbackInterface* callback, se
 
 	//number of packets to send
 	uint8_t numPerPacket = PACKET_APP_NUMBERED_DISCOVERY_DRIVERS_NUM;
-	uint8_t packets = ceil((double) num / numPerPacket);
+	uint8_t packets = ceil((float) num / numPerPacket);
 
 	//send packets
 	for(uint8_t i = 0; i < packets; i++) {
