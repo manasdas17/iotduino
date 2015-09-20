@@ -39,10 +39,28 @@
 	#define RAM_MGR_ADDRESS_WIDTH (SpiRAM::l24bit)
 	#define RAM_MGR_RAM_LEN 128000
 #else
-	#define RAM_MGR_SS_PIN A4
-	#define RAM_MGR_ADDRESS_WIDTH (SpiRAM::l16bit)
-	#define RAM_MGR_RAM_LEN 32768
+#define RAM_MGR_SS_PIN A4
+#define RAM_MGR_ADDRESS_WIDTH (SpiRAM::l16bit)
+#define RAM_MGR_RAM_LEN 32768
 #endif
+	//#define RAM_MGR_SS_PIN 40
+	////#define RAM_MGR_ADDRESS_WIDTH (SpiRAM::l16bit)
+	////#define RAM_MGR_RAM_LEN 32768
+
+/************/
+/* HARDWARE */
+/************/
+#define SERIAL_SPEED 115200
+
+#define ADDRESS_PIN0 4
+#define ADDRESS_PIN1 5
+#define ADDRESS_PIN2 6
+#define ADDRESS_PIN3 7
+#define ADDRESS_PIN4 8
+#define ADDRESS_PIN5 9
+//#define ADDRESS_PIN6
+//#define ADDRESS_PIN7
+
 
 /************/
 /* nodeinfo */
@@ -82,6 +100,9 @@
 /******/
 /* L2 */
 /******/
+#define PIN_CE A0
+#define PIN_CSN SS
+
 #include <networking/rf24/RF24.h>
 #define CONFIG_RF_PA_LEVEL RF24_PA_LOW
 #define CONFIG_RF_CHANNEL 70
@@ -99,9 +120,6 @@
 /* L3 */
 /******/
 #define CONFIG_L3_ADDRESS_BROADCAST CONFIG_L2_ADDR_BROADCAST
-
-#define CONFIG_L3_PAYLOAD_SIZE (CONFIG_L2_PAYLOAD_SIZE - 5) //5b l2 overhead
-#define CONFIG_APP_PAYLOAD_SIZE (CONFIG_L3_PAYLOAD_SIZE - 7) //7b l3 overhead
 
 #define CONFIG_L3_BEACON_PERIOD_MS (30*1000L)
 #define CONFIG_L3_NEIGHBOUR_MAX_AGE_MS (300*1000L)
@@ -127,9 +145,9 @@ typedef uint16_t l3_seq_t;
 typedef uint32_t l3_timestamp;
 typedef uint16_t l3_address_t;
 
-/************************/
-/* subscription service */
-/************************/
+/****************************************/
+/* subscription service (detects events */
+/****************************************/
 #ifdef ENABLE_EXTERNAL_RAM
 	#define numSubscriptionList 10
 #else
@@ -162,6 +180,15 @@ typedef uint16_t l3_address_t;
 #define sizeUInt8List 8 //enough size for 4 16bit vars.
 
 
+/*************/
+/* webserver */
+/*************/
+#define WEBSERVER_PORT 80
+#define WEBSERVER_MAC "0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED"
+#define WEBSERVER_IP "192, 168, 0, 177"
+#ifndef WEBSERVER_IP
+	#define USE_DHCP_FOR_IP_ADDRESS
+#endif
 
 
 

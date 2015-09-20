@@ -10,8 +10,9 @@
 #define __NRF24MESH_H__
 
 #include <Arduino.h>
-#include <SPI.h>
 #include <Configuration.h>
+#include <networking/Packets.h>
+#include <SPI.h>
 #include <networking/rf24/nRF24L01.h>
 #include <networking/rf24/RF24.h>
 #include <ramManager.h>

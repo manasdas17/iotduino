@@ -35,6 +35,8 @@ typedef struct packet_ack_t_struct {
 	seq_t ack;
 } packet_ack_t;
 
+#define CONFIG_L3_PAYLOAD_SIZE (CONFIG_L2_PAYLOAD_SIZE - 5) //5b l2 overhead
+#define CONFIG_APP_PAYLOAD_SIZE (CONFIG_L3_PAYLOAD_SIZE - 7) //7b l3 overhead
 
 /** struct for numbered packets */
 #define CONFIG_L3_PACKET_NUMBERED_MAX_LEN (CONFIG_APP_PAYLOAD_SIZE - 3)
@@ -86,7 +88,6 @@ typedef enum packet_type_application_enum {
 	NACK
 } packet_type_application_t;
 
-#define CONFIG_APP_LAYER_PAYLOAD_SIZE (CONFIG_L3_PACKET_NUMBERED_MAX_LEN - 1)
 
 /** generic struct for numbered application packet */
 typedef struct packet_application_numbered_cmd_struct {

@@ -11,21 +11,57 @@
  * read pin 4..9 inverted
  */
 void getAddress() {
-	pinMode(4, INPUT_PULLUP);
-	pinMode(5, INPUT_PULLUP);
-	pinMode(6, INPUT_PULLUP);
-	pinMode(7, INPUT_PULLUP);
-	pinMode(8, INPUT_PULLUP);
-	pinMode(9, INPUT_PULLUP);
+	#ifdef ADDRESS_PIN0
+	pinMode(ADDRESS_PIN0, INPUT_PULLUP);
+	#endif
+	#ifdef ADDRESS_PIN1
+	pinMode(ADDRESS_PIN1, INPUT_PULLUP);
+	#endif
+	#ifdef ADDRESS_PIN2
+	pinMode(ADDRESS_PIN2, INPUT_PULLUP);
+	#endif
+	#ifdef ADDRESS_PIN3
+	pinMode(ADDRESS_PIN3, INPUT_PULLUP);
+	#endif
+	#ifdef ADDRESS_PIN4
+	pinMode(ADDRESS_PIN4, INPUT_PULLUP);
+	#endif
+	#ifdef ADDRESS_PIN5
+	pinMode(ADDRESS_PIN5, INPUT_PULLUP);
+	#endif
+	#ifdef ADDRESS_PIN6
+	pinMode(ADDRESS_PIN6, INPUT_PULLUP);
+	#endif
+	#ifdef ADDRESS_PIN7
+	pinMode(ADDRESS_PIN7, INPUT_PULLUP);
+	#endif
 
 	#define invert(x) ((x == 1) ? 0 : 1)
 	address_local = 0;
-	address_local |= invert(digitalRead(4)) << 5;
-	address_local |= invert(digitalRead(5)) << 4;
-	address_local |= invert(digitalRead(6)) << 3;
-	address_local |= invert(digitalRead(7)) << 2;
-	address_local |= invert(digitalRead(8)) << 1;
-	address_local |= invert(digitalRead(9)) << 0;
+	#ifdef ADDRESS_PIN7
+	address_local |= invert(digitalRead(ADDRESS_PIN7)) << 7;
+	#endif
+	#ifdef ADDRESS_PIN6
+	address_local |= invert(digitalRead(ADDRESS_PIN6)) << 6;
+	#endif
+	#ifdef ADDRESS_PIN5
+	address_local |= invert(digitalRead(ADDRESS_PIN5)) << 5;
+	#endif
+	#ifdef ADDRESS_PIN4
+	address_local |= invert(digitalRead(ADDRESS_PIN4)) << 4;
+	#endif
+	#ifdef ADDRESS_PIN3
+	address_local |= invert(digitalRead(ADDRESS_PIN3)) << 3;
+	#endif
+	#ifdef ADDRESS_PIN2
+	address_local |= invert(digitalRead(ADDRESS_PIN2)) << 2;
+	#endif
+	#ifdef ADDRESS_PIN1
+	address_local |= invert(digitalRead(ADDRESS_PIN1)) << 1;
+	#endif
+	#ifdef ADDRESS_PIN0
+	address_local |= invert(digitalRead(ADDRESS_PIN0)) << 0;
+	#endif
 	#undef invert
 
 	#ifdef DEBUG
@@ -39,23 +75,12 @@ void getAddress() {
 }
 
 void setup() {
-	Serial.begin(115200);
+	Serial.begin(SERIAL_SPEED);
 
 	randomSeed(analogRead(1));
 
 	#ifdef DEBUG
 		Serial.println("start test...");
-		Serial.flush();
-		Serial.print(F("pin miso="));
-		Serial.print(MISO);
-		Serial.print(F(", pin mosi="));
-		Serial.print(MOSI);
-		Serial.print(F(", pin sck="));
-		Serial.print(SCK);
-		Serial.print(F(", pin ce="));
-		Serial.print(PIN_CE);
-		Serial.print(F(", pin csn(ss)="));
-		Serial.println(PIN_CSN);
 	#endif
 
 	#ifdef RTC_ENABLE

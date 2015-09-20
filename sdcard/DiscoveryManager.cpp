@@ -151,7 +151,9 @@ void DiscoveryManager::maintainDiscoveries() {
 
 			#ifdef ENABLE_EXTERNAL_RAM
 				ram.readElementIntoBuffer(l3.getNeighbourManager()->memRegionId, nextDiscoveryRequestNeighbourIndex);
-				l3_address_t remote = ((NeighbourManager::neighbourData_t*) ram.buffer)->nodeId;
+
+				NeighbourManager::neighbourData_t* tmp = (NeighbourManager::neighbourData_t*) ram.buffer;
+				l3_address_t remote = tmp->nodeId;
 			#else
 				l3_address_t remote = l3.getNeighbourManager()->neighbours[nextDiscoveryRequestNeighbourIndex].nodeId;
 			#endif
