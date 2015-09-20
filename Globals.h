@@ -71,13 +71,12 @@ PacketFactory pf;
 	#include <webserver/StringConstants.h>
 
 	#include <Ethernet/Ethernet.h>
-	//ethernet start on defailt port 80
-	EthernetServer server(80);
+	EthernetServer server(WEBSERVER_PORT);
 
-	byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
+	byte mac[] = { WEBSERVER_MAC };
 	#ifndef USE_DHCP_FOR_IP_ADDRESS
 		//ip
-		byte ip[] = { 192, 168, 0, 177 };
+		byte ip[] = { WEBSERVER_IP };
 	#endif
 #endif
 
