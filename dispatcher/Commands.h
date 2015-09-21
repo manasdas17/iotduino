@@ -18,7 +18,7 @@ typedef struct hwCommand {
 	uint8_t isRead;
 	uint8_t address;
 
-	uint8_t isEventType; //TODO!
+	uint8_t isEventType;
 
 	uint8_t numUint8;
 	uint8_t numUint16;
@@ -51,6 +51,8 @@ class HardwareCommandResult {
 
 	HardwareTypeIdentifier type;
 	uint8_t address;
+
+	subscription_event_type_t eventType;
 
 	public:
 		void reset();
@@ -123,6 +125,13 @@ class HardwareCommandResult {
 			isRead = val;
 		}
 
+		inline void setEventType(subscription_event_type_t t) {
+			eventType = t;
+		}
+
+		inline subscription_event_type_t getEventType() {
+			return eventType;
+		}
 		/**
 		 * put data into the command struct - copies complete size of uint8list
 		 * @param hwresult

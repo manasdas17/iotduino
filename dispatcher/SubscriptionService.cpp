@@ -3,7 +3,7 @@
 
 #ifdef ENABLE_SUBSCRIPTION_SERVICE
 
-boolean SubscriptionService::executeSubscription(const subscription_helper_t* subscription) {
+boolean SubscriptionService::executeSubscription(const subscription_helper_t* subscription, subscription_event_type_t eventType) {
 	if(networking == NULL || subscription == NULL || commandHandler == NULL)
 		return false;
 
@@ -18,6 +18,7 @@ boolean SubscriptionService::executeSubscription(const subscription_helper_t* su
 	cmd->address = subscription->hardwareAddress;
 	cmd->type = (HardwareTypeIdentifier) subscription->hardwareType;
 	cmd->isRead = 1;
+	cmd->isEventType = eventType;
 
 	//fire into the system - with networking callback.
 	return commandHandler->handleHardwareCommand(&pan, networking->getCallbackInterface(), subscription->address, subscription->sequence);
@@ -74,7 +75,7 @@ void SubscriptionService::executeSubscriptions() {
 						subscriptionsLastExecution[i] = now;
 					#endif
 
-					executeSubscription(currentItem);
+					executeSubscription(currentItem, EVENT_TYPE_DISABLED);
 				}
 			}
 	}
@@ -336,7 +337,7 @@ void SubscriptionService::doPollingForSubscriptions() {
 						Serial.println(currentItem->onEventType);
 						Serial.flush();
 						#endif
-						executeSubscription(currentItem);
+						executeSubscription(currentItem, drv->getLastEventType());
 					}
 				}
 			}

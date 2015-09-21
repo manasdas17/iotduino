@@ -10,6 +10,7 @@ boolean HardwareCommandResult::deSerialize(command_t* hwresult) {
 	this->numUint16 = hwresult->numUint16;
 	this->numInt8 = hwresult->numInt8;
 	this->numInt16 = hwresult->numInt16;
+	this->eventType = (subscription_event_type_t) hwresult->isEventType;
 
 	memcpy(this->uint8List, hwresult->uint8list, sizeof(hwresult->uint8list));
 
@@ -24,6 +25,7 @@ boolean HardwareCommandResult::serialize(command_t* hwresult) {
 	hwresult->numInt8 = numInt8;
 	hwresult->numInt16 = numInt16;
 	hwresult->isRead = isRead;
+	hwresult->isEventType = eventType;
 
 	memcpy(hwresult->uint8list, uint8List, sizeof(uint8List));
 
@@ -39,6 +41,7 @@ void HardwareCommandResult::reset() {
 	numUint8 = 0;
 	numInt16 = 0;
 	numInt8 = 0;
+	eventType = EVENT_TYPE_DISABLED;
 
 	memset(uint8List, 0, sizeof(uint8List));
 

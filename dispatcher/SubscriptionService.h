@@ -207,7 +207,7 @@ class SubscriptionService {
 		 * @param parameters
 		 * @param success
 		 */
-		boolean executeSubscription(const subscription_helper_t* subscription);
+		boolean executeSubscription(const subscription_helper_t* subscription, subscription_event_type_t eventType);
 
 
 	private:
