@@ -214,7 +214,7 @@ boolean ResponseHandler::removeListener(uint8_t i) {
 	#ifdef ENABLE_EXTERNAL_RAM
 		ram.memsetElement(memRegionId, i, 0);
 	#else
-		memset(listeners[i], 0, sizeof(responseListener_t));
+		memset(&listeners[i], 0, sizeof(responseListener_t));
 	#endif
 
 	return true;

@@ -41,8 +41,12 @@ class PacketDispatcher {
 		void init() {
 			commandHandler.init();
 			responseHandler.init();
-			subscriptionService.init();
-			discoveryService.init();
+			#ifdef ENABLE_SUBSCRIPTION_SERVICE
+				subscriptionService.init();
+			#endif
+			#ifdef ENABLE_DISCOVERY_SERVICE
+				discoveryService.init();
+			#endif
 		}
 
 		/**

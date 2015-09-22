@@ -60,14 +60,18 @@ class NeighbourManager {
 		}
 
 		boolean getIterator(SPIRamManager::iterator* it) {
+			#ifdef ENABLE_EXTERNAL_RAM
 			return it->init(&ram, memRegionId);
+			#else
+			return false;
+			#endif
 		}
 
 		/**
 		* get neighbour row.
 		* @param neighbour
 		*/
-		neighbourData_t* getNeighbour(uint8_t* index, l3_address_t destination) {
+		neighbourData_t* getNeighbour(l3_address_t destination) {
 			#ifdef ENABLE_EXTERNAL_RAM
 				SPIRamManager::iterator it = SPIRamManager::iterator(&ram, memRegionId);
 				while(it.hasNext()) {
@@ -77,7 +81,6 @@ class NeighbourManager {
 					neighbourData_t* currentItem = &neighbours[i];
 			#endif
 					if(currentItem->nodeId == destination) {
-						*index = it.getIteratorIndex()-1;
 						return currentItem;
 					}
 				}
@@ -103,31 +106,30 @@ class NeighbourManager {
 		boolean updateNeighbour( l3_address_t destination, l3_address_t nextHop, uint8_t hopCount) {
 			#ifdef DEBUG_NETWORK_ENABLE
 				Serial.print(millis());
-				Serial.print(F(": updateNeighbour()"));
-				Serial.print(F(" destination="));
+				Serial.print(F(":updateN:"));
+				Serial.print(F(" dst="));
 				Serial.print(destination);
 				Serial.print(F(" nextHop="));
 				Serial.print(nextHop);
-				Serial.print(F(" hopCount="));
+				Serial.print(F(" hop#="));
 				Serial.println(hopCount);
 				Serial.flush();
 			#endif
 
 			if(destination == localAddress) {
 				#ifdef DEBUG_NETWORK_ENABLE
-					Serial.println(F("\tthis is us, no routing update!"));
+					Serial.println(F("\t=us,no upd"));
 				#endif
 				return true;
 			}
 			if(hopCount > CONFIG_L3_MAX_HOPCOUNT) {
 				#ifdef DEBUG_NETWORK_ENABLE
-					Serial.println(F("\ttoo many hops, discard."));
+					Serial.println(F("\t#hops excdd"));
 				#endif
 				return true;
 			}
 
-			uint8_t index = 0xff;
-			neighbourData_t* n = getNeighbour(&index, destination);
+			neighbourData_t* n = getNeighbour(destination);
 
 			//we do not have it yet - create.
 			if(n == NULL) {
@@ -144,7 +146,7 @@ class NeighbourManager {
 						//free entry
 						if(currentItem->nodeId == 0) {
 							#ifdef DEBUG_NETWORK_ENABLE
-								Serial.print(F("\tnew entry@index="));
+								Serial.print(F("\tnew@idx="));
 								#ifdef ENABLE_EXTERNAL_RAM
 									Serial.print(it.getIteratorIndex()-1);
 								#else
@@ -155,18 +157,14 @@ class NeighbourManager {
 							#endif
 
 							n = currentItem;
-							#ifdef ENABLE_EXTERNAL_RAM
-								index = it.getIteratorIndex()-1;
-							#else
-								index = i;
-							#endif
 							break;
 						}
 					}
 
-				if(index == 0xff) {
+				//still not found?
+				if(n == NULL) {
 					#ifdef DEBUG_NETWORK_ENABLE
-						Serial.println(F("\ttable full."));
+						Serial.println(F("\tfull"));
 						Serial.flush();
 					#endif
 					return false;
@@ -175,16 +173,16 @@ class NeighbourManager {
 
 			#ifdef DEBUG_NETWORK_ENABLE
 				else {
-					Serial.print(F("\texisting: "));
+					Serial.print(F("\tex:"));
 					Serial.flush();
 				}
 			#endif
 
 			//update data - if better.
 			#ifdef DEBUG_NETWORK_ENABLE
-				Serial.print(F("currentHopCount="));
+				Serial.print(F("crrntHop#="));
 				Serial.print(n->hopCount);
-				Serial.print(F(" newHopCount="));
+				Serial.print(F(" newHop#="));
 				Serial.println(hopCount);
 				Serial.flush();
 			#endif
@@ -200,7 +198,7 @@ class NeighbourManager {
 				#endif
 
 				#ifdef DEBUG_NETWORK_ENABLE
-					Serial.println(F(" - updated."));
+					Serial.println(F("-updt"));
 					Serial.flush();
 				#endif
 			} else if(hopCount == n->hopCount && nextHop == n->hopNextNodeId) {
@@ -211,13 +209,13 @@ class NeighbourManager {
 				#endif
 
 				#ifdef DEBUG_NETWORK_ENABLE
-					Serial.println(F(" - same information, updated timestamp."));
+					Serial.println(F("==,upd T"));
 					Serial.flush();
 				#endif
 			}
 			#ifdef DEBUG_NETWORK_ENABLE
 			else {
-					Serial.println(F(" - not updated."));
+					Serial.println(F("-no upd"));
 				}
 				Serial.flush();
 			#endif
@@ -248,7 +246,7 @@ class NeighbourManager {
 		void cleanNeighbours() {
 			#ifdef DEBUG_NETWORK_ENABLE
 				Serial.print(millis());
-				Serial.println(F(": cleanNeighbours()"));
+				Serial.println(F(":clnNghbrs:"));
 				Serial.flush();
 			#endif
 
@@ -270,13 +268,13 @@ class NeighbourManager {
 							#else
 								Serial.print(i);
 							#endif
-							Serial.print(F(" nodeId="));
+							Serial.print(F(" node="));
 							Serial.print(currentItem->nodeId);
-							Serial.print(F(" timestamp="));
+							Serial.print(F(" T="));
 							Serial.print(currentItem->timestamp);
-							Serial.print(F(" hops="));
+							Serial.print(F(" #hop="));
 							Serial.print(currentItem->hopCount);
-							Serial.print(F(" nextHop="));
+							Serial.print(F(" nextH="));
 							Serial.print(currentItem->hopNextNodeId);
 						#endif
 
@@ -289,7 +287,7 @@ class NeighbourManager {
 							#endif
 
 							#ifdef DEBUG_NETWORK_ENABLE
-								Serial.println(F(" cleared!"));
+								Serial.println(F(" clrd"));
 								Serial.flush();
 							#endif
 						}

@@ -47,8 +47,7 @@ boolean Layer3::sendPacket( packet_t &packet )
 		}
 
 		//get neighbour
-		uint8_t index;
-		NeighbourManager::neighbourData_t* neighbour = neighbourMgr.getNeighbour(&index, packet.data.destination);
+		NeighbourManager::neighbourData_t* neighbour = neighbourMgr.getNeighbour(packet.data.destination);
 
 		//unknown.
 		if(neighbour == NULL) {
@@ -409,8 +408,7 @@ boolean Layer3::routePacket( packet_t* packet )
 	//no.
 	packet->data.hopcount++;
 
-	uint8_t index;
-	if(neighbourMgr.getNeighbour(&index, packet->data.destination) == NULL) {
+	if(neighbourMgr.getNeighbour(packet->data.destination) == NULL) {
 		#ifdef DEBUG_NETWORK_ENABLE
 			Serial.println(F("\tnot route to host, discarding."));
 			Serial.flush();
@@ -503,7 +501,7 @@ boolean Layer3::sendBeacon() {
 			#ifdef ENABLE_EXTERNAL_RAM
 				NeighbourManager::neighbourData_t* currentItem = (NeighbourManager::neighbourData_t*) ram.readElementIntoBuffer(getNeighbourManager()->memRegionId, currentNeighbourIndex);
 			#else
-				NeighbourManager::neighbourData_t* currentItem = getNeighbourManager()->neighbours[currentNeighbourIndex];
+				NeighbourManager::neighbourData_t* currentItem = &getNeighbourManager()->neighbours[currentNeighbourIndex];
 			#endif
 
 			info[j].hopcount = currentItem->hopCount + 1;
