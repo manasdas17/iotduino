@@ -1677,8 +1677,7 @@ class PageMaker
 					int32_t tmp = 0;
 					tmp = cmd->int16list[0];
 
-					uint8_t level = tmp * 100 / 1024;
-					//uint8_t levelNot = 100 - level;
+					uint8_t level = 100 - tmp * 100 / 1024;
 
 					client->print(level);
 					client->print(F(" %"));
