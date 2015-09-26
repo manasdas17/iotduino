@@ -9,6 +9,7 @@
 #include "nRF24L01.h"
 #include "RF24_config.h"
 #include "RF24.h"
+#include <Configuration.h>
 
 /****************************************************************************/
 
@@ -41,7 +42,7 @@ void RF24::csn(bool mode)
       #if !defined (SOFTSPI)
 		_SPI.setBitOrder(MSBFIRST);
 		_SPI.setDataMode(SPI_MODE0);
-		_SPI.setClockDivider(SPI_CLOCK_DIV4);
+		_SPI.setClockDivider(USE_SPI_CLOCK_DIV);
       #endif
 
 #elif defined (RF24_RPi)

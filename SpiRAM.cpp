@@ -38,7 +38,7 @@
 
 #include <SPI.h>
 #include <SpiRAM.h>
-
+#include <Configuration.h>
 // Constructor
 
 SpiRAM::SpiRAM(byte clockDiv, byte ssPin, addressLengthEnum len)
@@ -60,10 +60,11 @@ SpiRAM::SpiRAM(byte clockDiv, byte ssPin, addressLengthEnum len)
   // Set the spi mode using the requested clock speed
 //  SPI.mode(clock);
 //4 is the usual one.
-  //SPI.setClockDivider(SPI_CLOCK_DIV4);
-  SPI.setClockDivider(SPI_CLOCK_DIV2);
+  SPI.setClockDivider(USE_SPI_CLOCK_DIV);
+  //SPI.setClockDivider(SPI_CLOCK_DIV2);
   _ssPin = ssPin;
   pinMode(_ssPin, OUTPUT);
+  pinMode(SS, OUTPUT);
 
   // Set the RAM operarion mode flag according to the chip default
   _current_mode = RAM_BYTE_MODE;
