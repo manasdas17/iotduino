@@ -7,6 +7,8 @@
 
 #include "../../interfaces/output/MyTone.h"
 
+#ifdef TIMER_ENABLE
+
 extern SimpleTimer timer;
 
 boolean MyTone::implementsInterface( HardwareTypeIdentifier type ) {
@@ -38,3 +40,5 @@ boolean MyTone::writeVal( HardwareTypeIdentifier type, HardwareCommandResult* re
 
 	return false;
 }
+
+#endif
