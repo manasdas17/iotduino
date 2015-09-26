@@ -224,9 +224,10 @@ void WebServer::loop() {
 		if(clientStatus[i].waiting == true) {
 			if(clientStatus[i].callback != NULL && clientStatus[i].callback->state == webserverListener::FINISHED) {
 				handleFinishedCallback(&client);
-			} else if(clientStatus[i].callback != NULL && clientStatus[i].callback != NULL && (clientStatus[i].callback->state == webserverListener::FAILED || millis() - clientStatus[i].timestamp > WEBSERVER_REQUEST_TIMEOUT_MILLIS)) {
+			} else if(clientStatus[i].callback != NULL && (clientStatus[i].callback->state == webserverListener::FAILED || millis() - clientStatus[i].timestamp > WEBSERVER_REQUEST_TIMEOUT_MILLIS)) {
 				//no answer.
 				PageMaker::sendHttp500WithBody(&client, WEBSERVER_TIMED_OUT);
+				closeClient(&client);
 			}
 		}
 
@@ -253,7 +254,6 @@ void WebServer::handleFinishedCallback(EthernetClient* client) {
 		//unknown request
 		PageMaker::sendHttp500WithBody(client, WEBSERVER_UNKNOWN_URI);
 	}
-
 	closeClient(client);
 }
 
