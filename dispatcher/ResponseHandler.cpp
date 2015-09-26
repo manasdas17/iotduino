@@ -31,7 +31,6 @@ boolean ResponseHandler::handleReponseNumbered(const seq_t seq, const packet_typ
 		}
 		Serial.print(F(" remote="));
 		Serial.println(remote);
-		Serial.flush();
 	#endif
 
 	//search for seq listener
@@ -68,7 +67,6 @@ boolean ResponseHandler::registerListener(const uint32_t timeout, const seq_t se
 		Serial.print(seqNumber);
 		Serial.print(F(" type="));
 		Serial.println(type);
-		Serial.flush();
 	#endif
 
 	if(callbackObject == NULL)
@@ -133,7 +131,6 @@ void ResponseHandler::maintainListeners() {
 		#ifdef DEBUG_HANDLER_RESPONSE_ENABLE
 		Serial.print(millis());
 		Serial.println(F(": ResponseHandler::maintainListeners()"));
-		Serial.flush();
 		#endif
 
 
@@ -153,7 +150,6 @@ void ResponseHandler::maintainListeners() {
 						Serial.print(currentItem->seqNumber);
 						Serial.print(F(" remote="));
 						Serial.println(currentItem->remote);
-						Serial.flush();
 					#endif
 					currentItem->callbackObj->fail(currentItem->seqNumber, currentItem->remote);
 
@@ -176,7 +172,6 @@ uint8_t ResponseHandler::getListenerCallbacks(EventCallbackInterface** listeners
 		Serial.print(type);
 		Serial.print(F(" remote="));
 		Serial.println(remote);
-		Serial.flush();
 	#endif
 	uint8_t found = 0;
 
@@ -198,7 +193,6 @@ uint8_t ResponseHandler::getListenerCallbacks(EventCallbackInterface** listeners
 	#ifdef DEBUG_HANDLER_RESPONSE_ENABLE
 		Serial.print(F("\tfoundNum="));
 		Serial.println(found);
-		Serial.flush();
 	#endif
 	return found;
 }

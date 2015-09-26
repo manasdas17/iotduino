@@ -49,7 +49,6 @@ void SubscriptionService::executeSubscriptions() {
 		//#ifdef DEBUG_HANDLER_SUBSCRIPTION_ENABLE
 		//Serial.print(millis());
 		//Serial.println(F(": SubscriptionService::executeSubscriptions()"));
-		//Serial.flush();
 		//#endif
 
 		uint32_t now = millis();
@@ -302,7 +301,6 @@ void SubscriptionService::doPollingForSubscriptions() {
 		//#ifdef DEBUG_HANDLER_SUBSCRIPTION_ENABLE
 		//Serial.print(millis());
 		//Serial.println(F(": SubscriptionService::doPollingForSubscriptions()"));
-		//Serial.flush();
 		//#endif
 
 
@@ -335,7 +333,6 @@ void SubscriptionService::doPollingForSubscriptions() {
 						#ifdef DEBUG_HANDLER_SUBSCRIPTION_ENABLE
 						Serial.print(F("\tevent found, trigger subscription execution, matchingType="));
 						Serial.println(currentItem->onEventType);
-						Serial.flush();
 						#endif
 						executeSubscription(currentItem, drv->getLastEventType());
 					}

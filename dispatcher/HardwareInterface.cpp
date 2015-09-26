@@ -16,7 +16,6 @@ boolean HardwareInterface::registerDriver( HardwareDriver* mydriver ) {
 		Serial.print(millis());
 		Serial.print(F(": HardwareInterface::registerDriver() hwaddress="));
 		Serial.println(mydriver->getAddress());
-		Serial.flush();
 	#endif
 
 	for(uint8_t i = 0; i < driverPointerListSize; i++) {
@@ -42,7 +41,6 @@ HardwareDriver* HardwareInterface::getHardwareDriver( HardwareTypeIdentifier typ
 		Serial.print(millis());
 		Serial.print(F(": HardwareInterface::getHardwareDriver() hwType="));
 		Serial.println(type);
-		Serial.flush();
 	#endif
 
 	for(uint8_t i = 0; i < driverPointerListSize; i++) {
@@ -66,7 +64,6 @@ HardwareDriver* HardwareInterface::getHardwareDriver( const HardwareTypeIdentifi
 		Serial.print(type);
 		Serial.print(F(" address="));
 		Serial.println(address);
-		Serial.flush();
 	#endif
 
 	for(uint8_t i = 0; i < driverPointerListSize; i++) {
@@ -97,7 +94,6 @@ boolean HardwareInterface::executeCommand(HardwareCommandResult* cmd) {
 		Serial.print(F(" isRead="));
 		Serial.print(cmd->isReadRequest());
 		Serial.println(F("]"));
-		Serial.flush();
 	#endif
 
 	HardwareDriver* driver = getHardwareDriver(cmd->getHardwareType(), cmd->getAddress());

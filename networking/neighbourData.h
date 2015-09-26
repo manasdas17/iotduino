@@ -34,9 +34,6 @@ class NeighbourManager {
 			this->localAddress = localAddress;
 
 			#ifdef ENABLE_EXTERNAL_RAM
-				#ifdef DEBUG_NETWORK_ENABLE
-					Serial.println(F("region for neighbours: "));
-				#endif
 				memRegionId = ram.createRegion(sizeof(neighbourData_t), CONFIG_L3_NUM_NEIGHBOURS);
 
 				SPIRamManager::iterator it = SPIRamManager::iterator(&ram, memRegionId);
@@ -67,11 +64,15 @@ class NeighbourManager {
 			#endif
 		}
 
+
+		neighbourData_t* getNeighbour(l3_address_t destination) {
+			return getNeighbour(NULL, destination);
+		}
 		/**
 		* get neighbour row.
 		* @param neighbour
 		*/
-		neighbourData_t* getNeighbour(l3_address_t destination) {
+		neighbourData_t* getNeighbour(uint8_t* index, l3_address_t destination) {
 			#ifdef ENABLE_EXTERNAL_RAM
 				SPIRamManager::iterator it = SPIRamManager::iterator(&ram, memRegionId);
 				while(it.hasNext()) {
@@ -81,6 +82,8 @@ class NeighbourManager {
 					neighbourData_t* currentItem = &neighbours[i];
 			#endif
 					if(currentItem->nodeId == destination) {
+						if(index != NULL)
+							*index = it.getIteratorIndex()-1;
 						return currentItem;
 					}
 				}
@@ -129,10 +132,11 @@ class NeighbourManager {
 				return true;
 			}
 
-			neighbourData_t* n = getNeighbour(destination);
-
 			#ifdef ENABLE_EXTERNAL_RAM
-			uint8_t index = 0xff;
+				uint8_t index = 0xff;
+				neighbourData_t* n = getNeighbour(&index, destination);
+			#else
+				neighbourData_t* n = getNeighbour(destination);
 			#endif
 
 			//we do not have it yet - create.
@@ -189,8 +193,7 @@ class NeighbourManager {
 				Serial.print(F("crrntHop#="));
 				Serial.print(n->hopCount);
 				Serial.print(F(" newHop#="));
-				Serial.println(hopCount);
-				Serial.flush();
+				Serial.print(hopCount);
 			#endif
 
 			if(hopCount < n->hopCount)  {

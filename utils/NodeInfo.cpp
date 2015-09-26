@@ -12,8 +12,6 @@ const char* NodeInfo::fileNameNodeInfo = {NODEINFO_SD_FILENAME};
 
 
 void NodeInfo::init() {
-	Serial.print(millis());
-	Serial.print(F(": creating memregion for nodeInfo"));
 	memRegionId = ram.createRegion(sizeof(NodeInfoTableEntry_t), NODE_INFO_MAX);
 
 	#ifdef SDCARD_ENABLE

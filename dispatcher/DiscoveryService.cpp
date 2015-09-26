@@ -55,7 +55,6 @@ boolean DiscoveryService::handleInfoRequest(EventCallbackInterface* callback, se
 	#ifdef DEBUG_HANDLER_DISCOVERY_ENABLE
 		Serial.print(millis());
 		Serial.println(F(": DiscoveryService::handleInfoRequest()"));
-		Serial.flush();
 	#endif
 
 	if(callback == NULL || appPacket == NULL)

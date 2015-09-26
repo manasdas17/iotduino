@@ -79,7 +79,6 @@ uint8_t Layer2rf24::receive()
 			#ifdef DEBUG_NETWORK_ENABLE
 			Serial.print(millis());
 			Serial.println(F(": L2.receive() discarded"));
-			Serial.flush();
 			#endif
 			continue; //discard.
 		}
@@ -93,7 +92,6 @@ uint8_t Layer2rf24::receive()
 			Serial.print(frame.data.source);
 			Serial.print(F(" len="));
 			Serial.println(frame.data.payloadLen);
-			Serial.flush();
 		#endif
 
 		if(receiveQueuePush(&frame)) {
@@ -103,7 +101,6 @@ uint8_t Layer2rf24::receive()
 			else {
 				Serial.print(millis()));
 				Serial.println(F(": L2.receiveQueue full."));
-				Serial.flush();
 			}
 		#endif
 	}
@@ -126,7 +123,6 @@ boolean Layer2rf24::sendFrame( frame_t* frame )
 		Serial.print(frame->data.destination);
 		Serial.print(F(" len="));
 		Serial.println(frame->data.payloadLen);
-		Serial.flush();
 	#endif
 
 

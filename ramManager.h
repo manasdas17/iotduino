@@ -23,13 +23,11 @@ class SPIRamManager {
 		} memRegion_t;
 
 		//static const uint8_t pageSize = 32;
-		static const uint8_t bufferSize = RAM_MGR_BUF_SIZE;
-		static const uint8_t maxRegions = RAM_MGR_MAX_REGIONS; //reservation for memRegion structs.
-		static const uint32_t usableRamStartAddress = sizeof(memRegion_t) * maxRegions;
-		SpiRAM ram;
+		static const uint32_t usableRamStartAddress = sizeof(memRegion_t) * RAM_MGR_MAX_REGIONS;
+		SpiRAM spiram;
 		uint32_t size;
 
-		byte buffer[bufferSize];
+		byte buffer[RAM_MGR_BUF_SIZE];
 
 		/**
 		 * iterate a data region using the ramManager buffer
@@ -93,7 +91,7 @@ class SPIRamManager {
 		/**
 		 * initializer.
 		 */
-		SPIRamManager(uint8_t SS, SpiRAM::addressLengthEnum adrLen, uint32_t size);
+		void init(uint8_t SS, SpiRAM::addressLengthEnum adrLen, uint32_t size);
 		//SPIRamManager(uint8_t SS, uint8_t adrLen, uint32_t size) : SPIRamManager(SS, (SpiRAM::addressLengthEnum) adrLen, size) {};
 
 		/**

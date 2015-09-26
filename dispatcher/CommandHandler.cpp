@@ -24,7 +24,6 @@ boolean CommandHandler::handleHardwareCommand(packet_application_numbered_cmd_t*
 		Serial.print(F(" isRead="));
 		Serial.print(cmd.isReadRequest());
 		Serial.println(F("]"));
-		Serial.flush();
 	#endif
 
 	boolean result = hardwareInterface->executeCommand(&cmd);
@@ -33,7 +32,6 @@ boolean CommandHandler::handleHardwareCommand(packet_application_numbered_cmd_t*
 		Serial.print(F(": &result="));
 		Serial.print((uint16_t) &cmd, HEX);
 		Serial.println();
-		Serial.flush();
 	#endif
 
 	packet_application_numbered_cmd_t appLayerPacket;

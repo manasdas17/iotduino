@@ -66,7 +66,6 @@ class EventDetector {
 					Serial.print(millis());
 					Serial.print(F(": EventDetector::CheckForEvent() eventTypeDetected="));
 					Serial.println(type);
-					Serial.flush();
 				#endif
 			}
 

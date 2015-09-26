@@ -24,7 +24,6 @@ boolean PacketDispatcher::handleNumbered(const seq_t seq, const packet_type_appl
 		Serial.print(millis());
 		Serial.print(F(": PacketDispatcher::handleNumbered() type="));
 		Serial.println(type);
-		Serial.flush();
 	#endif
 	switch(type) {
 		case HARDWARE_COMMAND_WRITE:
@@ -82,7 +81,6 @@ void PacketDispatcher::loop() {
 	//#ifdef DEBUG_HANDLER_DISPATCHER_ENABLE
 		//Serial.print(millis());
 		//Serial.println(F(": PacketDispatcher::loop()"));
-		//Serial.flush();
 	//#endif
 
 	//networking
@@ -94,7 +92,6 @@ void PacketDispatcher::loop() {
 			Serial.print(millis());
 			Serial.print(F(":\treceived packetType="));
 			Serial.println(packet.data.type);
-			Serial.flush();
 		#endif
 
 		switch(packet.data.type) {
