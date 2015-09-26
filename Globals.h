@@ -14,7 +14,7 @@
 
 #ifdef ENABLE_EXTERNAL_RAM
 	#include <ramManager.h>
-	SPIRamManager ram = SPIRamManager(RAM_MGR_SS_PIN, RAM_MGR_ADDRESS_WIDTH, RAM_MGR_RAM_LEN);
+	SPIRamManager ram;
 #endif
 
 #include <networking/Layer3.h>
@@ -82,5 +82,14 @@ Adafruit_BMP085 bmp180;
 RCSwitchTevionFSI07 rcsw;
 MotionDetector motion;
 Light light;
+
+
+
+#ifndef ENABLE_SUBSCRIPTION_SERVICE
+#warning "SUBSCRIPTION SERVICE DISABLED"
+#endif
+#ifndef ENABLE_EVENTS
+#warning "EVENTS DISABLED"
+#endif
 
 #endif /* GLOBALS_H_ */

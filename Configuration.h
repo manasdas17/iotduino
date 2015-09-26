@@ -10,7 +10,6 @@
 #define CONFIGURATION_H_
 
 #include <DebugConfig.h>
-
 //only for scrappy source parser - may be removed
 //#define __AVR_ATmega328p__
 //#undef __AVR_ATmega2560__
@@ -25,8 +24,8 @@
 	#define SDCARD_LOGGER_ENABLE		//logging for sensor data.
 #endif
 
-#define ENABLE_EVENTS
-#define ENABLE_SUBSCRIPTION_SERVICE
+//#define ENABLE_EVENTS
+//#define ENABLE_SUBSCRIPTION_SERVICE
 #define ENABLE_DISCOVERY_SERVICE
 //#define TIMER_ENABLE				//by now only used by tone driver.
 
@@ -44,9 +43,9 @@
 	#define RAM_MGR_ADDRESS_WIDTH (SpiRAM::l24bit)
 	#define RAM_MGR_RAM_LEN 128000
 #else
-#define RAM_MGR_SS_PIN A1
-#define RAM_MGR_ADDRESS_WIDTH (SpiRAM::l16bit)
-#define RAM_MGR_RAM_LEN 32768
+	#define RAM_MGR_SS_PIN A1
+	#define RAM_MGR_ADDRESS_WIDTH (SpiRAM::l16bit)
+	#define RAM_MGR_RAM_LEN 32768
 #endif
 	//#define RAM_MGR_SS_PIN 40
 	////#define RAM_MGR_ADDRESS_WIDTH (SpiRAM::l16bit)
@@ -55,6 +54,10 @@
 /************/
 /* HARDWARE */
 /************/
+//#include <Arduino.h>
+#define NRF24_SPI_CLOCK_DIV SPI_CLOCK_DIV4
+#define RAM_SPI_CLOCK_DIV SPI_CLOCK_DIV4
+#define USE_SPI_CLOCK_DIV max(NRF24_SPI_CLOCK_DIV, RAM_SPI_CLOCK_DIV)
 #define SERIAL_SPEED 115200
 #define MAX_INTERFACES_PER_DRIVER 5 //used in discovery service
 
@@ -115,7 +118,7 @@
 /* L2 */
 /******/
 #include <networking/rf24/RF24.h>
-#define CONFIG_RF_PA_LEVEL RF24_PA_LOW
+#define CONFIG_RF_PA_LEVEL RF24_PA_HIGH
 #define CONFIG_RF_CHANNEL 70
 #define CONFIG_CRC RF24_CRC_16 //RF24_CRC_DISABLED //RF24_CRC_8
 #define CONFIG_RF_DATARATE RF24_250KBPS //RF24_1MBPS //RF24_250KBPS //RF24_2MBPS
@@ -132,7 +135,7 @@
 /******/
 #define CONFIG_L3_ADDRESS_BROADCAST CONFIG_L2_ADDR_BROADCAST
 
-#define CONFIG_L3_BEACON_PERIOD_MS (30*1000L)
+#define CONFIG_L3_BEACON_PERIOD_MS (5*1000L)
 #define CONFIG_L3_NEIGHBOUR_MAX_AGE_MS (300*1000L)
 
 #define CONFIG_L3_MAX_HOPCOUNT 10
@@ -204,11 +207,11 @@ typedef uint16_t l3_address_t;
 #define STRING_BUFFER_SIZE 128
 
 
-
 /** do not edit below. */
 //sanity check.
 //#if (CONFIG_L3_PACKET_NUMBERED_MAX_LEN < (7 + sizeUInt8List*1))
 	//#error maximum payload len exceeded.
 //#endif
+
 
 #endif /* CONFIGURATION_H_ */

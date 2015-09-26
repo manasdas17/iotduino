@@ -124,6 +124,9 @@ void setup() {
 	//get address config
 	getAddress();
 
+	ram.init(RAM_MGR_SS_PIN, RAM_MGR_ADDRESS_WIDTH, RAM_MGR_RAM_LEN);
+
+
 	#ifdef WEBSERVER_ENABLE
 		webServerWrapper.init();
 	#endif
