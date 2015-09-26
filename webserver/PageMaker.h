@@ -1596,7 +1596,8 @@ class PageMaker
 
 			case HWType_pressure:
 				{
-					uint16_t hPaVal = cmd->uint16list[0] / 100;
+					//prettyPrintCommandResultGeneric(client, cmd);
+					uint16_t hPaVal = cmd->uint16list[0];
 					client->print(F("<script type='text/javascript' src='https://www.google.com/jsapi'></script>"
 					"<script type='text/javascript'>"
 					"google.load('visualization', '1', {packages:['gauge']});"
@@ -1626,6 +1627,8 @@ class PageMaker
 				break;
 
 			case HWType_temprature:
+				//prettyPrintCommandResultGeneric(client, cmd);
+				{
 					client->print(F("<script type='text/javascript' src='https://www.google.com/jsapi'></script>"
 						"<script type='text/javascript'>"
 						"google.load('visualization', '1', {packages:['gauge']});"
@@ -1651,6 +1654,7 @@ class PageMaker
 						"}"
 						"</script>"
 						"<div id='chart_div' style='width: 120px; height: 120px;'></div>"));
+					}
 				break;
 
 			case HWType_rtc:
