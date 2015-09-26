@@ -131,6 +131,10 @@ class NeighbourManager {
 
 			neighbourData_t* n = getNeighbour(destination);
 
+			#ifdef ENABLE_EXTERNAL_RAM
+			uint8_t index = 0xff;
+			#endif
+
 			//we do not have it yet - create.
 			if(n == NULL) {
 				//search free index
@@ -157,12 +161,14 @@ class NeighbourManager {
 							#endif
 
 							n = currentItem;
+							#ifdef ENABLE_EXTERNAL_RAM
+								index = it.getIteratorIndex()-1;
+							#endif
 							break;
 						}
 					}
 
-				//still not found?
-				if(n == NULL) {
+				if(index == 0xff) {
 					#ifdef DEBUG_NETWORK_ENABLE
 						Serial.println(F("\tfull"));
 						Serial.flush();
