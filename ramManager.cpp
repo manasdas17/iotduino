@@ -12,7 +12,7 @@
 void SPIRamManager::printRam(uint32_t from, uint32_t to) {
 	#ifdef DEBUG_RAM_ENABLE
 		Serial.print(millis());
-		Serial.print(F(": print() from=0x"));
+		Serial.print(F(": p() s=0x"));
 		Serial.print(from, HEX);
 		Serial.print(F(" to=0x"));
 		Serial.println(to, HEX);
@@ -21,9 +21,7 @@ void SPIRamManager::printRam(uint32_t from, uint32_t to) {
 		while(from < to) {
 			if(num % 16 == 0) {
 				if(num > 0) Serial.println();
-				Serial.print(F("0x"));
-				Serial.print(from, HEX);
-				Serial.print(F(":\t"));
+				Serial.println(from, HEX);
 			}
 			uint8_t tmp = spiram.read_byte(from);
 			if(tmp < 0x10)
@@ -85,7 +83,7 @@ boolean SPIRamManager::getRegionInfo(memRegion_t* region, uint8_t regionId) {
 boolean SPIRamManager::writeElementToRam(uint8_t regionId, uint16_t index, void* elem) {
 	#ifdef DEBUG_RAM_ENABLE
 		Serial.print(millis());
-		Serial.print(F(": wrElmntToRam() id="));
+		Serial.print(F(": wrRam() id="));
 		Serial.print(index);
 		Serial.print(F(" "));
 		printRegionInfo(regionId);
@@ -110,13 +108,13 @@ void* SPIRamManager::readElementIntoBuffer(uint8_t regionId, uint16_t index) {
 	memRegion_t region;
 	getRegionInfo(&region, regionId);
 
-	#ifdef DEBUG_RAM_ENABLE
-		Serial.print(millis());
-		Serial.print(F(": putElmtToBuf() idx="));
-		Serial.print(index);
-		Serial.print(F(" "));
-		printRegionInfo(region.id);
-	#endif
+	//#ifdef DEBUG_RAM_ENABLE
+		//Serial.print(millis());
+		//Serial.print(F(": putToBuf() idx="));
+		//Serial.print(index);
+		//Serial.print(F(" "));
+		//printRegionInfo(region.id);
+	//#endif
 
 	//index not part of region or region empty
 	if(index >= region.numElements || region.numElements == 0) {
@@ -136,7 +134,7 @@ void SPIRamManager::printRegionInfo(uint8_t region) {
 		getRegionInfo(&r, region);
 		Serial.print(F("reg="));
 		Serial.print(r.id);
-		Serial.print(F(" startAdr=0x"));
+		Serial.print(F(" s="));
 		Serial.print(r.ramStartAddress, HEX);
 		Serial.print(F(" elmSize="));
 		Serial.print(r.elementSize);
@@ -149,7 +147,7 @@ void SPIRamManager::printRegionInfo(uint8_t region) {
 uint8_t SPIRamManager::createRegion(uint16_t elementSize, uint16_t numElements) {
 	#ifdef DEBUG_RAM_ENABLE
 		Serial.print(millis());
-		Serial.print(F(": createRegion() elmSize="));
+		Serial.print(F(": crtRgn() elmSize="));
 		Serial.print(elementSize);
 		Serial.print(F(" elm#="));
 		Serial.println(numElements);
@@ -209,9 +207,9 @@ uint8_t SPIRamManager::createRegion(uint16_t elementSize, uint16_t numElements) 
 			nextFreeAddress = region.ramStartAddress + region.numElements * region.elementSize;
 
 			#ifdef DEBUG_RAM_ENABLE
-				Serial.print(F("\tregion="));
+				Serial.print(F("\trgn="));
 				Serial.print(i);
-				Serial.print(F(" in use, nxtFreeAdr=0x"));
+				Serial.print(F(" inUse, nxtFrAdr="));
 				Serial.println(nextFreeAddress, HEX);
 				Serial.flush();
 			#endif
@@ -219,7 +217,7 @@ uint8_t SPIRamManager::createRegion(uint16_t elementSize, uint16_t numElements) 
 	}
 
 	#ifdef DEBUG_RAM_ENABLE
-		Serial.println(F("\tno free region."));
+		Serial.println(F("\tno free rg"));
 		while(1);
 	#endif
 	return 0;
@@ -239,13 +237,13 @@ uint8_t SPIRamManager::createRegion(uint16_t elementSize, uint16_t numElements) 
 
 	#ifdef DEBUG_RAM_ENABLE
 	Serial.print(millis());
-	Serial.print(F(": creating Reg0, id="));
+	Serial.print(F(": crtng Reg0, id="));
 	Serial.print(region0.id);
 	Serial.print(F(" elS="));
 	Serial.print(region0.elementSize);
 	Serial.print(F(" #elm="));
 	Serial.print(region0.numElements);
-	Serial.print(F(" adr=0x"));
+	Serial.print(F(" adr="));
 	Serial.println(region0.ramStartAddress, HEX);
 	#endif
 

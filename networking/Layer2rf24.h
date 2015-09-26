@@ -57,6 +57,8 @@ class Layer2rf24 {
 
 		Layer3* l3;
 
+		void printBytes(frame_t* frame);
+
 	//functions
 	public:
 		void setLayer3(Layer3* l3) {

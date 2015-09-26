@@ -14,7 +14,7 @@ boolean HardwareInterface::registerDriver( HardwareDriver* mydriver ) {
 
 	#ifdef DEBUG_HARDWARE_ENABLE
 		Serial.print(millis());
-		Serial.print(F(": HardwareInterface::registerDriver() hwaddress="));
+		Serial.print(F(": HWIntf::regDrv() hwadr="));
 		Serial.println(mydriver->getAddress());
 	#endif
 
@@ -39,7 +39,7 @@ boolean HardwareInterface::hasHardwareDriver( const HardwareTypeIdentifier type,
 HardwareDriver* HardwareInterface::getHardwareDriver( HardwareTypeIdentifier type ) const {
 	#ifdef DEBUG_HARDWARE_ENABLE
 		Serial.print(millis());
-		Serial.print(F(": HardwareInterface::getHardwareDriver() hwType="));
+		Serial.print(F(": HWIntf::getHWDrv() hwT="));
 		Serial.println(type);
 	#endif
 
@@ -60,16 +60,16 @@ HardwareDriver* HardwareInterface::getHardwareDriver( HardwareTypeIdentifier typ
 HardwareDriver* HardwareInterface::getHardwareDriver( const HardwareTypeIdentifier type, const uint8_t address ) const {
 	#ifdef DEBUG_HARDWARE_ENABLE
 		Serial.print(millis());
-		Serial.print(F(": HardwareInterface::getHardwareDriver() hwType="));
+		Serial.print(F(": HWIntf::getHWDrv() hwT="));
 		Serial.print(type);
-		Serial.print(F(" address="));
+		Serial.print(F(" adr="));
 		Serial.println(address);
 	#endif
 
 	for(uint8_t i = 0; i < driverPointerListSize; i++) {
 		if(driver[i] != NULL && driver[i]->getAddress() == address && driver[i]->implementsInterface(type)) {
 			#ifdef DEBUG_HARDWARE_ENABLE
-				Serial.print(F("\tfound! &drv="));
+				Serial.print(F("\t&drv="));
 				Serial.println((uint16_t) &driver[i], HEX);
 			#endif
 
@@ -86,12 +86,12 @@ boolean HardwareInterface::executeCommand(HardwareCommandResult* cmd) {
 
 	#ifdef DEBUG_HARDWARE_ENABLE
 		Serial.print(millis());
-		Serial.println(F(": HardwareInterface::executeCommand()"));
-		Serial.print(F("\tcmd=[hwAddress="));
+		Serial.println(F(": HWIntf::excCmd()"));
+		Serial.print(F("\tcmd=[hwAdr="));
 		Serial.print(cmd->getAddress());
-		Serial.print(F(" hwType="));
+		Serial.print(F(" hwT="));
 		Serial.print(cmd->getHardwareType());
-		Serial.print(F(" isRead="));
+		Serial.print(F(" isR="));
 		Serial.print(cmd->isReadRequest());
 		Serial.println(F("]"));
 	#endif
@@ -106,13 +106,13 @@ boolean HardwareInterface::executeCommand(HardwareCommandResult* cmd) {
 	if(cmd->isReadRequest()) {
 		#ifdef DEBUG_HARDWARE_ENABLE
 			Serial.print(millis());
-			Serial.println(F(": trigger read"));
+			Serial.println(F(": read"));
 		#endif
 		return readHardware(driver, cmd);
 	} else {
 		#ifdef DEBUG_HARDWARE_ENABLE
 			Serial.print(millis());
-			Serial.println(F(": trigger write"));
+			Serial.println(F(": write"));
 		#endif
 		return writeHardware(driver, cmd);
 	}
@@ -121,7 +121,7 @@ boolean HardwareInterface::executeCommand(HardwareCommandResult* cmd) {
 boolean HardwareInterface::readHardware(HardwareDriver* driver, HardwareCommandResult* cmd) {
 	#ifdef DEBUG_HARDWARE_ENABLE
 		Serial.print(millis());
-		Serial.println(F(": HardwareInterface::readHardware()"));
+		Serial.println(F(": HWIntf::readHW()"));
 	#endif
 
 	if(cmd == NULL)

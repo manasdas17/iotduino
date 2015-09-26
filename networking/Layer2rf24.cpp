@@ -72,6 +72,7 @@ uint8_t Layer2rf24::receive()
 	uint8_t num = 0;
 	while(radio.available()) {
 		frame_t frame;
+		memset(&frame, 0, sizeof(frame));
 		radio.read(frame.bytes, sizeof(frame_t));
 
 		//sanity checks.
@@ -92,6 +93,8 @@ uint8_t Layer2rf24::receive()
 			Serial.print(frame.data.source);
 			Serial.print(F(" len="));
 			Serial.println(frame.data.payloadLen);
+
+			printBytes(&frame);
 		#endif
 
 		if(receiveQueuePush(&frame)) {
@@ -108,6 +111,17 @@ uint8_t Layer2rf24::receive()
 	return num;
 }
 
+void Layer2rf24::printBytes(frame_t* frame) {
+		Serial.print(F("\t"));
+		for(uint8_t i = 0; i < sizeof(frame->bytes); i++) {
+			if(i % 2 == 0) {
+				Serial.print(F(" "));
+			}
+			Serial.print(frame->bytes[i], HEX);
+		}
+		Serial.println();
+}
+
 boolean Layer2rf24::sendFrame( frame_t* frame )
 {
 	//stop listening and open writing pipe
@@ -116,13 +130,15 @@ boolean Layer2rf24::sendFrame( frame_t* frame )
 
 	#ifdef DEBUG_NETWORK_ENABLE
 		Serial.print(millis());
-		Serial.println(F(": L2.sendFrame()"));
-		Serial.print(F("\tfrom="));
+		Serial.println(F(": L2.snd()"));
+		Serial.print(F("\tsrc="));
 		Serial.print(frame->data.source);
 		Serial.print(F(" to="));
 		Serial.print(frame->data.destination);
-		Serial.print(F(" len="));
+		Serial.print(F(" l="));
 		Serial.println(frame->data.payloadLen);
+		
+		printBytes(frame);
 	#endif
 
 

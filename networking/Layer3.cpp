@@ -26,7 +26,7 @@ boolean Layer3::sendPacket( packet_t &packet )
 {
 	#ifdef DEBUG_NETWORK_ENABLE
 		Serial.print(millis());
-		Serial.println(F(": L3::sendPkt()"));
+		Serial.println(F(": L3::sndPkt:"));
 		printPacketInformation(&packet);
 	#endif
 
@@ -45,7 +45,7 @@ boolean Layer3::sendPacket( packet_t &packet )
 		//unknown.
 		if(neighbour == NULL) {
 			#ifdef DEBUG_NETWORK_ENABLE
-				Serial.println(F("\tno route to host."));
+				Serial.println(F("\tno route"));
 			#endif
 
 			return false;
@@ -60,7 +60,7 @@ boolean Layer3::sendPacket( packet_t &packet )
 		#ifdef DEBUG_NETWORK_ENABLE
 			Serial.print(F("\tenq dst="));
 			Serial.print(packet.data.destination);
-			Serial.print(F(" seq="));
+			//Serial.print(F(" seq="));
 			packet_numbered_t* tmp = (packet_numbered_t*) packet.data.payload;
 			Serial.println(tmp->seqNumber);
 		#endif
@@ -79,19 +79,19 @@ void Layer3::printPacketInformation(packet_t* packet) {
 		Serial.print(F("\ttype="));
 		switch(packet->data.type) {
 			case PACKET_ACK: {
-				Serial.print(F("ACK seq="));
+				Serial.print(F("ACKs="));
 				packet_ack_t* tmp = (packet_ack_t*) packet->data.payload;
 				Serial.println(tmp->ack);
 				break;
 			}
 			case PACKET_BEACON: {
-				Serial.print(F("BEACON"));
+				Serial.print(F("BCN"));
 				break;
 			}
 			case PACKET_NUMBERED: {
-				Serial.print(F("NUMBERED"));
+				Serial.print(F("NMBRD"));
 				packet_numbered_t* tmpNumbered = (packet_numbered_t*) packet->data.payload;
-				Serial.print(F(" seq="));
+				Serial.print(F("s="));
 				Serial.print(tmpNumbered->seqNumber);
 				packet_application_numbered_cmd_t* tmpApp = (packet_application_numbered_cmd_t*) tmpNumbered->payload;
 				Serial.print(F(" appT="));
@@ -102,86 +102,86 @@ void Layer3::printPacketInformation(packet_t* packet) {
 					case HARDWARE_COMMAND_RES:
 						switch(tmpApp->packetType) {
 							case HARDWARE_COMMAND_WRITE:
-								Serial.print(F("HW_CMD_WRITE"));
+								Serial.print(F("HW_CMD_WRT"));
 								break;
 							case HARDWARE_COMMAND_READ:
-								Serial.print(F("HW_CMD_READ"));
+								Serial.print(F("HW_CMD_RD"));
 								break;
 							case HARDWARE_COMMAND_RES:
-								Serial.print(F("HW_CMD_RES"));
+								Serial.print(F("HW_CMD_RS"));
 								break;
 						}
 						{
 							command_t* cmd = (command_t*) tmpApp->payload;
-							Serial.print(F("hwtype="));
+							Serial.print(F("hwT="));
 							Serial.print(cmd->type);
-							Serial.print(F(" address="));
+							Serial.print(F(" adr="));
 							Serial.print(cmd->address);
-							Serial.print(F(" isRead="));
+							Serial.print(F(" isR="));
 							Serial.println(cmd->isRead);
 						}
 						break;
 					case HARDWARE_DISCOVERY_REQ: {
-						Serial.print(F("DISCOVERY_REQ"));
+						Serial.print(F("DSCVRY_RQ"));
 						break;
 					}
 					case HARDWARE_DISCOVERY_RES: {
-						Serial.print(F("DISCOVERY_RES "));
-						Serial.print(F("numSensors="));
+						Serial.print(F("DSCVRY__RS "));
+						Serial.print(F("#Snsrs="));
 						packet_application_numbered_discovery_info_t* info = (packet_application_numbered_discovery_info_t*) tmpApp->payload;
 						Serial.println(info->numSensors);
 
 						for(uint8_t i = 0; i < info->numSensors; i++) {
-							Serial.print(F("\thwtype="));
+							Serial.print(F("\thwT="));
 							Serial.print(info->infos[i].hardwareType);
-							Serial.print(F(" hwaddress="));
+							Serial.print(F(" hwAdr="));
 							Serial.print(info->infos[i].hardwareAddress);
-							Serial.print(F(" events="));
+							Serial.print(F(" #evnts="));
 							Serial.println(info->infos[i].canDetectEvents);
 						}
 						Serial.println(F("\t]"));
 						break;
 					}
 					case HARDWARE_SUBSCRIPTION_SET: {
-						Serial.print(F("SUBSCRIPTION_SET"));
+						Serial.print(F("SBSC_SET"));
 						break;
 					}
 					case HARDWARE_SUBSCRIPTION_INFO: {
-						Serial.print(F("SUBSCRIPTION_INFO"));
+						Serial.print(F("SBSC_NFO"));
 						subscription_info_t* info = (subscription_info_t*) tmpApp->payload;
-						Serial.print(F(" forAddress="));
+						Serial.print(F(" forAdr="));
 						Serial.println(info->forAddress);
 						break;
 					}
 					case HARDWARE_SUBSCRIPTION_INFO_RES: {
-						Serial.print(F("SUBSCRIPTION_INFO_RES"));
-						Serial.print(F(" infoFollowing="));
+						Serial.print(F("SBSC_NFO_RS"));
+						Serial.print(F(" nfoFllwng="));
 						subscription_info_t* info = (subscription_info_t*) tmpApp->payload;
 						Serial.print(info->numInfosFollowing);
-						Serial.print(F(" forAddress="));
+						Serial.print(F(" forAdr="));
 						Serial.print(info->forAddress);
-						Serial.print(F(" list=["));
-						Serial.print(F("\tremote="));
+						Serial.print(F(" ["));
+						Serial.print(F("\trmt="));
 						Serial.print(info->info.address);
-						Serial.print(F(" hwType="));
+						Serial.print(F(" hwTe="));
 						Serial.print(info->info.hardwareType);
 						Serial.print(F(" hwAdr="));
 						Serial.print(info->info.hardwareAddress);
-						Serial.print(F(" delay="));
+						Serial.print(F(" dlay="));
 						Serial.print(info->info.millisecondsDelay);
-						Serial.print(F(" eventT="));
+						Serial.print(F(" evtT="));
 						Serial.print(info->info.onEventType);
 						Serial.print(F(" seq="));
 						Serial.print(info->info.sequence);
-						Serial.println(F("\t]"));
+						Serial.println(F("]"));
 						break;
 					}
 					case ACK: {
-						Serial.println(F("app ACK"));
+						Serial.println(F("appACK"));
 						break;
 					}
 					case NACK: {
-						Serial.println(F("app NACK"));
+						Serial.println(F("appNACK"));
 						break;
 					}
 					default: {
@@ -192,8 +192,8 @@ void Layer3::printPacketInformation(packet_t* packet) {
 				break;
 			}
 			case PACKET_UNNUMBERED:
-				Serial.println(F("UNBRD"));
-				break;
+				//Serial.println(F("UNNMBRD"));
+				//break;
 			default:
 				Serial.println(F("??"));
 				break;
@@ -217,7 +217,7 @@ boolean Layer3::receive( void* payload )
 
 	#ifdef DEBUG_NETWORK_ENABLE
 		Serial.print(millis());
-		Serial.println(F(": L3::rcv()"));
+		Serial.println(F(": L3::rcv"));
 		printPacketInformation(packet);
 	#endif
 
@@ -360,14 +360,14 @@ boolean Layer3::routePacket( packet_t* packet )
 {
 	#ifdef DEBUG_NETWORK_ENABLE
 		Serial.print(millis());
-		Serial.println(F(" L3::routePkt()"));
+		Serial.println(F(" L3::routePkt:"));
 	#endif
 
 	//hopcount exceeded?
 	if(packet->data.hopcount >= CONFIG_L3_MAX_HOPCOUNT) {
-		#ifdef DEBUG_NETWORK_ENABLE
-			Serial.println(F("\thop# exceeded"));
-		#endif
+		//#ifdef DEBUG_NETWORK_ENABLE
+			//Serial.println(F("\thop# exceeded"));
+		//#endif
 		return false;
 	}
 
@@ -388,7 +388,7 @@ boolean Layer3::routePacket( packet_t* packet )
 boolean Layer3::handleBeacon( packet_t* packet ) {
 	#ifdef DEBUG_NETWORK_ENABLE
 		Serial.print(millis());
-		Serial.println(F(": L3::handleBeacon()"));
+		Serial.println(F(": L3::hndlBcn:"));
 	#endif
 
 	boolean result = true;
@@ -519,7 +519,7 @@ boolean Layer3::addToSendingQueue( packet_t* packet ) {
 
 				//#ifdef DEBUG_NETWORK_ENABLE
 					//Serial.print(millis());
-					//Serial.println(F(": L3::addToSQ(): dup"));
+					//Serial.println(F(": L3::addToSQ: dup"));
 				//#endif
 //
 				//break, this is a duplicate.
@@ -648,7 +648,7 @@ boolean Layer3::handleAck( packet_t* packet ) {
 
 	#ifdef DEBUG_NETWORK_ENABLE
 		Serial.print(millis());
-		Serial.println(F(": L3::handleAck()"));
+		Serial.println(F(": L3::hndlAck:"));
 		Serial.print(F("\tseq="));
 		Serial.print(seq);
 	#endif

@@ -22,7 +22,7 @@ boolean PacketDispatcher::handleUnNumbered(const packet_type_application_t type,
 boolean PacketDispatcher::handleNumbered(const seq_t seq, const packet_type_application_t type, const l3_address_t remote, packet_application_numbered_cmd_t* appPacket) {
 	#ifdef DEBUG_HANDLER_DISPATCHER_ENABLE
 		Serial.print(millis());
-		Serial.print(F(": PacketDispatcher::handleNumbered() type="));
+		Serial.print(F(": PktDsptchr::handleNmbrd() t="));
 		Serial.println(type);
 	#endif
 	switch(type) {
@@ -90,7 +90,7 @@ void PacketDispatcher::loop() {
 
 		#ifdef DEBUG_HANDLER_DISPATCHER_ENABLE
 			Serial.print(millis());
-			Serial.print(F(":\treceived packetType="));
+			Serial.print(F(":\trcv pktT="));
 			Serial.println(packet.data.type);
 		#endif
 

@@ -218,7 +218,7 @@ class NeighbourManager {
 				#endif
 
 				#ifdef DEBUG_NETWORK_ENABLE
-					Serial.println(F("==,upd T"));
+					Serial.println(F("\t==,upd T"));
 					Serial.flush();
 				#endif
 			}
