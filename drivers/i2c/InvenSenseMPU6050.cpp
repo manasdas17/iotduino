@@ -170,7 +170,7 @@ boolean InvenSenseMPU6050::readVal( HardwareTypeIdentifier type, HardwareCommand
 }
 
 boolean InvenSenseMPU6050::implementsInterface( HardwareTypeIdentifier type ) {
-	if(I2C::implementsInterface(type) || type == HWType_accelerometer || type == HWType_gyroscope || type == HWType_temprature)
+	if(type == HWType_accelerometer || type == HWType_gyroscope || type == HWType_temprature)
 		return true;
 	return false;
 }
