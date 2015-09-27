@@ -69,7 +69,7 @@ boolean NodeInfo::updateString(l3_address_t id, byte* buf, uint8_t buflen) {
 
 boolean NodeInfo::readInfoFromSDCard() {
 	#ifdef SDCARD_ENABLE
-		File fd = SD.open(fileNameNodeInfo, FILE_WRITE);
+		File fd = SD.open(fileNameNodeInfo, FILE_READ);
 		fd.seek(0);
 		NodeInfoTableEntry_t elem;
 		for(uint16_t i = 0; i < NODE_INFO_MAX; i++) {

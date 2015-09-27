@@ -48,6 +48,19 @@ class NodeInfo
 		 * @return success
 		 */
 		boolean deleteInfo(l3_address_t nodeId) {
+			//remove from sd.
+			File fd = SD.open(fileNameNodeInfo, FILE_WRITE);
+			NodeInfoTableEntry_t dummy;
+			memset(&dummy, 0, sizeof(dummy));
+			uint32_t pos = nodeId * sizeof(NodeInfoTableEntry_t);
+			if(!fd.seek(pos)) {
+				return false;
+			}
+			if(!fd.write((const uint8_t*) &dummy, sizeof(NodeInfoTableEntry_t))) {
+				return false;
+			}
+
+			//remove from ram
 			return ram.memsetElement(memRegionId, nodeId, 0);
 		}
 
