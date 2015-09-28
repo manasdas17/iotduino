@@ -207,7 +207,7 @@ class NeighbourManager {
 				#endif
 
 				#ifdef DEBUG_NETWORK_ENABLE
-					Serial.println(F("-updt"));
+					Serial.println(F("\t-updt"));
 					Serial.flush();
 				#endif
 			} else if(hopCount == n->hopCount && nextHop == n->hopNextNodeId) {

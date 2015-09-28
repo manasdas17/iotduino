@@ -72,8 +72,27 @@ class DiscoveryManager {
 			for(uint8_t i = 0; i < NUM_INFOS_PER_NODE; i++) {
 				result &= ram.memsetElement(memRegionDiscoveryInfo, node * NUM_INFOS_PER_NODE, 0);
 			}
-
-			return result;
+			
+			if(!result)
+				return false;
+			
+			////write changes to SD.
+			//File f = SD.open(filenameDiscovery, FILE_WRITE);
+			//if(!f) {
+				//return false;
+			//}
+			//uint32_t pos = node * sizeof(Discovery_nodeDiscoveryInfoTableEntry_t);
+			//if(!f.seek(pos)) {
+				//return false;
+			//}
+			//Discovery_nodeDiscoveryInfoTableEntry_t dummy;
+			//memset(&dummy, 0, sizeof(dummy));
+			//if(f.write((uint8_t*) &dummy, sizeof(Discovery_nodeDiscoveryInfoTableEntry_t)) == 0) {
+				//return false;
+			//}
+			//f.flush();
+			
+			return true;
 		}
 
 		/**
