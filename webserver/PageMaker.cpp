@@ -226,7 +226,8 @@ void PageMaker::doPageCss(EthernetClient* client)
 	sendHttpOk(client, 300, CSS, NULL, 0);
 
 	client->println(
-		F(".info { font-family: monospace; margin-bottom: 5px; background-color: rgb(220,255,220); border: 1px darkgray dashed; padding: 5px;}"
+		F(".warn { font-family: monospace; margin-bottom: 5px; background-color: rgb(255,220,220); border: 1px darkgray dashed; padding: 5px;}"
+		".info { font-family: monospace; margin-bottom: 5px; background-color: rgb(220,255,220); border: 1px darkgray dashed; padding: 5px;}"
 		"a, a:link, a:visited { color: #5F5F5F; text-decoration: underline; font-weight: normal; }"
 		"a:active { font-weight: bold; }"
 		"a:hover { text-decoration: none; background-color: #FFD8D8; }"
@@ -589,6 +590,38 @@ void PageMaker::doPageSensorInfo2(EthernetClient* client, RequestContent* req)
 	sendHttpOk(client);
 	sendHtmlHeader(client, PAGE_GETSENSORINFO, true, false);
 
+	//delete info?
+	if(req->hasKey(variableHwAddress) >= 0 && req->hasKey(variableHwType) >= 0 && req->hasKey(variableDelete) >= 0) {
+		String* hwAddress = req->getValue(variableHwAddress);
+		uint8_t hwAddressInt = hwAddress->toInt();
+		String* hwType = req->getValue(variableHwType);
+		uint8_t hwTypeInt = hwType->toInt();
+
+		boolean success = false;
+		if(hwAddressInt > 0 && hwTypeInt > 0) {
+			success = discoveryManager.deleteInfo(idInt, hwAddressInt, hwTypeInt);
+		}
+		
+		client->print(F("<div class='"));
+		if(success) {
+			client->print(F("info"));
+		} else {
+			client->print(F("warn"));
+		}
+		client->print(F("'>"));
+		client->print(F("Info for NoteID "));
+		client->print(idInt);
+		client->print(F(": type="));
+		printP(client, hardwareTypeStrings[hwTypeInt]);
+		client->print(F(" address="));
+		client->print(hwAddressInt);
+		if(!success) {
+			client->print(F(" not"));
+		}
+		client->print(F(" deleted."));
+		client->print(F("</div>"));
+	}
+
 	//general info
 	NodeInfo::NodeInfoTableEntry_t nodeInfoObj;
 	nodeInfo.getNodeInfo((l3_address_t) idInt, &nodeInfoObj);
@@ -629,7 +662,7 @@ void PageMaker::doPageSensorInfo2(EthernetClient* client, RequestContent* req)
 	client->print((millis() - neighbourLastKeepAlive) / 1000);
 	client->print(F("s</p>"));
 
-	client->println(F("<table><thead><tr><th>HardwareAddress</th><th>HardwareType</th><th>LastUpdated</th><th>requestSensor</th><th>writeSensor</th></tr></thead><tbody>"));
+	client->println(F("<table><thead><tr><th>HardwareAddress</th><th>HardwareType</th><th>LastUpdated</th><th>requestSensor</th><th>writeSensor</th><th>delete</th></tr></thead><tbody>"));
 	uint8_t numInfos = 0;
 	//conversion buffers
 	char buf1[3];
@@ -674,6 +707,26 @@ void PageMaker::doPageSensorInfo2(EthernetClient* client, RequestContent* req)
 			printExecutableLinks(client, idInt, (HardwareTypeIdentifier) elem.hardwareType, elem.hardwareAddress);
 			client->print(F("</td>"));
 
+			client->print(F("<td data-label='delete' class='centered'><a href='"));
+			printP(client, pageAddresses[PAGE_GETSENSORINFO]);
+			client->print(F("?"));
+			printP(client, variableRemote);
+			client->print(F("="));
+			client->print(idInt);
+			client->print(F("&"));
+			printP(client, variableHwAddress);
+			client->print(F("="));
+			client->print(elem.hardwareAddress);
+			client->print(F("&"));
+			printP(client, variableHwType);
+			client->print(F("="));
+			client->print(elem.hardwareType);
+			client->print(F("&"));
+			printP(client, variableDelete);
+			client->println(F("' onclick=\"return confirm('This will delete this sensor info. Are you sure?')\">x</a>"));
+			client->println(F("</td>"));
+			client->print(F("</td>"));
+
 			client->print(F("</tr>"));
 			client->print(F("</form>"));
 
@@ -681,7 +734,7 @@ void PageMaker::doPageSensorInfo2(EthernetClient* client, RequestContent* req)
 			client->flush();
 		}
 	}
-	client->print(F("</tbody><tfoot><tr><th colspan='5'>"));
+	client->print(F("</tbody><tfoot><tr><th colspan='6'>"));
 	client->print(numInfos);
 	client->println(F(" entries</th></tr></tfoot></table>"));
 
@@ -710,7 +763,7 @@ void PageMaker::doPageListFiles(EthernetClient* client, RequestContent* req)
 		#ifdef DEBUG_WEBSERVER_ENABLE
 		Serial.println(F("\tlist files."));
 		#endif
-		doPageListeFilesStart(client);
+		doPageListFilesStart(client);
 	} else {
 		const uint8_t bufSize = 13;
 		char filename[bufSize];
@@ -843,7 +896,7 @@ void PageMaker::doPageListFile(EthernetClient* client, const char* filename, con
 	#endif
 }
 
-void PageMaker::doPageListeFilesStart(EthernetClient* client)
+void PageMaker::doPageListFilesStart(EthernetClient* client)
 {
 	sendHttpOk(client);
 	sendHtmlHeader(client, PAGE_LIST_FILES, true, true);

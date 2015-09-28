@@ -247,7 +247,7 @@ class PageMaker
 	 * list files.
 	 * @param client
 	 */
-	static void doPageListeFilesStart(EthernetClient* client);
+	static void doPageListFilesStart(EthernetClient* client);
 
 	/**
 	 * print maintenance page

@@ -96,6 +96,27 @@ class DiscoveryManager {
 		}
 
 		/**
+		 * delete one info for node
+		 * @param node
+		 * @param hwAddress
+		 * @param hwType
+		 */
+		boolean deleteInfo(l3_address_t node, uint8_t hwAddress, uint8_t hwType) {
+			Discovery_nodeDiscoveryInfoTableEntry_t tmp;
+			uint16_t index;
+			for(uint8_t i = 0; i < NUM_INFOS_PER_NODE; i++) {
+				index = node * NUM_INFOS_PER_NODE + i;
+				ram.readElementIntoVar(memRegionDiscoveryInfo, index, &tmp);
+				
+				if(tmp.hardwareAddress == hwAddress && tmp.hardwareType == hwType) {
+					return ram.memsetElement(memRegionDiscoveryInfo, index, 0);
+				}
+			}
+			
+			return false;
+		}
+
+		/**
 		 * read am element into buffer wrapper
 		 * @param elem buffer
 		 * @param remote node
