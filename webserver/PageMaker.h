@@ -236,7 +236,7 @@ class PageMaker
 	static void doPageListFiles(EthernetClient* client, RequestContent* req);
 
 	/**
-	 * download/show
+	 * download
 	 * @param client
 	 * @param filename
 	 * @param filetype
@@ -247,7 +247,7 @@ class PageMaker
 	 * list files.
 	 * @param client
 	 */
-	static void doPageListFilesStart(EthernetClient* client);
+	static void doPageListFilesStart(EthernetClient* client, RequestContent* req);
 
 	/**
 	 * print maintenance page

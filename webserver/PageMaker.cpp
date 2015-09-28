@@ -759,12 +759,7 @@ void PageMaker::doPageListFiles(EthernetClient* client, RequestContent* req)
 	Serial.println(client->_sock);
 	#endif
 
-	if(req->hasKey(variableFilename) == -1) {
-		#ifdef DEBUG_WEBSERVER_ENABLE
-		Serial.println(F("\tlist files."));
-		#endif
-		doPageListFilesStart(client);
-	} else {
+	if(req->hasKey(variableFilename) >= 0 && req->hasKey(variableDelete) == -1) {
 		const uint8_t bufSize = 13;
 		char filename[bufSize];
 		req->getValue(variableFilename)->toCharArray(filename, bufSize);
@@ -778,6 +773,12 @@ void PageMaker::doPageListFiles(EthernetClient* client, RequestContent* req)
 		#endif
 
 		doPageListFile(client, filename, filetype);
+	} else {
+		#ifdef DEBUG_WEBSERVER_ENABLE
+		Serial.println(F("\tlist files."));
+		#endif
+		
+		doPageListFilesStart(client, req);
 	}
 }
 
@@ -896,11 +897,40 @@ void PageMaker::doPageListFile(EthernetClient* client, const char* filename, con
 	#endif
 }
 
-void PageMaker::doPageListFilesStart(EthernetClient* client)
+void PageMaker::doPageListFilesStart(EthernetClient* client, RequestContent* req)
 {
 	sendHttpOk(client);
 	sendHtmlHeader(client, PAGE_LIST_FILES, true, true);
-	client->println(F("<table><thead><tr><th>Remote</th><th>HardwareAddress</th><th>HardwareType</th><th>Filename</th><th>RAW</th><th>Size [b]</th></tr></thead>"));
+
+	//delete a file?
+	if(req->hasKey(variableFilename) >= 0) {
+		const uint8_t bufSize = 13;
+		char filename[bufSize];
+		req->getValue(variableFilename)->toCharArray(filename, bufSize);
+
+		boolean success = false;
+		if(SD.exists((char*) filename)) {
+			success = SD.remove(filename);
+		}
+
+		//result.
+		client->print(F("<div class='"));
+		if(success) {
+			client->print(F("info"));
+			} else {
+			client->print(F("warn"));
+		}
+		client->print(F("'>"));
+		client->print(F("File "));
+		client->print(filename);
+		if(!success) {
+			client->print(F(" not"));
+		}
+		client->print(F(" deleted."));
+		client->print(F("</div>"));
+	}//end delete file
+
+	client->println(F("<table><thead><tr><th>Remote</th><th>HardwareAddress</th><th>HardwareType</th><th>Filename</th><th>RAW</th><th>Size [b]</th><th>delete</th></tr></thead>"));
 	client->flush();
 
 	uint8_t num = 0;
@@ -942,6 +972,8 @@ void PageMaker::doPageListFilesStart(EthernetClient* client)
 				#endif
 
 				client->print(F("<tr>"));
+				
+				//remote
 				client->print(F("<td data-label='Remote'>"));
 				client->print(remote);
 				if(strlen(nodeInfoObj.nodeStr) > 0) {
@@ -951,15 +983,18 @@ void PageMaker::doPageListFilesStart(EthernetClient* client)
 				}
 				client->print(F("</td>"));
 
+				//HWaddress
 				client->print(F("<td data-label='HwAddress'>"));
 				client->print(address);
 				client->print(F("</td>"));
 
+				//HWtypoe
 				client->print(F("<td data-label='HwType'>"));
 				//client->print(type);
 				printP(client, hardwareTypeStrings[type]);
 				client->print(F("</td>"));
 
+				//link CSV
 				client->print(F("<td data-label='CSV'><a href='"));
 				printP(client, pageAddresses[PAGE_LIST_FILES]);
 				client->print(F("?"));
@@ -974,6 +1009,7 @@ void PageMaker::doPageListFilesStart(EthernetClient* client)
 				client->print(cursor.name());
 				client->print(F("</a></td>"));
 
+				//link RAW
 				client->print(F("<td data-label='RAW'><a href='"));
 				printP(client, pageAddresses[PAGE_LIST_FILES]);
 				client->print(F("?"));
@@ -982,21 +1018,36 @@ void PageMaker::doPageListFilesStart(EthernetClient* client)
 				client->print(cursor.name());
 				client->print(F("'>x</a></td>"));
 
+				//size
 				client->print(F("<td data-label='bytes'>"));
 				client->print(cursor.size());
 				client->print(F(" ("));
 				client->print(cursor.size() / (sizeUInt8List + 4)); //uint32_t rtc timestamp + sensordata.
 				client->print(F(" samples)</td>"));
 				client->print(F("</td>"));
-				client->print(F("</tr>"));
 
+				//delete
+				client->print(F("<td data-label='delete' class='centered'><a href='"));
+				printP(client, pageAddresses[PAGE_LIST_FILES]);
+				client->print(F("?"));
+				printP(client, variableFilename);
+				client->print(F("="));
+				client->print(cursor.name());
+				client->print(F("&"));
+				printP(client, variableDelete);
+				client->println(F("' onclick=\"return confirm('This will delete the sensor log. Are you sure?')\">x</a>"));
+				client->println(F("</td>"));
+			
+				client->print(F("</tr>"));
+				
 				num++;
+				client->flush();
 			}
 			cursor = test.openNextFile();
 		}
 	}
 
-	client->println(F("<tfoot><tr><th colspan='6'>"));
+	client->println(F("<tfoot><tr><th colspan='7'>"));
 	client->print(num);
 	client->println(F(" Entries</th></tr></tfoot>"));
 	client->println(F("</table>"));
@@ -1397,35 +1448,6 @@ void PageMaker::doPageRequestSensor2(EthernetClient* client, hardwareRequestList
 	listener->init(0, HWType_UNKNOWN, 0, webserverListener::START);
 }
 
-boolean PageMaker::getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &neighbourLastKeepAlive, uint8_t &neighbourHops, uint8_t &neighbourNextHop) {
-	#ifdef ENABLE_EXTERNAL_RAM
-		SPIRamManager::iterator it;
-		l3.getNeighbourManager()->getIterator(&it);
-		while(it.hasNext()) {
-			NeighbourManager::neighbourData_t* currentItem = (NeighbourManager::neighbourData_t*) it.next();
-	#else
-		for(uint8_t j = 0; j < CONFIG_L3_NUM_NEIGHBOURS; j++) {
-			NeighbourManager::neighbourData_t* currentItem = &l3.getNeighbourManager()->neighbours[j];
-	#endif
-			if(currentItem->nodeId == nodeId) {
-				neighbourActive = 1;
-				neighbourLastKeepAlive = currentItem->timestamp;
-				neighbourHops = currentItem->hopCount;
-				neighbourNextHop = currentItem->hopNextNodeId;
-				return true;
-			}
-		}
-
-		if(nodeId == l3.localAddress) {
-			//this is us!
-			neighbourActive = 1;
-			neighbourLastKeepAlive = millis();
-			neighbourHops = 0;
-			neighbourNextHop = l3.localAddress;
-		}
-		return false;
-}
-
 void PageMaker::prettyPrintCommandResultGeneric(EthernetClient* client, command_t* cmd)
 {
 	//fallback
@@ -1639,4 +1661,33 @@ void PageMaker::prettyPrintLight(command_t* cmd, EthernetClient* client)
 
 	client->print(level);
 	client->print(F(" %"));
+}
+
+boolean PageMaker::getRouteInfoForNode(uint8_t nodeId, boolean &neighbourActive, uint32_t &neighbourLastKeepAlive, uint8_t &neighbourHops, uint8_t &neighbourNextHop) {
+#ifdef ENABLE_EXTERNAL_RAM
+	SPIRamManager::iterator it;
+	l3.getNeighbourManager()->getIterator(&it);
+	while(it.hasNext()) {
+		NeighbourManager::neighbourData_t* currentItem = (NeighbourManager::neighbourData_t*) it.next();
+#else
+	for(uint8_t j = 0; j < CONFIG_L3_NUM_NEIGHBOURS; j++) {
+		NeighbourManager::neighbourData_t* currentItem = &l3.getNeighbourManager()->neighbours[j];
+#endif
+		if(currentItem->nodeId == nodeId) {
+			neighbourActive = 1;
+			neighbourLastKeepAlive = currentItem->timestamp;
+			neighbourHops = currentItem->hopCount;
+			neighbourNextHop = currentItem->hopNextNodeId;
+			return true;
+		}
+	}
+
+	if(nodeId == l3.localAddress) {
+		//this is us!
+		neighbourActive = 1;
+		neighbourLastKeepAlive = millis();
+		neighbourHops = 0;
+		neighbourNextHop = l3.localAddress;
+	}
+	return false;
 }
